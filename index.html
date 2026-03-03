@@ -683,8 +683,10 @@ function renderAdminReport() {
           <td style="color:${nott>0?"#4f46e5":"inherit"};font-weight:${nott>0?700:400}">${minToHHMM(nott)}h</td>
           <td style="color:${strD>0?"#ea580c":"inherit"};font-weight:${strD>0?700:400}">${minToHHMM(strD)}h</td>
           <td style="color:${strN>0?"#dc2626":"inherit"};font-weight:${strN>0?700:400}">${minToHHMM(strN)}h</td>
-          <td>${assCnt["Ferie"]||0}</td><td>${assCnt["Permesso"]||0}</td><td>${assCnt["Malattia"]||0}</td>
-          <td>${assCnt["Riposo Compensativo"]||0}</td>
+          <td>${assCnt["Ferie"]||0}g (${((assCnt["Ferie"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+<td>${assCnt["Permesso"]||0}g (${((assCnt["Permesso"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+<td>${assCnt["Malattia"]||0}g (${((assCnt["Malattia"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+<td>${assCnt["Riposo Compensativo"]||0}g (${((assCnt["Riposo Compensativo"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
         </tr>`).join("")}</tbody>
     </table>
     ${getTimbMese().length===0?`<div class="empty">Nessuna timbratura per ${MESI[state.filtroMese]} ${state.filtroAnno}</div>`:""}</div>`;

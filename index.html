@@ -415,9 +415,10 @@ document.addEventListener("click", async function(e) {
     const tariffa=parseFloat(document.getElementById("md-tariffa")?.value)||null;
     const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
     const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
+const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.value)||0;
     const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
     if(!nome){alert("Inserisci il nome!");return;}
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,montePermessi};
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -1057,7 +1058,7 @@ function renderAdminFerie() {
       const ferieGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
       const permGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
       const ferieOre=ferieGiorni*oreDip, permOre=permGiorni*oreDip;
-      const monteFerie=dip.monteFerie||0, montePermessi=dip.montePermessi||0;
+      const monteFerie=(dip.monteFerie||0)+(dip.feriePregresse||0); montePermessi=dip.montePermessi||0;
       const ferieRimaste=Math.max(0,monteFerie-ferieOre);
       const permRimasti=Math.max(0,montePermessi-permOre);
       const percF=monteFerie>0?Math.min(100,(ferieOre/monteFerie)*100):0;
@@ -1132,7 +1133,8 @@ function renderModaleDip() {
           <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
-          <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
+<div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
+<div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
           <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale>Annulla</button>

@@ -61,6 +61,7 @@ import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, 
 const ADMIN_PIN = "1234";
 const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const SEDI = ["Vivandaio", "Rione Certosa"];
 
 // ── MAGGIORAZIONI ─────────────────────────────────────────────
 const MAGGIORAZIONI = {
@@ -129,6 +130,7 @@ let state = {
   dipendenti: [], timbrature: [],
   dipTab: "timbra", adminTab: "presenze",
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
+  filtroSede: "",
   modaleDip: null, modaleTimbratura: null,
 };
 
@@ -317,7 +319,8 @@ document.addEventListener("click", async function(e) {
     const pausaNum=parseInt(document.getElementById("inp-pausa")?.value)||0;
     if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
     const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
+   const sede=document.getElementById("inp-sede")?.value||SEDI[0];
+    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede});
     alert("✅ Turno registrato!");
   }
  else if(t.hasAttribute("data-add-assenza-btn")){
@@ -327,8 +330,8 @@ document.addEventListener("click", async function(e) {
     if(!dates.length)return;
     if(!confirm(`Confermi "${tipoAssenza}" per ${dates.length} giorno/i?\n${dates.join(", ")}`))return;
     for(const data of dates){
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false});
-    }
+     const sedeAss=document.getElementById("inp-sede")?.value||SEDI[0];
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false,sede:sedeAss});
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
     window._dateSelezionate["dip"]=new Set();
   }
@@ -343,13 +346,15 @@ document.addEventListener("click", async function(e) {
       const pausaNum=parseInt(document.getElementById("ai-pausa")?.value)||0;
       if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
       const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
+     const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede:sedeAdmin});
      }else{
       const assenza=document.getElementById("ai-assenza")?.value;
       const dates=getDateAssenza("admin");
       if(!dates.length)return;
       for(const dataAss of dates){
-        await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data:dataAss,tipo:"assenza",assenza,sbloccata:false});
+       const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
+        await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data:dataAss,tipo:"assenza",assenza,sbloccata:false,sede:sedeAdmin});
       }
       alert(`Inseriti ${dates.length} giorno/i di assenza!`);
       window._dateSelezionate["admin"]=new Set();
@@ -500,6 +505,11 @@ function renderDipTimbra(dip) {
         <div><label>Entrata</label><input type="time" id="inp-entrata" value="${ora}"></div>
         <div><label>Uscita</label><input type="time" id="inp-uscita"></div>
         <div><label>Pausa (min)</label><input type="number" id="inp-pausa" value="30" min="0" max="120"></div>
+        <div><label>Sede</label>
+          <select id="inp-sede">
+            ${SEDI.map(s=>`<option>${s}</option>`).join("")}
+          </select>
+        </div>
       </div>
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-turno>✅ Registra turno</button>
     </div>
@@ -562,13 +572,13 @@ function renderDipStorico(dip) {
 }
 
 function renderAdmin() {
-  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
-  let content="";
+ const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["giornaliero","📅 Giornaliero"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
   if(state.adminTab==="presenze") content=renderAdminPresenze();
   else if(state.adminTab==="report") content=renderAdminReport();
   else if(state.adminTab==="inserisci") content=renderAdminInserisci();
   else if(state.adminTab==="settimane") content=renderAdminSettimane();
   else if(state.adminTab==="costi") content=renderAdminCosti();
+  else if(state.adminTab==="giornaliero") content=renderAdminGiornaliero(); 
   else if(state.adminTab==="maggiorazioni") content=renderAdminMaggiorazioni();
   else if(state.adminTab==="ferie") content=renderAdminFerie();
   else content=renderAdminDipendenti();
@@ -576,7 +586,11 @@ function renderAdmin() {
     <div style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
       <div><h1 style="font-size:18px;font-weight:700">🔐 Area Admin</h1>
       <p style="font-size:12px;opacity:0.7">Presenze in tempo reale</p></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="admin-filtro-sede" onchange="aggiornaSede()" style="border-radius:8px;padding:6px 10px;font-size:12px;border:1px solid #475569;background:#334155;color:white">
+          <option value="">Tutte le sedi</option>
+          ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
+        </select>
         <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
@@ -629,7 +643,12 @@ function filtriHTML() {
 }
 
 function getTimbMese() {
-  return state.timbrature.filter(t=>{const d=new Date(t.data);return d.getMonth()===state.filtroMese&&d.getFullYear()===state.filtroAnno;});
+  return state.timbrature.filter(t=>{
+    const d=new Date(t.data);
+    const okMese=d.getMonth()===state.filtroMese&&d.getFullYear()===state.filtroAnno;
+    const okSede=!state.filtroSede||t.sede===state.filtroSede;
+    return okMese&&okSede;
+  });
 }
 
 function getRiepilogo() {
@@ -676,6 +695,9 @@ function renderAdminInserisci() {
         <select id="ai-dip">${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
       </div>
       <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
+      <div><label>Sede</label>
+        <select id="ai-sede">${SEDI.map(s=>`<option${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}</select>
+      </div>
       <div><label>Tipo</label>
         <select id="ai-tipo" onchange="toggleTipoAdmin()">
           <option value="lavoro">Turno di lavoro</option>
@@ -741,6 +763,7 @@ function renderListaTimbratureHTML(filtroDipId) {
         <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
         <span style="color:#9ca3af">${t.data}</span>
         ${tipo==="festivo"?`<span class="badge badge-red">🎉 Festivo</span>`:tipo==="domenica"?`<span class="badge badge-purple">☀️ Dom.</span>`:""}
+       ${t.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">${t.sede}</span>`:""}
         ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}→${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
         ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
       </div>
@@ -908,6 +931,117 @@ function renderAdminMaggiorazioni() {
     </div>`;
 }
 
+  function renderAdminGiornaliero() {
+  const annoCorrente = state.filtroAnno;
+  const meseCorrente = state.filtroMese;
+  const giorniMese = new Date(annoCorrente, meseCorrente+1, 0).getDate();
+
+  // Costruisci mappa data → costo totale
+  const costiPerGiorno = {};
+  for(let g=1; g<=giorniMese; g++){
+    const ds = `${annoCorrente}-${String(meseCorrente+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const timbGiorno = state.timbrature.filter(t => {
+      const okData = t.data === ds;
+      const okSede = !state.filtroSede || t.sede === state.filtroSede;
+      return okData && okSede;
+    });
+    let costoGiorno = 0;
+    timbGiorno.forEach(t => {
+      const dip = state.dipendenti.find(d => d.id === t.dipendenteId);
+      if(!dip?.tariffaOraria) return;
+      if(t.tipo === "lavoro" && t.calcolo){
+        const r = calcolaCostoTurno(t, dip);
+        if(r) costoGiorno += r.totale;
+      } else if(t.tipo === "assenza" && new Date(ds).getDay() !== 0){
+        costoGiorno += (sogliaMinutiDip(dip)/60) * dip.tariffaOraria;
+      }
+    });
+    costiPerGiorno[ds] = { costo: costoGiorno, timbrature: timbGiorno };
+  }
+
+  const totMese = Object.values(costiPerGiorno).reduce((s,v)=>s+v.costo,0);
+  const giorniNomiBrevi = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📅 Costo giornaliero</h2>${filtriHTML()}
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;color:#374151">Totale ${MESI[meseCorrente]} ${annoCorrente}${state.filtroSede?" — "+state.filtroSede:""}</span>
+      <span style="font-weight:700;font-size:18px;color:#059669">${euro(totMese)}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:24px">
+      ${Object.entries(costiPerGiorno).map(([ds,{costo,timbrature}])=>{
+        const d = new Date(ds);
+        const isDom = d.getDay()===0;
+        const isFest = isFestivo(ds);
+        const bg = isFest?"#fef2f2":isDom?"#f5f3ff":costo>0?"#f0fdf4":"#f9fafb";
+        const border = isFest?"#fecaca":isDom?"#ddd6fe":costo>0?"#bbf7d0":"#f3f4f6";
+        const coloreCosto = costo>0?"#059669":"#9ca3af";
+        return `<div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:11px;font-weight:700;color:#6b7280">${giorniNomiBrevi[d.getDay()]}</div>
+          <div style="font-size:20px;font-weight:700;color:#374151">${d.getDate()}</div>
+          ${isFest?`<div style="font-size:10px;color:#dc2626">🎉 Festivo</div>`:""}
+          <div style="font-size:13px;font-weight:700;color:${coloreCosto};margin-top:4px">${costo>0?euro(costo):"—"}</div>
+          <div style="font-size:10px;color:#9ca3af">${timbrature.length>0?timbrature.length+" timb.":""}</div>
+        </div>`;
+      }).join("")}
+    </div>
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">🔍 Dettaglio per data</h3>
+    <div class="grid-auto" style="margin-bottom:12px;max-width:300px">
+      <div><label>Seleziona data</label>
+        <input type="date" id="filtro-data-giorno" value="${oggi()}" onchange="aggiornaCostoGiorno()">
+      </div>
+    </div>
+    <div id="dettaglio-giorno">${renderDettaglioGiorno(oggi())}</div>`;
+}
+
+function renderDettaglioGiorno(dataStr) {
+  const timbGiorno = state.timbrature.filter(t => {
+    const okData = t.data === dataStr;
+    const okSede = !state.filtroSede || t.sede === state.filtroSede;
+    return okData && okSede;
+  });
+  if(!timbGiorno.length) return `<div class="empty">Nessuna timbratura per ${dataStr}${state.filtroSede?" ("+state.filtroSede+")":""}.</div>`;
+
+  let totaleGiorno = 0;
+  const righe = timbGiorno.map(t => {
+    const dip = state.dipendenti.find(d => d.id === t.dipendenteId);
+    if(!dip) return "";
+    let costo = 0;
+    let dettaglio = "";
+    if(t.tipo==="lavoro"&&t.calcolo){
+      const r = calcolaCostoTurno(t,dip);
+      if(r){ costo=r.totale; dettaglio=`${t.entrata}→${t.uscita} (${minToHHMM(t.calcolo.totaleMin)}h)`; }
+    } else if(t.tipo==="assenza"){
+      const isDom = new Date(dataStr).getDay()===0;
+      if(!isDom){ costo=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria; }
+      dettaglio=`${t.assenza}${isDom?" (domenica, non pagata)":""}`;
+    }
+    totaleGiorno += costo;
+    return `<div class="row">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:600">${dip.nome}</span>
+        ${t.sede?`<span class="badge badge-blue">${t.sede}</span>`:""}
+        <span style="color:#6b7280;font-size:12px">${dettaglio}</span>
+      </div>
+      <span style="font-weight:700;color:#059669">${costo>0?euro(costo):"—"}</span>
+    </div>`;
+  }).join("");
+
+  return `
+    ${righe}
+    <div style="background:#1e293b;color:white;border-radius:8px;padding:12px 16px;margin-top:8px;display:flex;justify-content:space-between">
+      <span style="font-weight:700">Totale ${dataStr}</span>
+      <span style="font-weight:700;color:#10b981">${euro(totaleGiorno)}</span>
+    </div>`;
+}
+
+window.aggiornaCostoGiorno = function() {
+  const data = document.getElementById("filtro-data-giorno")?.value;
+  const el = document.getElementById("dettaglio-giorno");
+  if(el&&data) el.innerHTML = renderDettaglioGiorno(data);
+};
 function renderAdminFerie() {
   const anno=state.filtroAnno;
   return `
@@ -1030,6 +1164,10 @@ window.toggleTipoAdmin=function(){
   const tipo=document.getElementById("ai-tipo")?.value;
   document.getElementById("ai-lavoro-fields").style.display=tipo==="lavoro"?"grid":"none";
   document.getElementById("ai-assenza-fields").style.display=tipo==="assenza"?"block":"none";
+};
+window.aggiornaSede = function() {
+  state.filtroSede = document.getElementById("admin-filtro-sede")?.value || "";
+  render();
 };
 
 window.renderListaTimbrature=function(){

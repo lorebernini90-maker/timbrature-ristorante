@@ -209,7 +209,10 @@ function calcolaCostoAssenzeMensili(dipId) {
   const totaleCosto = totaleOre * dip.tariffaOraria;
   return { dettaglio, totaleGiorni, totaleOre, totaleCosto, oreDip, tariffa: dip.tariffaOraria };
 }
-
+function calcolaCostoMensile(dipId) {
+  const dip = state.dipendenti.find(d => d.id === dipId);
+  if(!dip?.tariffaOraria) return null;
+  const turni = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "lavoro");
   let totOrdDiurne=0, totStrDiurni=0, totStrNott=0, totOrdNott=0;
   let costoOrdDiurno=0, costoStrDiurno=0, costoStrNott=0, costoOrdNott=0;
   let costoMaggDom=0, costoMaggFest=0, totale=0;
@@ -833,7 +836,7 @@ function renderAdminCosti() {
           <td style="color:#b45309">${euro(r.costoMaggFest)}</td>
           <td style="color:#3b82f6">${euro(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0)}</td>
           <td style="font-weight:700;color:#059669">${euro(r.totale+(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0))}</td>
-        </tr>`;`;}).join("")}
+        </tr>`;}).join("")}
       </tbody>
       <tfoot>
         <tr style="background:#f0fdf4;border-top:2px solid #e5e7eb">
@@ -893,14 +896,15 @@ function renderAdminMaggiorazioni() {
             <span>Totale ${MESI[state.filtroMese]}</span>
             <span style="color:#059669">${euro(r.totale+(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0))}</span>
           </div>
-        </div>`;`;}).join("")}
+       </div>`;}).join("")}
     <div style="background:#1e293b;color:white;border-radius:10px;padding:16px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">
       <span style="font-weight:700;font-size:15px">Totale costo mensile</span>
       <span style="font-weight:700;font-size:20px;color:#10b981">${euro(state.dipendenti.reduce((s,dip)=>{
   const r=calcolaCostoMensile(dip.id);
   const ra=calcolaCostoAssenzeMensili(dip.id);
   return s+(r?.totale||0)+(ra?.totaleCosto||0);
-},0))};
+},0))}}</span>
+    </div>`;
 }
 
 function renderAdminFerie() {

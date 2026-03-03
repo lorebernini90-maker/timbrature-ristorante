@@ -317,7 +317,6 @@ document.addEventListener("click", async function(e) {
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
     window._dateSelezionate["dip"]=new Set();
   }
-  }
   else if(t.dataset.salvaTimbraturAdmin!==undefined||t.getAttribute("data-salva-timbratura-admin")!==null) {
     const dipId=document.getElementById("ai-dip")?.value;
     const data=document.getElementById("ai-data")?.value||oggi();
@@ -330,7 +329,6 @@ document.addEventListener("click", async function(e) {
       if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
       const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
       await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
-    } else {
      }else{
       const assenza=document.getElementById("ai-assenza")?.value;
       const dates=getDateAssenza("admin");
@@ -344,7 +342,8 @@ document.addEventListener("click", async function(e) {
       if(el)el.innerHTML=renderListaTimbratureHTML(document.getElementById("filtro-dip-lista")?.value||"");
       return;
     }
-    alert("Timbratura inserita!");; window.renderListaTimbrature();
+   alert("Timbratura inserita!");
+    window.renderListaTimbrature();
   }
   else if(t.dataset.modificaTimb) {
     const timb=state.timbrature.find(x=>x.id===t.dataset.modificaTimb);
@@ -518,6 +517,7 @@ function renderDipTimbra(dip) {
   </div>
   <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>📋 Registra assenza</button>
 </div>
+`;
 }
 
 function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {

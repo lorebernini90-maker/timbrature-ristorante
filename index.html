@@ -266,10 +266,147 @@ function render() {
   if(state.vista==="login") app.innerHTML=renderLogin();
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
   else if(state.vista==="admin") app.innerHTML=renderAdmin();
+  // Rimuovi modali esistenti
+  document.querySelectorAll(".modal-bg").forEach(el=>el.remove());
   if(state.modaleDip) document.body.insertAdjacentHTML("beforeend",renderModaleDip());
   if(state.modaleTimbratura) document.body.insertAdjacentHTML("beforeend",renderModaleTimbratura());
-  attachEvents();
 }
+
+// Un solo listener globale — chiamato UNA volta sola
+document.addEventListener("click", async function(e) {
+  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-filtro-mese],[data-filtro-anno],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv]");
+  if(!t) return;
+
+  if(t.dataset.loginDip) {
+    state.utenteCorrente=state.dipendenti.find(d=>d.id===t.dataset.loginDip);
+    state.vista="dipendente"; render();
+  }
+  else if(t.dataset.loginAdmin!==undefined) {
+    const pin=prompt("Inserisci il PIN admin:");
+    if(pin===ADMIN_PIN){state.vista="admin";render();} else if(pin!==null) alert("PIN errato!");
+  }
+  else if(t.dataset.logout!==undefined) {
+    state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; render();
+  }
+  else if(t.dataset.dipTab) {
+    state.dipTab=t.dataset.dipTab; render();
+  }
+  else if(t.dataset.adminTab) {
+    state.adminTab=t.dataset.adminTab; render();
+  }
+  else if(t.dataset.addTurno!==undefined) {
+    const dip=state.utenteCorrente;
+    const dataTurno=document.getElementById("inp-data-turno")?.value||oggi();
+    const entrata=document.getElementById("inp-entrata")?.value;
+    const uscita=document.getElementById("inp-uscita")?.value;
+    const pausaNum=parseInt(document.getElementById("inp-pausa")?.value)||0;
+    if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
+    const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
+    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
+    alert("✅ Turno registrato!");
+  }
+  else if(t.dataset.addAssenzaBtn!==undefined) {
+    const dip=state.utenteCorrente;
+    const dataAssenza=document.getElementById("inp-data-assenza")?.value||oggi();
+    const tipoAssenza=document.getElementById("inp-tipo-assenza")?.value;
+    if(!confirm(`Confermi "${tipoAssenza}" per il ${dataAssenza}?`)) return;
+    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataAssenza,tipo:"assenza",assenza:tipoAssenza});
+    alert("✅ Assenza registrata!");
+  }
+  else if(t.dataset.salvaTimbraturAdmin!==undefined||t.getAttribute("data-salva-timbratura-admin")!==null) {
+    const dipId=document.getElementById("ai-dip")?.value;
+    const data=document.getElementById("ai-data")?.value||oggi();
+    const tipo=document.getElementById("ai-tipo")?.value;
+    const dip=state.dipendenti.find(d=>d.id===dipId);
+    if(tipo==="lavoro"){
+      const entrata=document.getElementById("ai-entrata")?.value;
+      const uscita=document.getElementById("ai-uscita")?.value;
+      const pausaNum=parseInt(document.getElementById("ai-pausa")?.value)||0;
+      if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
+      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
+    } else {
+      const assenza=document.getElementById("ai-assenza")?.value;
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"assenza",assenza});
+    }
+    alert("✅ Timbratura inserita!"); window.renderListaTimbrature();
+  }
+  else if(t.dataset.modificaTimb) {
+    const timb=state.timbrature.find(x=>x.id===t.dataset.modificaTimb);
+    if(timb){state.modaleTimbratura=timb; render();}
+  }
+  else if(t.dataset.eliminaTimb) {
+    if(!confirm("Eliminare questa timbratura?")) return;
+    await deleteDoc(doc(db,"timbrature",t.dataset.eliminaTimb));
+  }
+  else if(t.dataset.chiudiModaleTimb!==undefined) {
+    state.modaleTimbratura=null; render();
+  }
+  else if(t.dataset.salvaModificaTimb!==undefined) {
+    const timb=state.modaleTimbratura;
+    const dip=state.dipendenti.find(d=>d.id===timb.dipendenteId);
+    let dati={};
+    if(timb.tipo==="lavoro"){
+      const entrata=document.getElementById("mt-entrata")?.value;
+      const uscita=document.getElementById("mt-uscita")?.value;
+      const pausaNum=parseInt(document.getElementById("mt-pausa")?.value)||0;
+      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
+      dati={entrata,uscita,pausa:pausaNum,calcolo};
+    } else {
+      dati={assenza:document.getElementById("mt-assenza")?.value};
+    }
+    await updateDoc(doc(db,"timbrature",timb.id),dati);
+    state.modaleTimbratura=null; render();
+  }
+  else if(t.dataset.apriModaleNuovo!==undefined) {
+    state.modaleDip={mode:"nuovo",dip:{}}; render();
+  }
+  else if(t.dataset.modificaDip) {
+    const dip=state.dipendenti.find(d=>d.id===t.dataset.modificaDip);
+    state.modaleDip={mode:"modifica",dip}; render();
+  }
+  else if(t.dataset.eliminaDip) {
+    const dip=state.dipendenti.find(d=>d.id===t.dataset.eliminaDip);
+    if(!confirm(`Eliminare ${dip?.nome}?`)) return;
+    await deleteDoc(doc(db,"dipendenti",t.dataset.eliminaDip));
+    state.dipendenti=state.dipendenti.filter(d=>d.id!==t.dataset.eliminaDip); render();
+  }
+  else if(t.dataset.chiudiModale!==undefined) {
+    state.modaleDip=null; render();
+  }
+  else if(t.dataset.salvaModale!==undefined) {
+    const nome=document.getElementById("md-nome")?.value?.trim();
+    const tipo=document.getElementById("md-tipo")?.value;
+    const tariffa=parseFloat(document.getElementById("md-tariffa")?.value)||null;
+    const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
+    const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
+    const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
+    if(!nome){alert("Inserisci il nome!");return;}
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,montePermessi};
+    if(state.modaleDip.mode==="modifica"){
+      const id=state.modaleDip.dip.id;
+      await updateDoc(doc(db,"dipendenti",id),dati);
+      const idx=state.dipendenti.findIndex(d=>d.id===id);
+      if(idx>=0) state.dipendenti[idx]={...state.dipendenti[idx],...dati};
+    } else {
+      const ref=await addDoc(collection(db,"dipendenti"),dati);
+      state.dipendenti.push({id:ref.id,...dati});
+    }
+    state.modaleDip=null; render();
+  }
+  else if(t.dataset.exportCsv!==undefined) {
+    esportaCSV();
+  }
+});
+
+// Listener per i select (change, non click)
+document.addEventListener("change", function(e) {
+  const t=e.target;
+  if(t.dataset.filtroMese!==undefined){ state.filtroMese=parseInt(t.value); render(); }
+  if(t.dataset.filtroAnno!==undefined){ state.filtroAnno=parseInt(t.value); render(); }
+});
+
+function attachEvents(){} // svuotata — tutto gestito dal listener globale
 
 function renderLogin() {
   return `
@@ -824,129 +961,3 @@ function attachModificaEliminaTimb(){
     el.onclick=async()=>{ if(!confirm("Eliminare questa timbratura?")) return; await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb)); };
   });
 }
-
-function attachEvents(){
-  document.querySelectorAll("[data-login-dip]").forEach(el=>{
-    el.onclick=()=>{ state.utenteCorrente=state.dipendenti.find(d=>d.id===el.dataset.loginDip); state.vista="dipendente"; render(); };
-  });
-  document.querySelector("[data-login-admin]")?.addEventListener("click",()=>{
-    const pin=prompt("Inserisci il PIN admin:");
-    if(pin===ADMIN_PIN){state.vista="admin";render();} else if(pin!==null) alert("PIN errato!");
-  });
-  document.querySelectorAll("[data-logout]").forEach(el=>{ el.onclick=()=>{ state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; render(); }; });
-  document.querySelectorAll("[data-dip-tab]").forEach(el=>{ el.onclick=()=>{ state.dipTab=el.dataset.dipTab; render(); }; });
-  document.querySelectorAll("[data-admin-tab]").forEach(el=>{ el.onclick=()=>{ state.adminTab=el.dataset.adminTab; render(); }; });
-  document.querySelector("[data-filtro-mese]")?.addEventListener("change",e=>{ state.filtroMese=parseInt(e.target.value); render(); });
-  document.querySelector("[data-filtro-anno]")?.addEventListener("change",e=>{ state.filtroAnno=parseInt(e.target.value); render(); });
-
-  document.querySelector("[data-add-turno]")?.addEventListener("click",async()=>{
-    const dip=state.utenteCorrente;
-    const dataTurno=document.getElementById("inp-data-turno")?.value||oggi();
-    const entrata=document.getElementById("inp-entrata")?.value;
-    const uscita=document.getElementById("inp-uscita")?.value;
-    const pausaNum=parseInt(document.getElementById("inp-pausa")?.value)||0;
-    if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
-    const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
-    alert("✅ Turno registrato!");
-  });
-
-  document.querySelector("[data-add-assenza-btn]")?.addEventListener("click",async()=>{
-    const dip=state.utenteCorrente;
-    const dataAssenza=document.getElementById("inp-data-assenza")?.value||oggi();
-    const tipoAssenza=document.getElementById("inp-tipo-assenza")?.value;
-    if(!confirm(`Confermi "${tipoAssenza}" per il ${dataAssenza}?`)) return;
-    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataAssenza,tipo:"assenza",assenza:tipoAssenza});
-    alert("✅ Assenza registrata!");
-  });
-
-  document.querySelector("[data-salva-timbratura-admin]")?.addEventListener("click",async()=>{
-    const dipId=document.getElementById("ai-dip")?.value;
-    const data=document.getElementById("ai-data")?.value||oggi();
-    const tipo=document.getElementById("ai-tipo")?.value;
-    const dip=state.dipendenti.find(d=>d.id===dipId);
-    if(tipo==="lavoro"){
-      const entrata=document.getElementById("ai-entrata")?.value;
-      const uscita=document.getElementById("ai-uscita")?.value;
-      const pausaNum=parseInt(document.getElementById("ai-pausa")?.value)||0;
-      if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
-      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
-    } else {
-      const assenza=document.getElementById("ai-assenza")?.value;
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"assenza",assenza});
-    }
-    alert("✅ Timbratura inserita!");
-    window.renderListaTimbrature();
-  });
-
-  attachModificaEliminaTimb();
-
-  document.querySelectorAll("[data-chiudi-modale-timb]").forEach(el=>{
-    el.onclick=(e)=>{ e.stopPropagation(); state.modaleTimbratura=null; document.querySelector(".modal-bg")?.remove(); render(); };
-  });
-  document.querySelector("[data-salva-modifica-timb]")?.addEventListener("click",async(e)=>{
-    e.stopPropagation();
-    const t=state.modaleTimbratura;
-    const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
-    let dati={};
-    if(t.tipo==="lavoro"){
-      const entrata=document.getElementById("mt-entrata")?.value;
-      const uscita=document.getElementById("mt-uscita")?.value;
-      const pausaNum=parseInt(document.getElementById("mt-pausa")?.value)||0;
-      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-      dati={entrata,uscita,pausa:pausaNum,calcolo};
-    } else {
-      dati={assenza:document.getElementById("mt-assenza")?.value};
-    }
-    await updateDoc(doc(db,"timbrature",t.id),dati);
-    state.modaleTimbratura=null;
-    document.querySelector(".modal-bg")?.remove();
-    render();
-  });
-
-  document.querySelector("[data-apri-modale-nuovo]")?.addEventListener("click",()=>{ state.modaleDip={mode:"nuovo",dip:{}}; render(); });
-  document.querySelectorAll("[data-modifica-dip]").forEach(el=>{
-    el.onclick=()=>{ const dip=state.dipendenti.find(d=>d.id===el.dataset.modificaDip); state.modaleDip={mode:"modifica",dip}; render(); };
-  });
-  document.querySelectorAll("[data-elimina-dip]").forEach(el=>{
-    el.onclick=async()=>{
-      const dip=state.dipendenti.find(d=>d.id===el.dataset.eliminaDip);
-      if(!confirm(`Eliminare ${dip?.nome}?`)) return;
-      await deleteDoc(doc(db,"dipendenti",el.dataset.eliminaDip));
-      state.dipendenti=state.dipendenti.filter(d=>d.id!==el.dataset.eliminaDip); render();
-    };
-  });
-  document.querySelectorAll("[data-chiudi-modale]").forEach(el=>{ el.onclick=()=>{ state.modaleDip=null; render(); }; });
-  document.querySelector("[data-salva-modale]")?.addEventListener("click",async()=>{
-    const nome=document.getElementById("md-nome")?.value?.trim();
-    const tipo=document.getElementById("md-tipo")?.value;
-    const tariffa=parseFloat(document.getElementById("md-tariffa")?.value)||null;
-    const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
-    const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
-    const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
-    if(!nome){alert("Inserisci il nome!");return;}
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,montePermessi};
-    if(state.modaleDip.mode==="modifica"){
-      const id=state.modaleDip.dip.id;
-      await updateDoc(doc(db,"dipendenti",id),dati);
-      const idx=state.dipendenti.findIndex(d=>d.id===id);
-      if(idx>=0) state.dipendenti[idx]={...state.dipendenti[idx],...dati};
-    } else {
-      const ref=await addDoc(collection(db,"dipendenti"),dati);
-      state.dipendenti.push({id:ref.id,...dati});
-    }
-    state.modaleDip=null; render();
-  });
-
-  document.querySelector("[data-export-csv]")?.addEventListener("click",esportaCSV);
-  if(state.vista==="dipendente"){
-    const tick=()=>{ const c=document.getElementById("big-clock")||document.getElementById("clock"); if(c) c.textContent=oraNow(); setTimeout(tick,30000); };
-    setTimeout(tick,1000);
-  }
-}
-
-avvia();
-</script>
-</body>
-</html>

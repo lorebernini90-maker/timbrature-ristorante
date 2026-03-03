@@ -12,7 +12,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-primary { background: #f59e0b; color: white; }
 .btn-white { background: white; color: #d97706; }
 .btn-danger { background: #ef4444; color: white; }
-.btn-green { background: #10b981; color: white; }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 input, select { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; background: white; }
@@ -23,12 +22,11 @@ input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(24
 .badge-green { background: #d1fae5; color: #065f46; }
 .badge-purple { background: #ede9fe; color: #5b21b6; }
 .badge-red { background: #fee2e2; color: #dc2626; }
-.badge-yellow { background: #fef3c7; color: #92400e; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { background: #f9fafb; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: center; white-space: nowrap; }
-th:first-child, th:nth-child(2) { text-align: left; }
+th:first-child { text-align: left; }
 td { padding: 8px 10px; text-align: center; border-top: 1px solid #f3f4f6; }
-td:first-child, td:nth-child(2) { text-align: left; }
+td:first-child { text-align: left; }
 tr:hover td { background: #fffbeb; }
 .empty { text-align: center; color: #9ca3af; padding: 32px; font-size: 14px; }
 .info-box { background: #f9fafb; border-radius: 10px; padding: 14px; font-size: 13px; color: #4b5563; margin-top: 16px; }
@@ -47,7 +45,11 @@ tr:hover td { background: #fffbeb; }
 .sezione-titolo { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
 .alert-red { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 .progress-bar { background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; margin-top: 6px; }
-.progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+.progress-fill { height: 100%; border-radius: 99px; }
+.cost-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.cost-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #f9fafb; }
+.cost-row:last-child { border-bottom: none; }
+.cost-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; font-size: 15px; font-weight: 700; border-top: 2px solid #e5e7eb; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -59,6 +61,57 @@ import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, 
 const ADMIN_PIN = "1234";
 const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+
+// ── MAGGIORAZIONI ─────────────────────────────────────────────
+const MAGGIORAZIONI = {
+  strDiurno: 0.30,
+  strNotturno: 0.60,
+  ordinarioNotturno: 0.25,
+  domenica: 0.10,
+  festivo: 0.20,
+};
+
+// ── FESTIVI ───────────────────────────────────────────────────
+function getPassqua(anno) {
+  const a=anno%19, b=Math.floor(anno/100), c=anno%100;
+  const d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25);
+  const g=Math.floor((b-f+1)/3), h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4), k=c%4, l=(32+2*e+2*i-h-k)%7;
+  const m=Math.floor((a+11*h+22*l)/451);
+  const mese=Math.floor((h+l-7*m+114)/31);
+  const giorno=((h+l-7*m+114)%31)+1;
+  return new Date(anno, mese-1, giorno);
+}
+
+function isFestivo(dataStr) {
+  const d = new Date(dataStr);
+  const anno = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const gg = String(d.getDate()).padStart(2,"0");
+  const mmgg = `${mm}-${gg}`;
+
+  // Festivi fissi
+  const fissi = ["01-01","04-25","05-01","06-02","06-24","08-15","11-01","12-08","12-25","12-26"];
+  if(fissi.includes(mmgg)) return true;
+
+  // Pasqua
+  const pasqua = getPassqua(anno);
+  const pasquetta = new Date(pasqua); pasquetta.setDate(pasqua.getDate()+1);
+  if(d.toDateString()===pasqua.toDateString()) return true;
+  if(d.toDateString()===pasquetta.toDateString()) return true;
+
+  return false;
+}
+
+function isDomenica(dataStr) {
+  return new Date(dataStr).getDay() === 0;
+}
+
+function getTipoGiorno(dataStr) {
+  if(isFestivo(dataStr)) return "festivo";
+  if(isDomenica(dataStr)) return "domenica";
+  return "normale";
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyBx2VqiSLGTjWBR7s0lf96cYro1pUfTv08",
@@ -74,7 +127,7 @@ const db = getFirestore(fbApp);
 let state = {
   vista: "loading", utenteCorrente: null,
   dipendenti: [], timbrature: [],
-  dipTab: "timbra", adminTab: "report",
+  dipTab: "timbra", adminTab: "presenze",
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
   modaleDip: null, modaleTimbratura: null,
 };
@@ -83,6 +136,7 @@ function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); r
 function minToHHMM(min) { if(!min||min<=0) return "0:00"; return `${Math.floor(min/60)}:${String(min%60).padStart(2,"0")}`; }
 function oggi() { return new Date().toISOString().split("T")[0]; }
 function oraNow() { const n=new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
+function euro(n) { return `€ ${(n||0).toFixed(2)}`; }
 
 function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
   if(!entrata||!uscita) return null;
@@ -98,7 +152,8 @@ function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
   nott=Math.max(0,nott);
   const diur=Math.max(0,tot-nott);
   const strN=Math.min(str,nott), strD=Math.max(0,str-strN);
-  return {totaleMin:tot,diurneMin:diur,notturneMin:nott,straordinariMin:str,strDiurniMin:strD,strNotturniMin:strN};
+  const ordNott=Math.max(0,nott-strN);
+  return {totaleMin:tot,diurneMin:diur,notturneMin:nott,straordinariMin:str,strDiurniMin:strD,strNotturniMin:strN,ordNottMin:ordNott};
 }
 
 function sogliaMinutiDip(dip) {
@@ -106,12 +161,71 @@ function sogliaMinutiDip(dip) {
   return 400;
 }
 
-// Calcola ore assenza usate nell'anno corrente
-function oreAssenzaAnno(dipId, tipo, anno) {
-  return state.timbrature.filter(t=>{
-    const d=new Date(t.data);
-    return t.dipendenteId===dipId && t.tipo==="assenza" && t.assenza===tipo && d.getFullYear()===anno;
-  }).length; // ogni assenza = 1 giorno, convertiamo in ore usando sogliaOre del dip
+// ── CALCOLO COSTO CON MAGGIORAZIONI ──────────────────────────
+function calcolaCostoTurno(timb, dip) {
+  if(!timb.calcolo||!dip.tariffaOraria) return null;
+  const tariffa=dip.tariffaOraria;
+  const c=timb.calcolo;
+  const tipo=getTipoGiorno(timb.data);
+
+  const oreOrdDiurne=(c.diurneMin-c.strDiurniMin)/60;
+  const oreStrDiurni=c.strDiurniMin/60;
+  const oreStrNott=c.strNotturniMin/60;
+  const oreOrdNott=(c.ordNottMin||0)/60;
+
+  // Costo base
+  const costoOrdDiurno=oreOrdDiurne*tariffa;
+  const costoStrDiurno=oreStrDiurni*tariffa*(1+MAGGIORAZIONI.strDiurno);
+  const costoStrNott=oreStrNott*tariffa*(1+MAGGIORAZIONI.strNotturno);
+  const costoOrdNott=oreOrdNott*tariffa*(1+MAGGIORAZIONI.ordinarioNotturno);
+
+  // Maggiorazione domenica/festivo sulle ore ordinarie diurne
+  let costoMaggiorazione=0;
+  if(tipo==="domenica") costoMaggiorazione=oreOrdDiurne*tariffa*MAGGIORAZIONI.domenica;
+  if(tipo==="festivo") costoMaggiorazione=(oreOrdDiurne+oreOrdNott)*tariffa*MAGGIORAZIONI.festivo;
+
+  const totale=costoOrdDiurno+costoStrDiurno+costoStrNott+costoOrdNott+costoMaggiorazione;
+
+  return {
+    oreOrdDiurne, oreStrDiurni, oreStrNott, oreOrdNott,
+    costoOrdDiurno, costoStrDiurno, costoStrNott, costoOrdNott,
+    costoMaggiorazione, totale, tipo,
+    tariffa
+  };
+}
+
+function calcolaCostoMensile(dipId) {
+  const dip=state.dipendenti.find(d=>d.id===dipId);
+  if(!dip?.tariffaOraria) return null;
+  const turni=getTimbMese().filter(t=>t.dipendenteId===dipId&&t.tipo==="lavoro");
+
+  let totOrdDiurne=0, totStrDiurni=0, totStrNott=0, totOrdNott=0;
+  let costoOrdDiurno=0, costoStrDiurno=0, costoStrNott=0, costoOrdNott=0;
+  let costoMaggDom=0, costoMaggFest=0, totale=0;
+  let giorniFestivi=0, giorniDomenica=0;
+
+  turni.forEach(t=>{
+    const r=calcolaCostoTurno(t,dip);
+    if(!r) return;
+    totOrdDiurne+=r.oreOrdDiurne;
+    totStrDiurni+=r.oreStrDiurni;
+    totStrNott+=r.oreStrNott;
+    totOrdNott+=r.oreOrdNott;
+    costoOrdDiurno+=r.costoOrdDiurno;
+    costoStrDiurno+=r.costoStrDiurno;
+    costoStrNott+=r.costoStrNott;
+    costoOrdNott+=r.costoOrdNott;
+    if(r.tipo==="domenica"){ costoMaggDom+=r.costoMaggiorazione; giorniDomenica++; }
+    if(r.tipo==="festivo"){ costoMaggFest+=r.costoMaggiorazione; giorniFestivi++; }
+    totale+=r.totale;
+  });
+
+  return {
+    dip, totOrdDiurne, totStrDiurni, totStrNott, totOrdNott,
+    costoOrdDiurno, costoStrDiurno, costoStrNott, costoOrdNott,
+    costoMaggDom, costoMaggFest, totale,
+    giorniFestivi, giorniDomenica
+  };
 }
 
 async function caricaDipendenti() {
@@ -157,7 +271,6 @@ function render() {
   attachEvents();
 }
 
-// ── LOGIN ─────────────────────────────────────────────────────
 function renderLogin() {
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;text-align:center">
@@ -178,7 +291,6 @@ function renderLogin() {
     </div></div>`;
 }
 
-// ── DIPENDENTE ────────────────────────────────────────────────
 function renderDipendente() {
   const dip=state.utenteCorrente;
   const mese=new Date().getMonth(), anno=new Date().getFullYear();
@@ -263,15 +375,15 @@ function renderDipStorico(dip) {
     </div>`).join("");
 }
 
-// ── ADMIN ─────────────────────────────────────────────────────
 function renderAdmin() {
-  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
+  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
   let content="";
   if(state.adminTab==="presenze") content=renderAdminPresenze();
   else if(state.adminTab==="report") content=renderAdminReport();
   else if(state.adminTab==="inserisci") content=renderAdminInserisci();
   else if(state.adminTab==="settimane") content=renderAdminSettimane();
   else if(state.adminTab==="costi") content=renderAdminCosti();
+  else if(state.adminTab==="maggiorazioni") content=renderAdminMaggiorazioni();
   else if(state.adminTab==="ferie") content=renderAdminFerie();
   else content=renderAdminDipendenti();
   return `
@@ -285,36 +397,24 @@ function renderAdmin() {
     </div>
     <div style="max-width:960px;margin:0 auto;padding:16px">
       <div style="display:flex;gap:2px;border-bottom:2px solid #e5e7eb;flex-wrap:wrap">
-        ${tabs.map(([k,l])=>`<button data-admin-tab="${k}" style="padding:7px 12px;font-size:12px;font-weight:600;border:none;background:${state.adminTab===k?"white":"transparent"};color:${state.adminTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.adminTab===k?"2px solid white":"none"};margin-bottom:${state.adminTab===k?"-2px":"0"}">${l}</button>`).join("")}
+        ${tabs.map(([k,l])=>`<button data-admin-tab="${k}" style="padding:7px 11px;font-size:12px;font-weight:600;border:none;background:${state.adminTab===k?"white":"transparent"};color:${state.adminTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.adminTab===k?"2px solid white":"none"};margin-bottom:${state.adminTab===k?"-2px":"0"}">${l}</button>`).join("")}
       </div>
       <div style="background:white;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">${content}</div>
     </div>`;
 }
 
-// ── PRESENZE OGGI ─────────────────────────────────────────────
 function renderAdminPresenze() {
   const dataOggi=oggi();
-  const ieri=new Date(); ieri.setDate(ieri.getDate()-1);
-  const dataIeri=ieri.toISOString().split("T")[0];
-
   const timbratiOggi=new Set(state.timbrature.filter(t=>t.data===dataOggi).map(t=>t.dipendenteId));
   const nonTimbrati=state.dipendenti.filter(d=>!timbratiOggi.has(d.id));
   const timbrati=state.dipendenti.filter(d=>timbratiOggi.has(d.id));
-
   return `
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">👁️ Presenze oggi — ${dataOggi}</h2>
-
     ${nonTimbrati.length>0?`
       <div style="margin-bottom:16px">
         <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">⚠️ Non hanno ancora timbrato (${nonTimbrati.length})</div>
-        ${nonTimbrati.map(d=>`
-          <div class="alert-red">
-            <span>🔴</span>
-            <span style="font-weight:600">${d.nome}</span>
-            <span style="color:#9ca3af;font-size:12px">${d.tipo}</span>
-          </div>`).join("")}
+        ${nonTimbrati.map(d=>`<div class="alert-red"><span>🔴</span><span style="font-weight:600">${d.nome}</span><span style="color:#9ca3af;font-size:12px">${d.tipo}</span></div>`).join("")}
       </div>`:""}
-
     ${timbrati.length>0?`
       <div>
         <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✅ Presenti oggi (${timbrati.length})</div>
@@ -328,103 +428,9 @@ function renderAdminPresenze() {
             </div>
             ${t?.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
           </div>`;}).join("")}
-      </div>`:""}
-
-    ${timbrati.length===0&&nonTimbrati.length===0?`<div class="empty">Nessun dipendente registrato.</div>`:""}`;
+      </div>`:""}`;
 }
 
-// ── INSERISCI TIMBRATURA ADMIN ────────────────────────────────
-function renderAdminInserisci() {
-  return `
-    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
-    <div class="grid-auto" style="margin-bottom:12px">
-      <div><label>Dipendente</label>
-        <select id="ai-dip">
-          ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
-        </select>
-      </div>
-      <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
-      <div><label>Tipo</label>
-        <select id="ai-tipo" onchange="toggleTipoAdmin()">
-          <option value="lavoro">Turno di lavoro</option>
-          <option value="assenza">Assenza</option>
-        </select>
-      </div>
-    </div>
-    <div id="ai-lavoro-fields" class="grid-auto" style="margin-bottom:12px">
-      <div><label>Entrata</label><input type="time" id="ai-entrata"></div>
-      <div><label>Uscita</label><input type="time" id="ai-uscita"></div>
-      <div><label>Pausa (min)</label><input type="number" id="ai-pausa" value="30" min="0"></div>
-    </div>
-    <div id="ai-assenza-fields" style="display:none;margin-bottom:12px">
-      <label>Tipo assenza</label>
-      <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
-    </div>
-    <button class="btn btn-primary" data-salva-timbratura-admin>💾 Salva timbratura</button>
-
-    <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
-
-    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">📋 Tutte le timbrature — modifica o elimina</h3>
-    <div class="grid-auto" style="margin-bottom:12px;max-width:400px">
-      <div><label>Filtra dipendente</label>
-        <select id="filtro-dip-lista" onchange="renderListaTimbrature()">
-          <option value="">Tutti</option>
-          ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
-        </select>
-      </div>
-    </div>
-    <div id="lista-timbrature">${renderListaTimbratureHTML()}</div>`;
-}
-
-function renderListaTimbratureHTML(filtroDipId) {
-  let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data));
-  if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
-  lista=lista.slice(0,50);
-  if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
-  return lista.map(t=>{
-    const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
-    return `<div class="row">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
-        <span style="color:#9ca3af">${t.data}</span>
-        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}→${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
-        ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h</span>`:""}
-      </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-timb="${t.id}">✏️</button>
-        <button class="btn btn-sm btn-danger" data-elimina-timb="${t.id}">🗑️</button>
-      </div>
-    </div>`;}).join("");
-}
-
-// ── MODALE MODIFICA TIMBRATURA ────────────────────────────────
-function renderModaleTimbratura() {
-  const t=state.modaleTimbratura;
-  const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
-  return `
-    <div class="modal-bg" data-chiudi-modale-timb>
-      <div class="modal" onclick="event.stopPropagation()">
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">✏️ Modifica timbratura</h3>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:16px">${dip?.nome} — ${t.data}</p>
-        ${t.tipo==="lavoro"?`
-          <div class="grid-auto" style="gap:12px;margin-bottom:12px">
-            <div><label>Entrata</label><input id="mt-entrata" type="time" value="${t.entrata||""}"></div>
-            <div><label>Uscita</label><input id="mt-uscita" type="time" value="${t.uscita||""}"></div>
-            <div><label>Pausa (min)</label><input id="mt-pausa" type="number" value="${t.pausa||30}" min="0"></div>
-          </div>`:`
-          <div style="margin-bottom:12px">
-            <label>Tipo assenza</label>
-            <select id="mt-assenza">${VOCI_ASSENZA.map(v=>`<option${t.assenza===v?" selected":""}>${v}</option>`).join("")}</select>
-          </div>`}
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale-timb>Annulla</button>
-          <button class="btn btn-primary btn-sm" data-salva-modifica-timb>Salva</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-// ── REPORT MENSILE ────────────────────────────────────────────
 function filtriHTML() {
   return `<div style="display:flex;gap:8px;flex-wrap:wrap">
     <select data-filtro-mese style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
@@ -450,8 +456,7 @@ function getRiepilogo() {
     const strD=turni.reduce((s,t)=>s+(t.calcolo?.strDiurniMin||0),0);
     const strN=turni.reduce((s,t)=>s+(t.calcolo?.strNotturniMin||0),0);
     const assCnt={}; VOCI_ASSENZA.forEach(v=>{assCnt[v]=ass.filter(a=>a.assenza===v).length;});
-    const costo=dip.tariffaOraria?((tot/60)*dip.tariffaOraria).toFixed(2):null;
-    return {dip,tot,diur,nott,strD,strN,assCnt,nTurni:turni.length,costo};
+    return {dip,tot,diur,nott,strD,strN,assCnt,nTurni:turni.length};
   });
 }
 
@@ -462,10 +467,10 @@ function renderAdminReport() {
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Report mensile</h2>${filtriHTML()}
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr>${["Dipendente","Contratto","Turni","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia","Riposo"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <thead><tr>${["Dipendente","Turni","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia","Riposo"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
       <tbody>${r.map(({dip,tot,diur,nott,strD,strN,assCnt,nTurni})=>`
         <tr>
-          <td style="font-weight:600">${dip.nome}</td><td style="color:#6b7280">${dip.tipo}</td><td>${nTurni}</td>
+          <td style="font-weight:600">${dip.nome}</td><td>${nTurni}</td>
           <td style="font-weight:700">${minToHHMM(tot)}h</td><td>${minToHHMM(diur)}h</td>
           <td style="color:${nott>0?"#4f46e5":"inherit"};font-weight:${nott>0?700:400}">${minToHHMM(nott)}h</td>
           <td style="color:${strD>0?"#ea580c":"inherit"};font-weight:${strD>0?700:400}">${minToHHMM(strD)}h</td>
@@ -475,6 +480,93 @@ function renderAdminReport() {
         </tr>`).join("")}</tbody>
     </table>
     ${getTimbMese().length===0?`<div class="empty">Nessuna timbratura per ${MESI[state.filtroMese]} ${state.filtroAnno}</div>`:""}</div>`;
+}
+
+function renderAdminInserisci() {
+  return `
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
+    <div class="grid-auto" style="margin-bottom:12px">
+      <div><label>Dipendente</label>
+        <select id="ai-dip">${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
+      </div>
+      <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
+      <div><label>Tipo</label>
+        <select id="ai-tipo" onchange="toggleTipoAdmin()">
+          <option value="lavoro">Turno di lavoro</option>
+          <option value="assenza">Assenza</option>
+        </select>
+      </div>
+    </div>
+    <div id="ai-lavoro-fields" class="grid-auto" style="margin-bottom:12px">
+      <div><label>Entrata</label><input type="time" id="ai-entrata"></div>
+      <div><label>Uscita</label><input type="time" id="ai-uscita"></div>
+      <div><label>Pausa (min)</label><input type="number" id="ai-pausa" value="30" min="0"></div>
+    </div>
+    <div id="ai-assenza-fields" style="display:none;margin-bottom:12px">
+      <label>Tipo assenza</label>
+      <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+    </div>
+    <button class="btn btn-primary" data-salva-timbratura-admin>💾 Salva timbratura</button>
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">📋 Gestisci timbrature</h3>
+    <div style="margin-bottom:12px;max-width:300px">
+      <label>Filtra dipendente</label>
+      <select id="filtro-dip-lista" onchange="renderListaTimbrature()">
+        <option value="">Tutti</option>
+        ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
+      </select>
+    </div>
+    <div id="lista-timbrature">${renderListaTimbratureHTML()}</div>`;
+}
+
+function renderListaTimbratureHTML(filtroDipId) {
+  let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data));
+  if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
+  lista=lista.slice(0,50);
+  if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
+  return lista.map(t=>{
+    const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
+    const tipo=getTipoGiorno(t.data);
+    return `<div class="row">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
+        <span style="color:#9ca3af">${t.data}</span>
+        ${tipo==="festivo"?`<span class="badge badge-red">🎉 Festivo</span>`:tipo==="domenica"?`<span class="badge badge-purple">☀️ Dom.</span>`:""}
+        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}→${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
+        ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        ${t.calcolo?`<span style="font-weight:700;font-size:13px">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-timb="${t.id}">✏️</button>
+        <button class="btn btn-sm btn-danger" data-elimina-timb="${t.id}">🗑️</button>
+      </div>
+    </div>`;}).join("");
+}
+
+function renderModaleTimbratura() {
+  const t=state.modaleTimbratura;
+  const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
+  return `
+    <div class="modal-bg" data-chiudi-modale-timb>
+      <div class="modal" onclick="event.stopPropagation()">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">✏️ Modifica timbratura</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:16px">${dip?.nome} — ${t.data}</p>
+        ${t.tipo==="lavoro"?`
+          <div class="grid-auto" style="gap:12px;margin-bottom:12px">
+            <div><label>Entrata</label><input id="mt-entrata" type="time" value="${t.entrata||""}"></div>
+            <div><label>Uscita</label><input id="mt-uscita" type="time" value="${t.uscita||""}"></div>
+            <div><label>Pausa (min)</label><input id="mt-pausa" type="number" value="${t.pausa||30}" min="0"></div>
+          </div>`:`
+          <div style="margin-bottom:12px">
+            <label>Tipo assenza</label>
+            <select id="mt-assenza">${VOCI_ASSENZA.map(v=>`<option${t.assenza===v?" selected":""}>${v}</option>`).join("")}</select>
+          </div>`}
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale-timb>Annulla</button>
+          <button class="btn btn-primary btn-sm" data-salva-modifica-timb>Salva</button>
+        </div>
+      </div>
+    </div>`;
 }
 
 function renderAdminSettimane() {
@@ -506,26 +598,93 @@ function renderAdminSettimane() {
 }
 
 function renderAdminCosti() {
-  const r=getRiepilogo(), totCosto=r.reduce((s,x)=>s+(parseFloat(x.costo)||0),0);
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>${filtriHTML()}
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr>${["Dipendente","Contratto","Ore Lavorate","Tariffa/h","Costo Stimato"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <thead><tr>
+        <th>Dipendente</th>
+        <th>Ore Ord.</th><th>Ore Nott.</th><th>Str.Diurni</th><th>Str.Nott.</th>
+        <th>Dom.</th><th>Festivi</th>
+        <th>Costo Ord.</th><th>Costo Nott.</th><th>Costo Str.D</th><th>Costo Str.N</th>
+        <th>Magg.Dom</th><th>Magg.Fest</th>
+        <th style="color:#059669">TOTALE</th>
+      </tr></thead>
       <tbody>
-        ${r.map(({dip,tot,costo})=>`<tr>
-          <td style="font-weight:600">${dip.nome}</td><td style="color:#6b7280">${dip.tipo}</td>
-          <td style="font-weight:700">${minToHHMM(tot)}h</td>
-          <td>${dip.tariffaOraria?`€ ${dip.tariffaOraria}/h`:`<span style="color:#d1d5db">—</span>`}</td>
-          <td style="font-weight:700;color:${costo?"#059669":"#d1d5db"}">${costo?`€ ${costo}`:"—"}</td>
-        </tr>`).join("")}
-        ${totCosto>0?`<tr style="background:#f0fdf4;border-top:2px solid #e5e7eb"><td colspan="4" style="text-align:right;font-weight:700;padding:8px 10px">Totale mese:</td><td style="font-weight:700;color:#059669;font-size:15px">€ ${totCosto.toFixed(2)}</td></tr>`:""}
+      ${state.dipendenti.map(dip=>{
+        const r=calcolaCostoMensile(dip.id);
+        if(!r) return `<tr><td style="font-weight:600">${dip.nome}</td><td colspan="13" style="color:#9ca3af;font-style:italic">Nessuna tariffa impostata</td></tr>`;
+        return `<tr>
+          <td style="font-weight:600">${dip.nome}</td>
+          <td>${r.totOrdDiurne.toFixed(2)}h</td>
+          <td style="color:#4f46e5">${r.totOrdNott.toFixed(2)}h</td>
+          <td style="color:#ea580c">${r.totStrDiurni.toFixed(2)}h</td>
+          <td style="color:#dc2626">${r.totStrNott.toFixed(2)}h</td>
+          <td>${r.giorniDomenica}</td>
+          <td>${r.giorniFestivi}</td>
+          <td>${euro(r.costoOrdDiurno)}</td>
+          <td style="color:#4f46e5">${euro(r.costoOrdNott)}</td>
+          <td style="color:#ea580c">${euro(r.costoStrDiurno)}</td>
+          <td style="color:#dc2626">${euro(r.costoStrNott)}</td>
+          <td style="color:#7c3aed">${euro(r.costoMaggDom)}</td>
+          <td style="color:#b45309">${euro(r.costoMaggFest)}</td>
+          <td style="font-weight:700;color:#059669">${euro(r.totale)}</td>
+        </tr>`;}).join("")}
       </tbody>
-    </table></div>`;
+      <tfoot>
+        <tr style="background:#f0fdf4;border-top:2px solid #e5e7eb">
+          <td style="font-weight:700">TOTALE</td>
+          <td colspan="12"></td>
+          <td style="font-weight:700;color:#059669;font-size:15px">
+            ${euro(state.dipendenti.reduce((s,dip)=>{const r=calcolaCostoMensile(dip.id);return s+(r?.totale||0);},0))}
+          </td>
+        </tr>
+      </tfoot>
+    </table></div>
+    <div class="info-box" style="margin-top:16px">
+      <p><strong>📋 Maggiorazioni applicate:</strong></p>
+      <p>• Straordinario diurno: +${MAGGIORAZIONI.strDiurno*100}% sulla tariffa base</p>
+      <p>• Straordinario notturno: +${MAGGIORAZIONI.strNotturno*100}% sulla tariffa base</p>
+      <p>• Ordinario notturno: +${MAGGIORAZIONI.ordinarioNotturno*100}% sulla tariffa base</p>
+      <p>• Domenica: +${MAGGIORAZIONI.domenica*100}% sulle ore ordinarie</p>
+      <p>• Festivo: +${MAGGIORAZIONI.festivo*100}% sulle ore ordinarie</p>
+    </div>`;
 }
 
-// ── FERIE E PERMESSI ──────────────────────────────────────────
+function renderAdminMaggiorazioni() {
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📈 Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
+    </div>
+    ${state.dipendenti.map(dip=>{
+      const r=calcolaCostoMensile(dip.id);
+      if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
+      const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro");
+      const festivi=turni.filter(t=>getTipoGiorno(t.data)==="festivo");
+      const domeniche=turni.filter(t=>getTipoGiorno(t.data)==="domenica");
+      return `
+        <div class="cost-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:700;font-size:14px">${dip.nome} <span style="font-weight:400;color:#6b7280;font-size:12px">${dip.tipo} • € ${dip.tariffaOraria}/h</span></div>
+            <div style="font-size:18px;font-weight:700;color:#059669">${euro(r.totale)}</div>
+          </div>
+          <div class="cost-row"><span>Ore ordinarie diurne (${r.totOrdDiurne.toFixed(2)}h × €${dip.tariffaOraria})</span><span>${euro(r.costoOrdDiurno)}</span></div>
+          <div class="cost-row"><span style="color:#4f46e5">Ore ordinarie notturne +${MAGGIORAZIONI.ordinarioNotturno*100}% (${r.totOrdNott.toFixed(2)}h)</span><span style="color:#4f46e5">${euro(r.costoOrdNott)}</span></div>
+          <div class="cost-row"><span style="color:#ea580c">Straordinari diurni +${MAGGIORAZIONI.strDiurno*100}% (${r.totStrDiurni.toFixed(2)}h)</span><span style="color:#ea580c">${euro(r.costoStrDiurno)}</span></div>
+          <div class="cost-row"><span style="color:#dc2626">Straordinari notturni +${MAGGIORAZIONI.strNotturno*100}% (${r.totStrNott.toFixed(2)}h)</span><span style="color:#dc2626">${euro(r.costoStrNott)}</span></div>
+          ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:#7c3aed">Maggiorazione domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica} giorn${r.giorniDomenica>1?"i":"o"})</span><span style="color:#7c3aed">${euro(r.costoMaggDom)}</span></div>`:""}
+          ${r.giorniFestivi>0?`<div class="cost-row"><span style="color:#b45309">Maggiorazione festivo +${MAGGIORAZIONI.festivo*100}% (${r.giorniFestivi} giorn${r.giorniFestivi>1?"i":"o"})</span><span style="color:#b45309">${euro(r.costoMaggFest)}</span></div>`:""}
+          ${festivi.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:6px">Festivi: ${festivi.map(t=>t.data).join(", ")}</div>`:""}
+          ${domeniche.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:2px">Domeniche: ${domeniche.map(t=>t.data).join(", ")}</div>`:""}
+          <div class="cost-total"><span>Totale ${MESI[state.filtroMese]}</span><span style="color:#059669">${euro(r.totale)}</span></div>
+        </div>`;}).join("")}
+    <div style="background:#1e293b;color:white;border-radius:10px;padding:16px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;font-size:15px">Totale costo mensile</span>
+      <span style="font-weight:700;font-size:20px;color:#10b981">${euro(state.dipendenti.reduce((s,dip)=>{const r=calcolaCostoMensile(dip.id);return s+(r?.totale||0);},0))}</span>
+    </div>`;
+}
+
 function renderAdminFerie() {
   const anno=state.filtroAnno;
   return `
@@ -537,47 +696,41 @@ function renderAdminFerie() {
     </div>
     ${state.dipendenti.map(dip=>{
       const oreDip=dip.sogliaOre||6.67;
-      const ferieUsateGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
-      const permUsatiGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
-      const ferieUsateOre=ferieUsateGiorni*oreDip;
-      const permUsatiOre=permUsatiGiorni*oreDip;
-      const monteFerie=dip.monteFerie||0;
-      const montePermessi=dip.montePermessi||0;
-      const ferieRimaste=Math.max(0,monteFerie-ferieUsateOre);
-      const permRimasti=Math.max(0,montePermessi-permUsatiOre);
-      const percFerie=monteFerie>0?Math.min(100,(ferieUsateOre/monteFerie)*100):0;
-      const percPerm=montePermessi>0?Math.min(100,(permUsatiOre/montePermessi)*100):0;
+      const ferieGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
+      const permGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
+      const ferieOre=ferieGiorni*oreDip, permOre=permGiorni*oreDip;
+      const monteFerie=dip.monteFerie||0, montePermessi=dip.montePermessi||0;
+      const ferieRimaste=Math.max(0,monteFerie-ferieOre);
+      const permRimasti=Math.max(0,montePermessi-permOre);
+      const percF=monteFerie>0?Math.min(100,(ferieOre/monteFerie)*100):0;
+      const percP=montePermessi>0?Math.min(100,(permOre/montePermessi)*100):0;
       return `
         <div style="border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="font-weight:700;font-size:14px">${dip.nome}</span>
-              <span class="badge ${dip.tipo==="Full Time"?"badge-green":dip.tipo==="Part Time"?"badge-blue":"badge-purple"}">${dip.tipo}</span>
-            </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+            <span style="font-weight:700;font-size:14px">${dip.nome}</span>
+            <span class="badge ${dip.tipo==="Full Time"?"badge-green":dip.tipo==="Part Time"?"badge-blue":"badge-purple"}">${dip.tipo}</span>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
             <div>
               <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
                 <span style="font-weight:600">🏖️ Ferie</span>
-                <span style="color:#6b7280">${ferieUsateOre.toFixed(1)}h usate / ${monteFerie}h totali</span>
+                <span style="color:#6b7280">${ferieOre.toFixed(1)}h / ${monteFerie}h</span>
               </div>
-              <div class="progress-bar"><div class="progress-fill" style="width:${percFerie}%;background:${percFerie>90?"#ef4444":percFerie>70?"#f59e0b":"#10b981"}"></div></div>
-              <div style="font-size:12px;margin-top:4px;color:${ferieRimaste<8?"#dc2626":"#059669"};font-weight:600">Rimaste: ${ferieRimaste.toFixed(1)}h (${(ferieRimaste/oreDip).toFixed(1)} giorni)</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${percF}%;background:${percF>90?"#ef4444":percF>70?"#f59e0b":"#10b981"}"></div></div>
+              <div style="font-size:12px;margin-top:4px;color:${ferieRimaste<8?"#dc2626":"#059669"};font-weight:600">Rimaste: ${ferieRimaste.toFixed(1)}h (≈${(ferieRimaste/oreDip).toFixed(1)} giorni)</div>
             </div>
             <div>
               <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
                 <span style="font-weight:600">📋 Permessi</span>
-                <span style="color:#6b7280">${permUsatiOre.toFixed(1)}h usati / ${montePermessi}h totali</span>
+                <span style="color:#6b7280">${permOre.toFixed(1)}h / ${montePermessi}h</span>
               </div>
-              <div class="progress-bar"><div class="progress-fill" style="width:${percPerm}%;background:${percPerm>90?"#ef4444":percPerm>70?"#f59e0b":"#10b981"}"></div></div>
-              <div style="font-size:12px;margin-top:4px;color:${permRimasti<4?"#dc2626":"#059669"};font-weight:600">Rimasti: ${permRimasti.toFixed(1)}h (${(permRimasti/oreDip).toFixed(1)} giorni)</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${percP}%;background:${percP>90?"#ef4444":percP>70?"#f59e0b":"#10b981"}"></div></div>
+              <div style="font-size:12px;margin-top:4px;color:${permRimasti<4?"#dc2626":"#059669"};font-weight:600">Rimasti: ${permRimasti.toFixed(1)}h (≈${(permRimasti/oreDip).toFixed(1)} giorni)</div>
             </div>
           </div>
-        </div>`;}).join("")}
-    <p style="font-size:12px;color:#9ca3af;margin-top:8px">💡 Il monte ore si imposta nella scheda 👥 Dipendenti per ogni dipendente.</p>`;
+        </div>`;}).join("")}`;
 }
 
-// ── DIPENDENTI ────────────────────────────────────────────────
 function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -601,8 +754,8 @@ function renderAdminDipendenti() {
       </div>`).join("")}
     <div class="info-box">
       <p><strong>📋 Note:</strong></p>
-      <p>• Soglia straordinario, tariffa, ferie e permessi non sono visibili ai dipendenti</p>
-      <p>• Le ore ferie/permessi vengono calcolate moltiplicando i giorni di assenza per la soglia giornaliera del dipendente</p>
+      <p>• Tariffa, soglia straordinario, ferie e permessi non sono visibili ai dipendenti</p>
+      <p>• Festivi inclusi: 25/4, 1/5, 2/6, 24/6, 15/8, 1/11, 8/12, 25/12, 26/12, Pasqua, Pasquetta</p>
     </div>`;
 }
 
@@ -619,7 +772,7 @@ function renderModaleDip() {
             <select id="md-tipo">${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}</select>
           </div>
           <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
-          <div><label>Soglia straordinario (h/giorno)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
+          <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
         </div>
@@ -633,13 +786,16 @@ function renderModaleDip() {
 
 function esportaCSV() {
   const tm=getTimbMese();
-  const righe=[["Dipendente","Tipo","Data","Tipo Reg.","Entrata","Uscita","Pausa","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Assenza"]];
+  const righe=[["Dipendente","Tipo","Data","Giorno","Entrata","Uscita","Pausa","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Assenza","Costo Totale"]];
   tm.forEach(t=>{
-    const d=state.dipendenti.find(x=>x.id===t.dipendenteId);
-    righe.push([d?.nome||"",d?.tipo||"",t.data,t.tipo,t.entrata||"",t.uscita||"",t.pausa||"",
+    const dip=state.dipendenti.find(x=>x.id===t.dipendenteId);
+    const tipo=getTipoGiorno(t.data);
+    const costo=t.calcolo&&dip?calcolaCostoTurno(t,dip):null;
+    righe.push([dip?.nome||"",dip?.tipo||"",t.data,tipo,t.entrata||"",t.uscita||"",t.pausa||"",
       t.calcolo?minToHHMM(t.calcolo.totaleMin):"",t.calcolo?minToHHMM(t.calcolo.diurneMin):"",
       t.calcolo?minToHHMM(t.calcolo.notturneMin):"",t.calcolo?minToHHMM(t.calcolo.strDiurniMin):"",
-      t.calcolo?minToHHMM(t.calcolo.strNotturniMin):"",t.assenza||""]);
+      t.calcolo?minToHHMM(t.calcolo.strNotturniMin):"",t.assenza||"",
+      costo?costo.totale.toFixed(2):"" ]);
   });
   const csv=righe.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
   const a=document.createElement("a");
@@ -647,42 +803,35 @@ function esportaCSV() {
   a.download=`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.csv`; a.click();
 }
 
-// ── EVENTI ────────────────────────────────────────────────────
-window.toggleTipoAdmin = function() {
+window.toggleTipoAdmin=function(){
   const tipo=document.getElementById("ai-tipo")?.value;
   document.getElementById("ai-lavoro-fields").style.display=tipo==="lavoro"?"grid":"none";
   document.getElementById("ai-assenza-fields").style.display=tipo==="assenza"?"block":"none";
 };
 
-window.renderListaTimbrature = function() {
+window.renderListaTimbrature=function(){
   const filtro=document.getElementById("filtro-dip-lista")?.value||"";
   const el=document.getElementById("lista-timbrature");
   if(el) el.innerHTML=renderListaTimbratureHTML(filtro);
   attachModificaEliminaTimb();
 };
 
-function attachModificaEliminaTimb() {
+function attachModificaEliminaTimb(){
   document.querySelectorAll("[data-modifica-timb]").forEach(el=>{
-    el.onclick=()=>{
-      const t=state.timbrature.find(x=>x.id===el.dataset.modificaTimb);
-      if(t){ state.modaleTimbratura=t; render(); }
-    };
+    el.onclick=()=>{ const t=state.timbrature.find(x=>x.id===el.dataset.modificaTimb); if(t){state.modaleTimbratura=t;render();} };
   });
   document.querySelectorAll("[data-elimina-timb]").forEach(el=>{
-    el.onclick=async()=>{
-      if(!confirm("Eliminare questa timbratura?")) return;
-      await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb));
-    };
+    el.onclick=async()=>{ if(!confirm("Eliminare questa timbratura?")) return; await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb)); };
   });
 }
 
-function attachEvents() {
+function attachEvents(){
   document.querySelectorAll("[data-login-dip]").forEach(el=>{
     el.onclick=()=>{ state.utenteCorrente=state.dipendenti.find(d=>d.id===el.dataset.loginDip); state.vista="dipendente"; render(); };
   });
   document.querySelector("[data-login-admin]")?.addEventListener("click",()=>{
     const pin=prompt("Inserisci il PIN admin:");
-    if(pin===ADMIN_PIN){ state.vista="admin"; render(); } else if(pin!==null) alert("PIN errato!");
+    if(pin===ADMIN_PIN){state.vista="admin";render();} else if(pin!==null) alert("PIN errato!");
   });
   document.querySelectorAll("[data-logout]").forEach(el=>{ el.onclick=()=>{ state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; render(); }; });
   document.querySelectorAll("[data-dip-tab]").forEach(el=>{ el.onclick=()=>{ state.dipTab=el.dataset.dipTab; render(); }; });
@@ -690,20 +839,18 @@ function attachEvents() {
   document.querySelector("[data-filtro-mese]")?.addEventListener("change",e=>{ state.filtroMese=parseInt(e.target.value); render(); });
   document.querySelector("[data-filtro-anno]")?.addEventListener("change",e=>{ state.filtroAnno=parseInt(e.target.value); render(); });
 
-  // Turno dipendente
   document.querySelector("[data-add-turno]")?.addEventListener("click",async()=>{
     const dip=state.utenteCorrente;
     const dataTurno=document.getElementById("inp-data-turno")?.value||oggi();
     const entrata=document.getElementById("inp-entrata")?.value;
     const uscita=document.getElementById("inp-uscita")?.value;
-    const pausa=parseInt(document.getElementById("inp-pausa")?.value||"30");
-    if(!entrata||!uscita){ alert("Inserisci entrata e uscita!"); return; }
-    const calcolo=calcolaTurno(entrata,uscita,pausa,sogliaMinutiDip(dip));
-    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa,calcolo});
+    const pausaNum=parseInt(document.getElementById("inp-pausa")?.value)||0;
+    if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
+    const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
+    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
     alert("✅ Turno registrato!");
   });
 
-  // Assenza dipendente
   document.querySelector("[data-add-assenza-btn]")?.addEventListener("click",async()=>{
     const dip=state.utenteCorrente;
     const dataAssenza=document.getElementById("inp-data-assenza")?.value||oggi();
@@ -713,7 +860,6 @@ function attachEvents() {
     alert("✅ Assenza registrata!");
   });
 
-  // Inserisci timbratura admin
   document.querySelector("[data-salva-timbratura-admin]")?.addEventListener("click",async()=>{
     const dipId=document.getElementById("ai-dip")?.value;
     const data=document.getElementById("ai-data")?.value||oggi();
@@ -722,10 +868,10 @@ function attachEvents() {
     if(tipo==="lavoro"){
       const entrata=document.getElementById("ai-entrata")?.value;
       const uscita=document.getElementById("ai-uscita")?.value;
-      const pausa=parseInt(document.getElementById("ai-pausa")?.value||"30");
-      if(!entrata||!uscita){ alert("Inserisci entrata e uscita!"); return; }
-      const calcolo=calcolaTurno(entrata,uscita,pausa,sogliaMinutiDip(dip));
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa,calcolo});
+      const pausaNum=parseInt(document.getElementById("ai-pausa")?.value)||0;
+      if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
+      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
     } else {
       const assenza=document.getElementById("ai-assenza")?.value;
       await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"assenza",assenza});
@@ -734,11 +880,9 @@ function attachEvents() {
     window.renderListaTimbrature();
   });
 
-  // Modifica/elimina timbrature nella lista
   attachModificaEliminaTimb();
 
-  // Modale modifica timbratura
- document.querySelectorAll("[data-chiudi-modale-timb]").forEach(el=>{
+  document.querySelectorAll("[data-chiudi-modale-timb]").forEach(el=>{
     el.onclick=(e)=>{ e.stopPropagation(); state.modaleTimbratura=null; document.querySelector(".modal-bg")?.remove(); render(); };
   });
   document.querySelector("[data-salva-modifica-timb]")?.addEventListener("click",async(e)=>{
@@ -761,7 +905,6 @@ function attachEvents() {
     render();
   });
 
-  // Dipendenti
   document.querySelector("[data-apri-modale-nuovo]")?.addEventListener("click",()=>{ state.modaleDip={mode:"nuovo",dip:{}}; render(); });
   document.querySelectorAll("[data-modifica-dip]").forEach(el=>{
     el.onclick=()=>{ const dip=state.dipendenti.find(d=>d.id===el.dataset.modificaDip); state.modaleDip={mode:"modifica",dip}; render(); };
@@ -782,7 +925,7 @@ function attachEvents() {
     const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
     const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
     const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
-    if(!nome){ alert("Inserisci il nome!"); return; }
+    if(!nome){alert("Inserisci il nome!");return;}
     const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,montePermessi};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;

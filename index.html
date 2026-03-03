@@ -11,6 +11,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn:hover { opacity: 0.85; }
 .btn-primary { background: #f59e0b; color: white; }
 .btn-white { background: white; color: #d97706; }
+.btn-danger { background: #ef4444; color: white; }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 input, select { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; background: white; }
@@ -37,15 +38,17 @@ tr:hover td { background: #fffbeb; }
 .loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; flex-direction: column; gap: 12px; color: #6b7280; font-size: 15px; }
 .spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #f59e0b; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
 </style>
 </head>
 <body>
 <div id="app"><div class="loading"><div class="spinner"></div>Caricamento...</div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const ADMIN_PIN = "ScilaLori90";
+const ADMIN_PIN = "1234";
 const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
@@ -65,6 +68,7 @@ let state = {
   dipendenti: [], timbrature: [],
   dipTab: "timbra", adminTab: "report",
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
+  modaleDip: null, // { mode: 'modifica'|null, dip: {...} }
 };
 
 function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
@@ -72,12 +76,12 @@ function minToHHMM(min) { if(!min||min<=0) return "0:00"; return `${Math.floor(m
 function oggi() { return new Date().toISOString().split("T")[0]; }
 function oraNow() { const n=new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
 
-function calcolaTurno(entrata, uscita, pausa, tipo) {
+function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
   if(!entrata||!uscita) return null;
   const e=timeToMin(entrata); let u=timeToMin(uscita);
   if(u<e) u+=1440;
   const tot=u-e-(pausa||0);
-  const soglia=tipo==="Full Time"?400:240;
+  const soglia = sogliaMinuti || 400; // default 6h40
   const str=Math.max(0,tot-soglia);
   const N1=23*60,N2=6*60; let nott=0;
   if(u>N1) nott+=Math.min(u,1440)-Math.max(e,N1);
@@ -88,14 +92,20 @@ function calcolaTurno(entrata, uscita, pausa, tipo) {
   return {totaleMin:tot,diurneMin:diur,notturneMin:nott,straordinariMin:str,strDiurniMin:strD,strNotturniMin:strN};
 }
 
+function sogliaMinutiDip(dip) {
+  // sogliaOre è salvata come numero (es. 6.67 per 6h40)
+  if(dip.sogliaOre) return Math.round(dip.sogliaOre * 60);
+  return 400; // default 6h40
+}
+
 async function caricaDipendenti() {
   const snap=await getDocs(collection(db,"dipendenti"));
   state.dipendenti=snap.docs.map(d=>({id:d.id,...d.data()}));
   if(state.dipendenti.length===0) {
     const defaults=[
-      {nome:"Mario Rossi",tipo:"Full Time",tariffaOraria:9.5},
-      {nome:"Giulia Bianchi",tipo:"Part Time",tariffaOraria:9.0},
-      {nome:"Luca Verdi",tipo:"Intermittente",tariffaOraria:10.0},
+      {nome:"Mario Rossi",tipo:"Full Time",tariffaOraria:9.5,sogliaOre:6.67},
+      {nome:"Giulia Bianchi",tipo:"Part Time",tariffaOraria:9.0,sogliaOre:6.67},
+      {nome:"Luca Verdi",tipo:"Intermittente",tariffaOraria:10.0,sogliaOre:6.67},
     ];
     for(const d of defaults){
       const ref=await addDoc(collection(db,"dipendenti"),d);
@@ -126,6 +136,7 @@ function render() {
   if(state.vista==="login") app.innerHTML=renderLogin();
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
   else if(state.vista==="admin") app.innerHTML=renderAdmin();
+  if(state.modaleDip) document.body.insertAdjacentHTML("beforeend", renderModaleDip());
   attachEvents();
 }
 
@@ -333,7 +344,6 @@ function renderAdminCosti() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>${filtriHTML()}
     </div>
-    <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Imposta la tariffa oraria nella scheda <strong>👥 Dipendenti</strong>.</p>
     <div style="overflow-x:auto"><table>
       <thead><tr>${["Dipendente","Contratto","Ore Lavorate","Tariffa/h","Costo Stimato"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
       <tbody>
@@ -352,30 +362,51 @@ function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Dipendenti</h2>
-      <button class="btn btn-primary btn-sm" data-show-form-dip>+ Aggiungi</button>
-    </div>
-    <div id="form-dip" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:16px">
-      <div class="grid-auto" style="gap:10px;margin-bottom:10px">
-        <div><label>Nome Cognome</label><input id="nd-nome" placeholder="Es. Anna Neri"></div>
-        <div><label>Contratto</label><select id="nd-tipo"><option>Full Time</option><option>Part Time</option><option>Intermittente</option></select></div>
-        <div><label>Tariffa €/h</label><input id="nd-tariffa" type="number" placeholder="Es. 9.50" step="0.1"></div>
-      </div>
-      <button class="btn btn-primary btn-sm" data-salva-dip>Salva dipendente</button>
+      <button class="btn btn-primary btn-sm" data-apri-modale-nuovo>+ Aggiungi</button>
     </div>
     ${state.dipendenti.map(d=>`
       <div class="row">
-        <div style="display:flex;gap:10px;align-items:center">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <span style="font-weight:600">${d.nome}</span>
           <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
+          <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre?d.sogliaOre+"h":"6.67h"}</span>
           ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€ ${d.tariffaOraria}/h</span>`:""}
         </div>
-        <span style="color:#9ca3af;font-size:12px">${state.timbrature.filter(t=>t.dipendenteId===d.id).length} reg.</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️ Modifica</button>
+          <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
+        </div>
       </div>`).join("")}
     <div class="info-box">
-      <p><strong>📋 Soglie straordinario:</strong></p>
-      <p>• Full Time: dopo 6h 40min/giorno</p>
-      <p>• Part Time / Intermittente: dopo 4h/giorno</p>
+      <p><strong>📋 Note:</strong></p>
+      <p>• La soglia straordinario si imposta per ogni dipendente</p>
       <p>• Ore notturne: fascia 23:00 – 06:00</p>
+      <p>• Tariffa e soglia non sono visibili ai dipendenti</p>
+    </div>`;
+}
+
+function renderModaleDip() {
+  const d = state.modaleDip?.dip || {};
+  const titolo = state.modaleDip?.mode==="modifica" ? "✏️ Modifica dipendente" : "➕ Nuovo dipendente";
+  return `
+    <div class="modal-bg" data-chiudi-modale>
+      <div class="modal" onclick="event.stopPropagation()">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">${titolo}</h3>
+        <div class="grid-auto" style="gap:12px;margin-bottom:12px">
+          <div><label>Nome Cognome</label><input id="md-nome" value="${d.nome||""}" placeholder="Es. Anna Neri"></div>
+          <div><label>Contratto</label>
+            <select id="md-tipo">
+              ${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}
+            </select>
+          </div>
+          <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
+          <div><label>Soglia straordinario (ore/giorno)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale>Annulla</button>
+          <button class="btn btn-primary btn-sm" data-salva-modale>Salva</button>
+        </div>
+      </div>
     </div>`;
 }
 
@@ -408,16 +439,19 @@ function attachEvents() {
   document.querySelectorAll("[data-admin-tab]").forEach(el=>{ el.onclick=()=>{ state.adminTab=el.dataset.adminTab; render(); }; });
   document.querySelector("[data-filtro-mese]")?.addEventListener("change",e=>{ state.filtroMese=parseInt(e.target.value); render(); });
   document.querySelector("[data-filtro-anno]")?.addEventListener("change",e=>{ state.filtroAnno=parseInt(e.target.value); render(); });
+
   document.querySelector("[data-add-turno]")?.addEventListener("click",async()=>{
     const dip=state.utenteCorrente;
     const entrata=document.getElementById("inp-entrata")?.value;
     const uscita=document.getElementById("inp-uscita")?.value;
     const pausa=parseInt(document.getElementById("inp-pausa")?.value||"30");
     if(!entrata||!uscita){ alert("Inserisci entrata e uscita!"); return; }
-    const calcolo=calcolaTurno(entrata,uscita,pausa,dip.tipo);
+    const soglia=sogliaMinutiDip(dip);
+    const calcolo=calcolaTurno(entrata,uscita,pausa,soglia);
     await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata,uscita,pausa,calcolo});
     alert("✅ Turno registrato!");
   });
+
   document.querySelectorAll("[data-add-assenza]").forEach(el=>{
     el.onclick=async()=>{
       if(!confirm(`Confermi "${el.dataset.addAssenza}" per oggi?`)) return;
@@ -425,19 +459,58 @@ function attachEvents() {
       alert("✅ Assenza registrata!");
     };
   });
-  document.querySelector("[data-show-form-dip]")?.addEventListener("click",()=>{
-    const f=document.getElementById("form-dip"); if(f) f.style.display=f.style.display==="none"?"block":"none";
+
+  // Modale nuovo dipendente
+  document.querySelector("[data-apri-modale-nuovo]")?.addEventListener("click",()=>{
+    state.modaleDip={mode:"nuovo",dip:{}}; render();
   });
-  document.querySelector("[data-salva-dip]")?.addEventListener("click",async()=>{
-    const nome=document.getElementById("nd-nome")?.value?.trim();
-    const tipo=document.getElementById("nd-tipo")?.value;
-    const tariffa=parseFloat(document.getElementById("nd-tariffa")?.value)||null;
+
+  // Modale modifica dipendente
+  document.querySelectorAll("[data-modifica-dip]").forEach(el=>{
+    el.onclick=()=>{
+      const dip=state.dipendenti.find(d=>d.id===el.dataset.modificaDip);
+      state.modaleDip={mode:"modifica",dip}; render();
+    };
+  });
+
+  // Elimina dipendente
+  document.querySelectorAll("[data-elimina-dip]").forEach(el=>{
+    el.onclick=async()=>{
+      const dip=state.dipendenti.find(d=>d.id===el.dataset.eliminaDip);
+      if(!confirm(`Eliminare ${dip?.nome}? Le sue timbrature rimarranno nel database.`)) return;
+      await deleteDoc(doc(db,"dipendenti",el.dataset.eliminaDip));
+      state.dipendenti=state.dipendenti.filter(d=>d.id!==el.dataset.eliminaDip);
+      render();
+    };
+  });
+
+  // Chiudi modale
+  document.querySelectorAll("[data-chiudi-modale]").forEach(el=>{
+    el.onclick=()=>{ state.modaleDip=null; render(); };
+  });
+
+  // Salva modale
+  document.querySelector("[data-salva-modale]")?.addEventListener("click",async()=>{
+    const nome=document.getElementById("md-nome")?.value?.trim();
+    const tipo=document.getElementById("md-tipo")?.value;
+    const tariffa=parseFloat(document.getElementById("md-tariffa")?.value)||null;
+    const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
     if(!nome){ alert("Inserisci il nome!"); return; }
-    const ref=await addDoc(collection(db,"dipendenti"),{nome,tipo,tariffaOraria:tariffa});
-    state.dipendenti.push({id:ref.id,nome,tipo,tariffaOraria:tariffa});
-    render();
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia};
+    if(state.modaleDip.mode==="modifica") {
+      const id=state.modaleDip.dip.id;
+      await updateDoc(doc(db,"dipendenti",id),dati);
+      const idx=state.dipendenti.findIndex(d=>d.id===id);
+      if(idx>=0) state.dipendenti[idx]={...state.dipendenti[idx],...dati};
+    } else {
+      const ref=await addDoc(collection(db,"dipendenti"),dati);
+      state.dipendenti.push({id:ref.id,...dati});
+    }
+    state.modaleDip=null; render();
   });
+
   document.querySelector("[data-export-csv]")?.addEventListener("click",esportaCSV);
+
   if(state.vista==="dipendente") {
     const tick=()=>{ const c=document.getElementById("big-clock")||document.getElementById("clock"); if(c) c.textContent=oraNow(); setTimeout(tick,30000); };
     setTimeout(tick,1000);

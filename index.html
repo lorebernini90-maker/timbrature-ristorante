@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <title>Timbrature Ristorante</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -291,8 +292,7 @@ function render() {
 
 // Un solo listener globale — chiamato UNA volta sola
 document.addEventListener("click", async function(e) {
-  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-filtro-mese],[data-filtro-anno],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv]");
-  if(!t) return;
+  const t = e.target.closest("[data-login-dip],...,[data-export-csv],[data-export-excel]");
 
   if(t.dataset.loginDip) {
     state.utenteCorrente=state.dipendenti.find(d=>d.id===t.dataset.loginDip);
@@ -431,6 +431,7 @@ const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.v
     state.modaleDip=null; render();
   }
   else if(t.dataset.exportCsv!==undefined) {
+  else if(t.dataset.exportExcel!==undefined) { esportaExcel(); }
     esportaCSV();
   }
 });
@@ -594,7 +595,8 @@ function renderAdmin() {
           <option value="">Tutte le sedi</option>
           ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
         </select>
-        <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
+       <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
+<button class="btn btn-sm btn-primary" data-export-excel>⬇️ Excel</button>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
     </div>
@@ -1179,6 +1181,68 @@ window.renderListaTimbrature=function(){
   if(el) el.innerHTML=renderListaTimbratureHTML(filtro);
   attachModificaEliminaTimb();
 };
+  function esportaExcel() {
+  const tm = getTimbMese();
+  const wb = XLSX.utils.book_new();
+
+  // ── FOGLIO 1: RIEPILOGO ──
+  const righeRiepilogo = [
+    ["Dipendente","Contratto","Turni","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie","Permessi","Malattia","Riposo Comp.","Giorno Libero"]
+  ];
+  state.dipendenti.forEach(dip => {
+    const turni = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
+    const ass = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "assenza");
+    const tot = turni.reduce((s,t) => s+(t.calcolo?.totaleMin||0), 0);
+    const diur = turni.reduce((s,t) => s+(t.calcolo?.diurneMin||0), 0);
+    const nott = turni.reduce((s,t) => s+(t.calcolo?.notturneMin||0), 0);
+    const strD = turni.reduce((s,t) => s+(t.calcolo?.strDiurniMin||0), 0);
+    const strN = turni.reduce((s,t) => s+(t.calcolo?.strNotturniMin||0), 0);
+    righeRiepilogo.push([
+      dip.nome,
+      dip.tipo,
+      turni.length,
+      minToHHMM(tot),
+      minToHHMM(diur),
+      minToHHMM(nott),
+      minToHHMM(strD),
+      minToHHMM(strN),
+      ass.filter(a => a.assenza==="Ferie").length,
+      ass.filter(a => a.assenza==="Permesso").length,
+      ass.filter(a => a.assenza==="Malattia").length,
+      ass.filter(a => a.assenza==="Riposo Compensativo").length,
+      ass.filter(a => a.assenza==="Giorno Libero").length,
+    ]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(righeRiepilogo);
+  ws1["!cols"] = [{wch:20},{wch:14},{wch:7},{wch:10},{wch:10},{wch:11},{wch:11},{wch:12},{wch:7},{wch:9},{wch:9},{wch:13},{wch:13}];
+  XLSX.utils.book_append_sheet(wb, ws1, "Riepilogo");
+
+  // ── FOGLIO 2: DETTAGLIO GIORNALIERO ──
+  const righeDettaglio = [
+    ["Dipendente","Data","Giorno","Sede","Tipo","Entrata","Uscita","Pausa (min)","Ore Totali","Assenza"]
+  ];
+  const giorniSettimana = ["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
+  [...tm].sort((a,b) => a.data.localeCompare(b.data) || (state.dipendenti.findIndex(d=>d.id===a.dipendenteId) - state.dipendenti.findIndex(d=>d.id===b.dipendenteId))).forEach(t => {
+    const dip = state.dipendenti.find(d => d.id === t.dipendenteId);
+    righeDettaglio.push([
+      dip?.nome || "",
+      t.data,
+      giorniSettimana[new Date(t.data).getDay()],
+      t.sede || "",
+      t.tipo === "lavoro" ? "Lavoro" : "Assenza",
+      t.entrata || "",
+      t.uscita || "",
+      t.tipo === "lavoro" ? (t.pausa || 0) : "",
+      t.tipo === "lavoro" ? minToHHMM(t.calcolo?.totaleMin||0) : "",
+      t.tipo === "assenza" ? t.assenza : "",
+    ]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(righeDettaglio);
+  ws2["!cols"] = [{wch:20},{wch:12},{wch:12},{wch:16},{wch:9},{wch:8},{wch:8},{wch:12},{wch:10},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, "Dettaglio");
+
+  XLSX.writeFile(wb, `timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
+}
 
 function attachModificaEliminaTimb(){
   document.querySelectorAll("[data-modifica-timb]").forEach(el=>{

@@ -12,6 +12,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-primary { background: #f59e0b; color: white; }
 .btn-white { background: white; color: #d97706; }
 .btn-danger { background: #ef4444; color: white; }
+.btn-green { background: #10b981; color: white; }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 input, select { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; background: white; }
@@ -21,6 +22,8 @@ input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(24
 .badge-blue { background: #dbeafe; color: #1d4ed8; }
 .badge-green { background: #d1fae5; color: #065f46; }
 .badge-purple { background: #ede9fe; color: #5b21b6; }
+.badge-red { background: #fee2e2; color: #dc2626; }
+.badge-yellow { background: #fef3c7; color: #92400e; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { background: #f9fafb; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: center; white-space: nowrap; }
 th:first-child, th:nth-child(2) { text-align: left; }
@@ -38,10 +41,13 @@ tr:hover td { background: #fffbeb; }
 .loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; flex-direction: column; gap: 12px; color: #6b7280; font-size: 15px; }
 .spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #f59e0b; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-.modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow-y: auto; }
+.modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
 .sezione { background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
 .sezione-titolo { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.alert-red { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.progress-bar { background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
 </style>
 </head>
 <body>
@@ -70,7 +76,7 @@ let state = {
   dipendenti: [], timbrature: [],
   dipTab: "timbra", adminTab: "report",
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
-  modaleDip: null,
+  modaleDip: null, modaleTimbratura: null,
 };
 
 function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
@@ -99,14 +105,22 @@ function sogliaMinutiDip(dip) {
   return 400;
 }
 
+// Calcola ore assenza usate nell'anno corrente
+function oreAssenzaAnno(dipId, tipo, anno) {
+  return state.timbrature.filter(t=>{
+    const d=new Date(t.data);
+    return t.dipendenteId===dipId && t.tipo==="assenza" && t.assenza===tipo && d.getFullYear()===anno;
+  }).length; // ogni assenza = 1 giorno, convertiamo in ore usando sogliaOre del dip
+}
+
 async function caricaDipendenti() {
   const snap=await getDocs(collection(db,"dipendenti"));
   state.dipendenti=snap.docs.map(d=>({id:d.id,...d.data()}));
   if(state.dipendenti.length===0) {
     const defaults=[
-      {nome:"Mario Rossi",tipo:"Full Time",tariffaOraria:9.5,sogliaOre:6.67},
-      {nome:"Giulia Bianchi",tipo:"Part Time",tariffaOraria:9.0,sogliaOre:6.67},
-      {nome:"Luca Verdi",tipo:"Intermittente",tariffaOraria:10.0,sogliaOre:6.67},
+      {nome:"Mario Rossi",tipo:"Full Time",tariffaOraria:9.5,sogliaOre:6.67,monteFerie:160,montePermessi:24},
+      {nome:"Giulia Bianchi",tipo:"Part Time",tariffaOraria:9.0,sogliaOre:6.67,monteFerie:80,montePermessi:12},
+      {nome:"Luca Verdi",tipo:"Intermittente",tariffaOraria:10.0,sogliaOre:6.67,monteFerie:0,montePermessi:0},
     ];
     for(const d of defaults){
       const ref=await addDoc(collection(db,"dipendenti"),d);
@@ -138,9 +152,11 @@ function render() {
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
   else if(state.vista==="admin") app.innerHTML=renderAdmin();
   if(state.modaleDip) document.body.insertAdjacentHTML("beforeend",renderModaleDip());
+  if(state.modaleTimbratura) document.body.insertAdjacentHTML("beforeend",renderModaleTimbratura());
   attachEvents();
 }
 
+// ── LOGIN ─────────────────────────────────────────────────────
 function renderLogin() {
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;text-align:center">
@@ -161,6 +177,7 @@ function renderLogin() {
     </div></div>`;
 }
 
+// ── DIPENDENTE ────────────────────────────────────────────────
 function renderDipendente() {
   const dip=state.utenteCorrente;
   const mese=new Date().getMonth(), anno=new Date().getFullYear();
@@ -207,15 +224,12 @@ function renderDipTimbra(dip) {
       </div>
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-turno>✅ Registra turno</button>
     </div>
-
     <div class="sezione">
       <div class="sezione-titolo">📅 Registra assenza</div>
       <div class="grid-auto" style="margin-bottom:12px">
         <div><label>Data assenza</label><input type="date" id="inp-data-assenza" value="${oggi()}"></div>
         <div><label>Tipo assenza</label>
-          <select id="inp-tipo-assenza">
-            ${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}
-          </select>
+          <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
         </div>
       </div>
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>📋 Registra assenza</button>
@@ -242,18 +256,22 @@ function renderDipStorico(dip) {
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="font-weight:600">${t.data}</span>
         ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min)</span></span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
-        ${t.calcolo?.straordinariMin>0?`<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
+        ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
       </div>
       ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
     </div>`).join("");
 }
 
+// ── ADMIN ─────────────────────────────────────────────────────
 function renderAdmin() {
-  const tabs=[["report","📊 Report"],["settimane","📅 Settimane"],["costi","💶 Costi"],["dipendenti","👥 Dipendenti"]];
+  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
   let content="";
-  if(state.adminTab==="report") content=renderAdminReport();
+  if(state.adminTab==="presenze") content=renderAdminPresenze();
+  else if(state.adminTab==="report") content=renderAdminReport();
+  else if(state.adminTab==="inserisci") content=renderAdminInserisci();
   else if(state.adminTab==="settimane") content=renderAdminSettimane();
   else if(state.adminTab==="costi") content=renderAdminCosti();
+  else if(state.adminTab==="ferie") content=renderAdminFerie();
   else content=renderAdminDipendenti();
   return `
     <div style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
@@ -265,13 +283,147 @@ function renderAdmin() {
       </div>
     </div>
     <div style="max-width:960px;margin:0 auto;padding:16px">
-      <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb;flex-wrap:wrap">
-        ${tabs.map(([k,l])=>`<button data-admin-tab="${k}" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${state.adminTab===k?"white":"transparent"};color:${state.adminTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.adminTab===k?"2px solid white":"none"};margin-bottom:${state.adminTab===k?"-2px":"0"}">${l}</button>`).join("")}
+      <div style="display:flex;gap:2px;border-bottom:2px solid #e5e7eb;flex-wrap:wrap">
+        ${tabs.map(([k,l])=>`<button data-admin-tab="${k}" style="padding:7px 12px;font-size:12px;font-weight:600;border:none;background:${state.adminTab===k?"white":"transparent"};color:${state.adminTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.adminTab===k?"2px solid white":"none"};margin-bottom:${state.adminTab===k?"-2px":"0"}">${l}</button>`).join("")}
       </div>
       <div style="background:white;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">${content}</div>
     </div>`;
 }
 
+// ── PRESENZE OGGI ─────────────────────────────────────────────
+function renderAdminPresenze() {
+  const dataOggi=oggi();
+  const ieri=new Date(); ieri.setDate(ieri.getDate()-1);
+  const dataIeri=ieri.toISOString().split("T")[0];
+
+  const timbratiOggi=new Set(state.timbrature.filter(t=>t.data===dataOggi).map(t=>t.dipendenteId));
+  const nonTimbrati=state.dipendenti.filter(d=>!timbratiOggi.has(d.id));
+  const timbrati=state.dipendenti.filter(d=>timbratiOggi.has(d.id));
+
+  return `
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">👁️ Presenze oggi — ${dataOggi}</h2>
+
+    ${nonTimbrati.length>0?`
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">⚠️ Non hanno ancora timbrato (${nonTimbrati.length})</div>
+        ${nonTimbrati.map(d=>`
+          <div class="alert-red">
+            <span>🔴</span>
+            <span style="font-weight:600">${d.nome}</span>
+            <span style="color:#9ca3af;font-size:12px">${d.tipo}</span>
+          </div>`).join("")}
+      </div>`:""}
+
+    ${timbrati.length>0?`
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✅ Presenti oggi (${timbrati.length})</div>
+        ${timbrati.map(d=>{
+          const t=state.timbrature.find(t=>t.data===dataOggi&&t.dipendenteId===d.id);
+          return `<div class="row">
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="color:#10b981;font-size:16px">✅</span>
+              <span style="font-weight:600">${d.nome}</span>
+              ${t?.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita||"in corso"}</span>`:`<span class="badge badge-blue">${t?.assenza}</span>`}
+            </div>
+            ${t?.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+          </div>`;}).join("")}
+      </div>`:""}
+
+    ${timbrati.length===0&&nonTimbrati.length===0?`<div class="empty">Nessun dipendente registrato.</div>`:""}`;
+}
+
+// ── INSERISCI TIMBRATURA ADMIN ────────────────────────────────
+function renderAdminInserisci() {
+  return `
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
+    <div class="grid-auto" style="margin-bottom:12px">
+      <div><label>Dipendente</label>
+        <select id="ai-dip">
+          ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
+        </select>
+      </div>
+      <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
+      <div><label>Tipo</label>
+        <select id="ai-tipo" onchange="toggleTipoAdmin()">
+          <option value="lavoro">Turno di lavoro</option>
+          <option value="assenza">Assenza</option>
+        </select>
+      </div>
+    </div>
+    <div id="ai-lavoro-fields" class="grid-auto" style="margin-bottom:12px">
+      <div><label>Entrata</label><input type="time" id="ai-entrata"></div>
+      <div><label>Uscita</label><input type="time" id="ai-uscita"></div>
+      <div><label>Pausa (min)</label><input type="number" id="ai-pausa" value="30" min="0"></div>
+    </div>
+    <div id="ai-assenza-fields" style="display:none;margin-bottom:12px">
+      <label>Tipo assenza</label>
+      <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+    </div>
+    <button class="btn btn-primary" data-salva-timbratura-admin>💾 Salva timbratura</button>
+
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
+
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">📋 Tutte le timbrature — modifica o elimina</h3>
+    <div class="grid-auto" style="margin-bottom:12px;max-width:400px">
+      <div><label>Filtra dipendente</label>
+        <select id="filtro-dip-lista" onchange="renderListaTimbrature()">
+          <option value="">Tutti</option>
+          ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div id="lista-timbrature">${renderListaTimbratureHTML()}</div>`;
+}
+
+function renderListaTimbratureHTML(filtroDipId) {
+  let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data));
+  if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
+  lista=lista.slice(0,50);
+  if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
+  return lista.map(t=>{
+    const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
+    return `<div class="row">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
+        <span style="color:#9ca3af">${t.data}</span>
+        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}→${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
+        ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h</span>`:""}
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-timb="${t.id}">✏️</button>
+        <button class="btn btn-sm btn-danger" data-elimina-timb="${t.id}">🗑️</button>
+      </div>
+    </div>`;}).join("");
+}
+
+// ── MODALE MODIFICA TIMBRATURA ────────────────────────────────
+function renderModaleTimbratura() {
+  const t=state.modaleTimbratura;
+  const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
+  return `
+    <div class="modal-bg" data-chiudi-modale-timb>
+      <div class="modal" onclick="event.stopPropagation()">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">✏️ Modifica timbratura</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:16px">${dip?.nome} — ${t.data}</p>
+        ${t.tipo==="lavoro"?`
+          <div class="grid-auto" style="gap:12px;margin-bottom:12px">
+            <div><label>Entrata</label><input id="mt-entrata" type="time" value="${t.entrata||""}"></div>
+            <div><label>Uscita</label><input id="mt-uscita" type="time" value="${t.uscita||""}"></div>
+            <div><label>Pausa (min)</label><input id="mt-pausa" type="number" value="${t.pausa||30}" min="0"></div>
+          </div>`:`
+          <div style="margin-bottom:12px">
+            <label>Tipo assenza</label>
+            <select id="mt-assenza">${VOCI_ASSENZA.map(v=>`<option${t.assenza===v?" selected":""}>${v}</option>`).join("")}</select>
+          </div>`}
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale-timb>Annulla</button>
+          <button class="btn btn-primary btn-sm" data-salva-modifica-timb>Salva</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── REPORT MENSILE ────────────────────────────────────────────
 function filtriHTML() {
   return `<div style="display:flex;gap:8px;flex-wrap:wrap">
     <select data-filtro-mese style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
@@ -309,7 +461,7 @@ function renderAdminReport() {
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Report mensile</h2>${filtriHTML()}
     </div>
     <div style="overflow-x:auto"><table>
-      <thead><tr>${["Dipendente","Contratto","Turni","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia","Riposo Comp."].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <thead><tr>${["Dipendente","Contratto","Turni","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia","Riposo"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
       <tbody>${r.map(({dip,tot,diur,nott,strD,strN,assCnt,nTurni})=>`
         <tr>
           <td style="font-weight:600">${dip.nome}</td><td style="color:#6b7280">${dip.tipo}</td><td>${nTurni}</td>
@@ -372,6 +524,59 @@ function renderAdminCosti() {
     </table></div>`;
 }
 
+// ── FERIE E PERMESSI ──────────────────────────────────────────
+function renderAdminFerie() {
+  const anno=state.filtroAnno;
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">🏖️ Monte Ferie & Permessi ${anno}</h2>
+      <select data-filtro-anno style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
+        ${[2024,2025,2026].map(y=>`<option${y===anno?" selected":""}>${y}</option>`).join("")}
+      </select>
+    </div>
+    ${state.dipendenti.map(dip=>{
+      const oreDip=dip.sogliaOre||6.67;
+      const ferieUsateGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
+      const permUsatiGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
+      const ferieUsateOre=ferieUsateGiorni*oreDip;
+      const permUsatiOre=permUsatiGiorni*oreDip;
+      const monteFerie=dip.monteFerie||0;
+      const montePermessi=dip.montePermessi||0;
+      const ferieRimaste=Math.max(0,monteFerie-ferieUsateOre);
+      const permRimasti=Math.max(0,montePermessi-permUsatiOre);
+      const percFerie=monteFerie>0?Math.min(100,(ferieUsateOre/monteFerie)*100):0;
+      const percPerm=montePermessi>0?Math.min(100,(permUsatiOre/montePermessi)*100):0;
+      return `
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-weight:700;font-size:14px">${dip.nome}</span>
+              <span class="badge ${dip.tipo==="Full Time"?"badge-green":dip.tipo==="Part Time"?"badge-blue":"badge-purple"}">${dip.tipo}</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                <span style="font-weight:600">🏖️ Ferie</span>
+                <span style="color:#6b7280">${ferieUsateOre.toFixed(1)}h usate / ${monteFerie}h totali</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${percFerie}%;background:${percFerie>90?"#ef4444":percFerie>70?"#f59e0b":"#10b981"}"></div></div>
+              <div style="font-size:12px;margin-top:4px;color:${ferieRimaste<8?"#dc2626":"#059669"};font-weight:600">Rimaste: ${ferieRimaste.toFixed(1)}h (${(ferieRimaste/oreDip).toFixed(1)} giorni)</div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+                <span style="font-weight:600">📋 Permessi</span>
+                <span style="color:#6b7280">${permUsatiOre.toFixed(1)}h usati / ${montePermessi}h totali</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${percPerm}%;background:${percPerm>90?"#ef4444":percPerm>70?"#f59e0b":"#10b981"}"></div></div>
+              <div style="font-size:12px;margin-top:4px;color:${permRimasti<4?"#dc2626":"#059669"};font-weight:600">Rimasti: ${permRimasti.toFixed(1)}h (${(permRimasti/oreDip).toFixed(1)} giorni)</div>
+            </div>
+          </div>
+        </div>`;}).join("")}
+    <p style="font-size:12px;color:#9ca3af;margin-top:8px">💡 Il monte ore si imposta nella scheda 👥 Dipendenti per ogni dipendente.</p>`;
+}
+
+// ── DIPENDENTI ────────────────────────────────────────────────
 function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -380,22 +585,23 @@ function renderAdminDipendenti() {
     </div>
     ${state.dipendenti.map(d=>`
       <div class="row">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span style="font-weight:600">${d.nome}</span>
           <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
           <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
-          ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€ ${d.tariffaOraria}/h</span>`:""}
+          ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
+          ${d.monteFerie?`<span style="color:#6b7280;font-size:12px">🏖️${d.monteFerie}h</span>`:""}
+          ${d.montePermessi?`<span style="color:#6b7280;font-size:12px">📋${d.montePermessi}h</span>`:""}
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️ Modifica</button>
+          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
           <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
         </div>
       </div>`).join("")}
     <div class="info-box">
       <p><strong>📋 Note:</strong></p>
-      <p>• La soglia straordinario si imposta per ogni dipendente</p>
-      <p>• Ore notturne: fascia 23:00 – 06:00</p>
-      <p>• Tariffa e soglia non sono visibili ai dipendenti</p>
+      <p>• Soglia straordinario, tariffa, ferie e permessi non sono visibili ai dipendenti</p>
+      <p>• Le ore ferie/permessi vengono calcolate moltiplicando i giorni di assenza per la soglia giornaliera del dipendente</p>
     </div>`;
 }
 
@@ -409,12 +615,12 @@ function renderModaleDip() {
         <div class="grid-auto" style="gap:12px;margin-bottom:12px">
           <div><label>Nome Cognome</label><input id="md-nome" value="${d.nome||""}" placeholder="Es. Anna Neri"></div>
           <div><label>Contratto</label>
-            <select id="md-tipo">
-              ${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}
-            </select>
+            <select id="md-tipo">${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}</select>
           </div>
           <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
-          <div><label>Soglia straordinario (ore/giorno)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
+          <div><label>Soglia straordinario (h/giorno)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
+          <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
+          <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
           <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale>Annulla</button>
@@ -440,6 +646,35 @@ function esportaCSV() {
   a.download=`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.csv`; a.click();
 }
 
+// ── EVENTI ────────────────────────────────────────────────────
+window.toggleTipoAdmin = function() {
+  const tipo=document.getElementById("ai-tipo")?.value;
+  document.getElementById("ai-lavoro-fields").style.display=tipo==="lavoro"?"grid":"none";
+  document.getElementById("ai-assenza-fields").style.display=tipo==="assenza"?"block":"none";
+};
+
+window.renderListaTimbrature = function() {
+  const filtro=document.getElementById("filtro-dip-lista")?.value||"";
+  const el=document.getElementById("lista-timbrature");
+  if(el) el.innerHTML=renderListaTimbratureHTML(filtro);
+  attachModificaEliminaTimb();
+};
+
+function attachModificaEliminaTimb() {
+  document.querySelectorAll("[data-modifica-timb]").forEach(el=>{
+    el.onclick=()=>{
+      const t=state.timbrature.find(x=>x.id===el.dataset.modificaTimb);
+      if(t){ state.modaleTimbratura=t; render(); }
+    };
+  });
+  document.querySelectorAll("[data-elimina-timb]").forEach(el=>{
+    el.onclick=async()=>{
+      if(!confirm("Eliminare questa timbratura?")) return;
+      await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb));
+    };
+  });
+}
+
 function attachEvents() {
   document.querySelectorAll("[data-login-dip]").forEach(el=>{
     el.onclick=()=>{ state.utenteCorrente=state.dipendenti.find(d=>d.id===el.dataset.loginDip); state.vista="dipendente"; render(); };
@@ -454,6 +689,7 @@ function attachEvents() {
   document.querySelector("[data-filtro-mese]")?.addEventListener("change",e=>{ state.filtroMese=parseInt(e.target.value); render(); });
   document.querySelector("[data-filtro-anno]")?.addEventListener("change",e=>{ state.filtroAnno=parseInt(e.target.value); render(); });
 
+  // Turno dipendente
   document.querySelector("[data-add-turno]")?.addEventListener("click",async()=>{
     const dip=state.utenteCorrente;
     const dataTurno=document.getElementById("inp-data-turno")?.value||oggi();
@@ -461,12 +697,12 @@ function attachEvents() {
     const uscita=document.getElementById("inp-uscita")?.value;
     const pausa=parseInt(document.getElementById("inp-pausa")?.value||"30");
     if(!entrata||!uscita){ alert("Inserisci entrata e uscita!"); return; }
-    const soglia=sogliaMinutiDip(dip);
-    const calcolo=calcolaTurno(entrata,uscita,pausa,soglia);
+    const calcolo=calcolaTurno(entrata,uscita,pausa,sogliaMinutiDip(dip));
     await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa,calcolo});
     alert("✅ Turno registrato!");
   });
 
+  // Assenza dipendente
   document.querySelector("[data-add-assenza-btn]")?.addEventListener("click",async()=>{
     const dip=state.utenteCorrente;
     const dataAssenza=document.getElementById("inp-data-assenza")?.value||oggi();
@@ -476,9 +712,51 @@ function attachEvents() {
     alert("✅ Assenza registrata!");
   });
 
-  document.querySelector("[data-apri-modale-nuovo]")?.addEventListener("click",()=>{
-    state.modaleDip={mode:"nuovo",dip:{}}; render();
+  // Inserisci timbratura admin
+  document.querySelector("[data-salva-timbratura-admin]")?.addEventListener("click",async()=>{
+    const dipId=document.getElementById("ai-dip")?.value;
+    const data=document.getElementById("ai-data")?.value||oggi();
+    const tipo=document.getElementById("ai-tipo")?.value;
+    const dip=state.dipendenti.find(d=>d.id===dipId);
+    if(tipo==="lavoro"){
+      const entrata=document.getElementById("ai-entrata")?.value;
+      const uscita=document.getElementById("ai-uscita")?.value;
+      const pausa=parseInt(document.getElementById("ai-pausa")?.value||"30");
+      if(!entrata||!uscita){ alert("Inserisci entrata e uscita!"); return; }
+      const calcolo=calcolaTurno(entrata,uscita,pausa,sogliaMinutiDip(dip));
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa,calcolo});
+    } else {
+      const assenza=document.getElementById("ai-assenza")?.value;
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"assenza",assenza});
+    }
+    alert("✅ Timbratura inserita!");
+    window.renderListaTimbrature();
   });
+
+  // Modifica/elimina timbrature nella lista
+  attachModificaEliminaTimb();
+
+  // Modale modifica timbratura
+  document.querySelectorAll("[data-chiudi-modale-timb]").forEach(el=>{ el.onclick=()=>{ state.modaleTimbratura=null; render(); }; });
+  document.querySelector("[data-salva-modifica-timb]")?.addEventListener("click",async()=>{
+    const t=state.modaleTimbratura;
+    const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
+    let dati={};
+    if(t.tipo==="lavoro"){
+      const entrata=document.getElementById("mt-entrata")?.value;
+      const uscita=document.getElementById("mt-uscita")?.value;
+      const pausa=parseInt(document.getElementById("mt-pausa")?.value||"30");
+      const calcolo=calcolaTurno(entrata,uscita,pausa,sogliaMinutiDip(dip));
+      dati={entrata,uscita,pausa,calcolo};
+    } else {
+      dati={assenza:document.getElementById("mt-assenza")?.value};
+    }
+    await updateDoc(doc(db,"timbrature",t.id),dati);
+    state.modaleTimbratura=null; render();
+  });
+
+  // Dipendenti
+  document.querySelector("[data-apri-modale-nuovo]")?.addEventListener("click",()=>{ state.modaleDip={mode:"nuovo",dip:{}}; render(); });
   document.querySelectorAll("[data-modifica-dip]").forEach(el=>{
     el.onclick=()=>{ const dip=state.dipendenti.find(d=>d.id===el.dataset.modificaDip); state.modaleDip={mode:"modifica",dip}; render(); };
   });
@@ -487,8 +765,7 @@ function attachEvents() {
       const dip=state.dipendenti.find(d=>d.id===el.dataset.eliminaDip);
       if(!confirm(`Eliminare ${dip?.nome}?`)) return;
       await deleteDoc(doc(db,"dipendenti",el.dataset.eliminaDip));
-      state.dipendenti=state.dipendenti.filter(d=>d.id!==el.dataset.eliminaDip);
-      render();
+      state.dipendenti=state.dipendenti.filter(d=>d.id!==el.dataset.eliminaDip); render();
     };
   });
   document.querySelectorAll("[data-chiudi-modale]").forEach(el=>{ el.onclick=()=>{ state.modaleDip=null; render(); }; });
@@ -497,9 +774,11 @@ function attachEvents() {
     const tipo=document.getElementById("md-tipo")?.value;
     const tariffa=parseFloat(document.getElementById("md-tariffa")?.value)||null;
     const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
+    const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
+    const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
     if(!nome){ alert("Inserisci il nome!"); return; }
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia};
-    if(state.modaleDip.mode==="modifica") {
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,montePermessi};
+    if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
       const idx=state.dipendenti.findIndex(d=>d.id===id);
@@ -510,8 +789,9 @@ function attachEvents() {
     }
     state.modaleDip=null; render();
   });
+
   document.querySelector("[data-export-csv]")?.addEventListener("click",esportaCSV);
-  if(state.vista==="dipendente") {
+  if(state.vista==="dipendente"){
     const tick=()=>{ const c=document.getElementById("big-clock")||document.getElementById("clock"); if(c) c.textContent=oraNow(); setTimeout(tick,30000); };
     setTimeout(tick,1000);
   }

@@ -336,7 +336,7 @@ document.addEventListener("click", async function(e) {
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
     window._dateSelezionate["dip"]=new Set();
   }
-  else if(t.dataset.salvaTimbraturAdmin...
+  else if(t.dataset.salvaTimbraturaAdmin!==undefined) {
     const dipId=document.getElementById("ai-dip")?.value;
     const data=document.getElementById("ai-data")?.value||oggi();
     const tipo=document.getElementById("ai-tipo")?.value;

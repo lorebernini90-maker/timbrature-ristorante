@@ -329,13 +329,14 @@ document.addEventListener("click", async function(e) {
     const dates=getDateAssenza("dip");
     if(!dates.length)return;
     if(!confirm(`Confermi "${tipoAssenza}" per ${dates.length} giorno/i?\n${dates.join(", ")}`))return;
-    for(const data of dates){
-     const sedeAss=document.getElementById("inp-sede")?.value||SEDI[0];
+   for(const data of dates){
+      const sedeAss=document.getElementById("inp-sede")?.value||SEDI[0];
       await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false,sede:sedeAss});
+    }
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
     window._dateSelezionate["dip"]=new Set();
   }
-  else if(t.dataset.salvaTimbraturAdmin!==undefined||t.getAttribute("data-salva-timbratura-admin")!==null) {
+  else if(t.dataset.salvaTimbraturAdmin...
     const dipId=document.getElementById("ai-dip")?.value;
     const data=document.getElementById("ai-data")?.value||oggi();
     const tipo=document.getElementById("ai-tipo")?.value;
@@ -572,7 +573,8 @@ function renderDipStorico(dip) {
 }
 
 function renderAdmin() {
- const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["giornaliero","📅 Giornaliero"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
+  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["giornaliero","📅 Giornaliero"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
+  let content="";
   if(state.adminTab==="presenze") content=renderAdminPresenze();
   else if(state.adminTab==="report") content=renderAdminReport();
   else if(state.adminTab==="inserisci") content=renderAdminInserisci();
@@ -927,7 +929,7 @@ function renderAdminMaggiorazioni() {
   const r=calcolaCostoMensile(dip.id);
   const ra=calcolaCostoAssenzeMensili(dip.id);
   return s+(r?.totale||0)+(ra?.totaleCosto||0);
-},0))}}</span>
+},0))}</span>
     </div>`;
 }
 

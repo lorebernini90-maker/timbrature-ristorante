@@ -305,13 +305,18 @@ document.addEventListener("click", async function(e) {
     await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
     alert("✅ Turno registrato!");
   }
-  else if(t.dataset.addAssenzaBtn!==undefined) {
+ else if(t.hasAttribute("data-add-assenza-btn")){
     const dip=state.utenteCorrente;
-    const dataAssenza=document.getElementById("inp-data-assenza")?.value||oggi();
     const tipoAssenza=document.getElementById("inp-tipo-assenza")?.value;
-    if(!confirm(`Confermi "${tipoAssenza}" per il ${dataAssenza}?`)) return;
-    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataAssenza,tipo:"assenza",assenza:tipoAssenza});
-    alert("✅ Assenza registrata!");
+    const dates=getDateAssenza("dip");
+    if(!dates.length)return;
+    if(!confirm(`Confermi "${tipoAssenza}" per ${dates.length} giorno/i?\n${dates.join(", ")}`))return;
+    for(const data of dates){
+      await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false});
+    }
+    alert(`Registrati ${dates.length} giorno/i di assenza!`);
+    window._dateSelezionate["dip"]=new Set();
+  }
   }
   else if(t.dataset.salvaTimbraturAdmin!==undefined||t.getAttribute("data-salva-timbratura-admin")!==null) {
     const dipId=document.getElementById("ai-dip")?.value;
@@ -326,10 +331,20 @@ document.addEventListener("click", async function(e) {
       const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
       await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo});
     } else {
+     }else{
       const assenza=document.getElementById("ai-assenza")?.value;
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"assenza",assenza});
+      const dates=getDateAssenza("admin");
+      if(!dates.length)return;
+      for(const dataAss of dates){
+        await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data:dataAss,tipo:"assenza",assenza,sbloccata:false});
+      }
+      alert(`Inseriti ${dates.length} giorno/i di assenza!`);
+      window._dateSelezionate["admin"]=new Set();
+      const el=document.getElementById("lista-timbrature");
+      if(el)el.innerHTML=renderListaTimbratureHTML(document.getElementById("filtro-dip-lista")?.value||"");
+      return;
     }
-    alert("✅ Timbratura inserita!"); window.renderListaTimbrature();
+    alert("Timbratura inserita!");; window.renderListaTimbrature();
   }
   else if(t.dataset.modificaTimb) {
     const timb=state.timbrature.find(x=>x.id===t.dataset.modificaTimb);
@@ -475,15 +490,34 @@ function renderDipTimbra(dip) {
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-turno>✅ Registra turno</button>
     </div>
     <div class="sezione">
-      <div class="sezione-titolo">📅 Registra assenza</div>
-      <div class="grid-auto" style="margin-bottom:12px">
-        <div><label>Data assenza</label><input type="date" id="inp-data-assenza" value="${oggi()}"></div>
-        <div><label>Tipo assenza</label>
-          <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
-        </div>
-      </div>
-      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>📋 Registra assenza</button>
-    </div>`;
+  <div class="sezione-titolo">📅 Registra assenza</div>
+  <div class="grid-auto" style="margin-bottom:12px">
+    <div><label>Tipo assenza</label>
+      <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+    </div>
+    <div><label>Modalità selezione</label>
+      <select id="inp-modo-assenza" onchange="toggleModoAssenza('dip')">
+        <option value="singola">Giorno singolo</option>
+        <option value="intervallo">Intervallo (da → a)</option>
+        <option value="multipla">Giorni multipli</option>
+      </select>
+    </div>
+  </div>
+  <div id="dip-assenza-singola" class="grid-auto" style="margin-bottom:12px">
+    <div><label>Data</label><input type="date" id="inp-data-assenza" value="${oggi()}"></div>
+  </div>
+  <div id="dip-assenza-intervallo" style="display:none;margin-bottom:12px">
+    <div class="grid-auto">
+      <div><label>Da</label><input type="date" id="inp-data-ass-da" value="${oggi()}"></div>
+      <div><label>A</label><input type="date" id="inp-data-ass-a" value="${oggi()}"></div>
+    </div>
+  </div>
+  <div id="dip-assenza-multipla" style="display:none;margin-bottom:12px">
+    <label>Seleziona più date (tieni premuto Ctrl/Cmd per selezionare più giorni)</label>
+    <div id="dip-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("dip")}</div>
+  </div>
+  <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>📋 Registra assenza</button>
+</div>
 }
 
 function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {
@@ -640,9 +674,32 @@ function renderAdminInserisci() {
       <div><label>Pausa (min)</label><input type="number" id="ai-pausa" value="30" min="0"></div>
     </div>
     <div id="ai-assenza-fields" style="display:none;margin-bottom:12px">
-      <label>Tipo assenza</label>
+  <div class="grid-auto" style="margin-bottom:12px">
+    <div><label>Tipo assenza</label>
       <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
     </div>
+    <div><label>Modalità selezione</label>
+      <select id="ai-modo-assenza" onchange="toggleModoAssenza('admin')">
+        <option value="singola">Giorno singolo</option>
+        <option value="intervallo">Intervallo (da → a)</option>
+        <option value="multipla">Giorni multipli</option>
+      </select>
+    </div>
+  </div>
+  <div id="admin-assenza-singola" class="grid-auto" style="margin-bottom:12px">
+    <div><label>Data</label><input type="date" id="ai-data-assenza" value="${oggi()}"></div>
+  </div>
+  <div id="admin-assenza-intervallo" style="display:none;margin-bottom:12px">
+    <div class="grid-auto">
+      <div><label>Da</label><input type="date" id="ai-data-ass-da" value="${oggi()}"></div>
+      <div><label>A</label><input type="date" id="ai-data-ass-a" value="${oggi()}"></div>
+    </div>
+  </div>
+  <div id="admin-assenza-multipla" style="display:none;margin-bottom:12px">
+    <label>Seleziona più date</label>
+    <div id="admin-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("admin")}</div>
+  </div>
+</div>
     <button class="btn btn-primary" data-salva-timbratura-admin>💾 Salva timbratura</button>
     <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
     <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">📋 Gestisci timbrature</h3>
@@ -960,6 +1017,88 @@ function attachModificaEliminaTimb(){
   document.querySelectorAll("[data-elimina-timb]").forEach(el=>{
     el.onclick=async()=>{ if(!confirm("Eliminare questa timbratura?")) return; await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb)); };
   });
+}
+  function renderCalendarioMultiplo(prefisso) {
+  const oggi_d = new Date();
+  const anno = oggi_d.getFullYear();
+  const mese = oggi_d.getMonth();
+  const primoGiorno = new Date(anno, mese, 1).getDay();
+  const giorniMese = new Date(anno, mese+1, 0).getDate();
+  const giorni = ["Lu","Ma","Me","Gi","Ve","Sa","Do"];
+  let html = `<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;text-align:center">${MESI[mese]} ${anno}</div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">`;
+  giorni.forEach(g => html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;padding:3px">${g}</div>`);
+  const offset = (primoGiorno + 6) % 7;
+  for(let i=0;i<offset;i++) html += `<div></div>`;
+  for(let g=1;g<=giorniMese;g++){
+    const ds = `${anno}-${String(mese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    html += `<div id="${prefisso}-giorno-${ds}" onclick="toggleGiorno('${prefisso}','${ds}')" style="cursor:pointer;padding:5px 2px;border-radius:6px;font-size:13px;border:1px solid #e5e7eb;background:white" data-data="${ds}">${g}</div>`;
+  }
+  html += `</div>`;
+  html += `<div id="${prefisso}-date-selezionate" style="margin-top:8px;font-size:12px;color:#6b7280">Nessuna data selezionata</div>`;
+  return html;
+}
+
+window._dateSelezionate = { dip: new Set(), admin: new Set() };
+
+window.toggleGiorno = function(prefisso, data) {
+  const set = window._dateSelezionate[prefisso];
+  const el = document.getElementById(`${prefisso}-giorno-${data}`);
+  if(!el) return;
+  if(set.has(data)){
+    set.delete(data);
+    el.style.background = "white";
+    el.style.color = "inherit";
+    el.style.borderColor = "#e5e7eb";
+  } else {
+    set.add(data);
+    el.style.background = "#f59e0b";
+    el.style.color = "white";
+    el.style.borderColor = "#f59e0b";
+  }
+  const info = document.getElementById(`${prefisso}-date-selezionate`);
+  if(info) info.textContent = set.size > 0 ? `${set.size} date selezionate: ${[...set].sort().join(", ")}` : "Nessuna data selezionata";
+};
+
+window.toggleModoAssenza = function(prefisso) {
+  const modo = document.getElementById(`${prefisso === "dip" ? "inp" : "ai"}-modo-assenza`)?.value;
+  const s = document.getElementById(`${prefisso}-assenza-singola`);
+  const i = document.getElementById(`${prefisso}-assenza-intervallo`);
+  const m = document.getElementById(`${prefisso}-assenza-multipla`);
+  if(s) s.style.display = modo==="singola" ? "grid" : "none";
+  if(i) i.style.display = modo==="intervallo" ? "block" : "none";
+  if(m) m.style.display = modo==="multipla" ? "block" : "none";
+  if(modo==="multipla") window._dateSelezionate[prefisso] = new Set();
+};
+
+function dateIntervallo(da, a) {
+  const dates = [];
+  const cur = new Date(da);
+  const fine = new Date(a);
+  while(cur <= fine){ dates.push(cur.toISOString().split("T")[0]); cur.setDate(cur.getDate()+1); }
+  return dates;
+}
+
+function getDateAssenza(prefisso) {
+  const modoId = prefisso === "dip" ? "inp-modo-assenza" : "ai-modo-assenza";
+  const modo = document.getElementById(modoId)?.value || "singola";
+  if(modo === "singola"){
+    const id = prefisso === "dip" ? "inp-data-assenza" : "ai-data-assenza";
+    const v = document.getElementById(id)?.value;
+    return v ? [v] : [];
+  }
+  if(modo === "intervallo"){
+    const da = document.getElementById(`${prefisso === "dip" ? "inp" : "ai"}-data-ass-da`)?.value;
+    const a  = document.getElementById(`${prefisso === "dip" ? "inp" : "ai"}-data-ass-a`)?.value;
+    if(!da||!a||da>a){ alert("Intervallo date non valido!"); return []; }
+    return dateIntervallo(da, a);
+  }
+  if(modo === "multipla"){
+    const dates = [...window._dateSelezionate[prefisso]].sort();
+    if(!dates.length){ alert("Seleziona almeno una data!"); return []; }
+    return dates;
+  }
+  return [];
 }
 
 avvia();

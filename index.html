@@ -144,4 +144,325 @@ function renderLogin() {
         </div>`).join("")}</div>
       <div data-login-admin style="background:#1e293b;color:white;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px">
         <span style="font-size:20px">🔐</span>
-        <div style="text-align:left"><div style="f
+        <div style="text-align:left"><div style="font-weight:700;font-size:14px">Area Admin</div><div style="font-size:11px;opacity:0.7">Solo per il titolare</div></div>
+      </div>
+    </div></div>`;
+}
+
+function renderDipendente() {
+  const dip=state.utenteCorrente;
+  const mese=new Date().getMonth(), anno=new Date().getFullYear();
+  const turniMese=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="lavoro"&&d.getMonth()===mese&&d.getFullYear()===anno;});
+  const totM=turniMese.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
+  const strM=turniMese.reduce((s,t)=>s+(t.calcolo?.straordinariMin||0),0);
+  const nottM=turniMese.reduce((s,t)=>s+(t.calcolo?.notturneMin||0),0);
+  const assM=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&d.getMonth()===mese&&d.getFullYear()===anno;}).length;
+  const tabs=[["timbra","⏱️ Timbra"],["riepilogo","📊 Riepilogo"],["storico","📋 Storico"]];
+  let content="";
+  if(state.dipTab==="timbra") content=renderDipTimbra(dip);
+  else if(state.dipTab==="riepilogo") content=renderDipRiepilogo(turniMese,totM,strM,nottM,assM);
+  else content=renderDipStorico(dip);
+  return `
+    <div style="background:#f59e0b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div><h1 style="font-size:18px;font-weight:700">👋 Ciao, ${dip.nome.split(" ")[0]}!</h1>
+      <p style="font-size:12px;opacity:0.85">${dip.tipo} • <span id="clock">${oraNow()}</span></p></div>
+      <button class="btn btn-white btn-sm" data-logout>Esci</button>
+    </div>
+    <div style="max-width:600px;margin:0 auto;padding:16px">
+      <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb">
+        ${tabs.map(([k,l])=>`<button data-dip-tab="${k}" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${state.dipTab===k?"white":"transparent"};color:${state.dipTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.dipTab===k?"2px solid white":"none"};margin-bottom:${state.dipTab===k?"-2px":"0"}">${l}</button>`).join("")}
+      </div>
+      <div style="background:white;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">${content}</div>
+    </div>`;
+}
+
+function renderDipTimbra(dip) {
+  const ora=oraNow();
+  const giaTimbrato=state.timbrature.find(t=>t.dipendenteId===dip.id&&t.data===oggi());
+  return `
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:48px;font-weight:700;color:#1e293b;letter-spacing:2px" id="big-clock">${ora}</div>
+      <div style="color:#6b7280;font-size:13px">${oggi()}</div>
+    </div>
+    ${giaTimbrato?`<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;text-align:center;font-size:13px;color:#92400e;margin-bottom:14px">⚠️ Hai già registrato una presenza oggi</div>`:""}
+    <div class="grid-auto" style="margin-bottom:14px">
+      <div><label>Entrata</label><input type="time" id="inp-entrata" value="${ora}"></div>
+      <div><label>Uscita</label><input type="time" id="inp-uscita"></div>
+      <div><label>Pausa (min)</label><input type="number" id="inp-pausa" value="30" min="0" max="120"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" data-add-turno>✅ Registra turno</button>
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:18px 0">
+    <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Registra assenza</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${VOCI_ASSENZA.map(v=>`<button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-add-assenza="${v}">${v}</button>`).join("")}
+    </div>`;
+}
+
+function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {
+  return `
+    <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">📊 ${MESI[new Date().getMonth()]} ${new Date().getFullYear()}</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+      ${[["Ore lavorate",minToHHMM(totM)+"h","#1e293b","#f0fdf4"],["Turni",turniMese.length,"#1e293b","#eff6ff"],
+         ["Straordinari",minToHHMM(strM)+"h",strM>0?"#dc2626":"#9ca3af","#fff1f2"],
+         ["Ore notturne",minToHHMM(nottM)+"h",nottM>0?"#4f46e5":"#9ca3af","#eef2ff"],
+         ["Giorni assenza",assM,assM>0?"#d97706":"#9ca3af","#fffbeb"]
+        ].map(([l,v,c,bg])=>`<div style="background:${bg};border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:${c}">${v}</div><div style="font-size:12px;color:#6b7280;margin-top:2px">${l}</div></div>`).join("")}
+    </div>`;
+}
+
+function renderDipStorico(dip) {
+  const storico=[...state.timbrature].filter(t=>t.dipendenteId===dip.id).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,30);
+  if(!storico.length) return `<div class="empty">Nessuna registrazione.</div>`;
+  return storico.map(t=>`
+    <div class="row">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:600">${t.data}</span>
+        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min)</span></span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
+        ${t.calcolo?.straordinariMin>0?`<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
+      </div>
+      ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+    </div>`).join("");
+}
+
+function renderAdmin() {
+  const tabs=[["report","📊 Report"],["settimane","📅 Settimane"],["costi","💶 Costi"],["dipendenti","👥 Dipendenti"]];
+  let content="";
+  if(state.adminTab==="report") content=renderAdminReport();
+  else if(state.adminTab==="settimane") content=renderAdminSettimane();
+  else if(state.adminTab==="costi") content=renderAdminCosti();
+  else content=renderAdminDipendenti();
+  return `
+    <div style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div><h1 style="font-size:18px;font-weight:700">🔐 Area Admin</h1>
+      <p style="font-size:12px;opacity:0.7">Presenze in tempo reale</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
+        <button class="btn btn-white btn-sm" data-logout>Esci</button>
+      </div>
+    </div>
+    <div style="max-width:960px;margin:0 auto;padding:16px">
+      <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb;flex-wrap:wrap">
+        ${tabs.map(([k,l])=>`<button data-admin-tab="${k}" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${state.adminTab===k?"white":"transparent"};color:${state.adminTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.adminTab===k?"2px solid white":"none"};margin-bottom:${state.adminTab===k?"-2px":"0"}">${l}</button>`).join("")}
+      </div>
+      <div style="background:white;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">${content}</div>
+    </div>`;
+}
+
+function filtriHTML() {
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap">
+    <select data-filtro-mese style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
+      ${MESI.map((m,i)=>`<option value="${i}"${i===state.filtroMese?" selected":""}>${m}</option>`).join("")}
+    </select>
+    <select data-filtro-anno style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
+      ${[2024,2025,2026].map(y=>`<option${y===state.filtroAnno?" selected":""}>${y}</option>`).join("")}
+    </select>
+  </div>`;
+}
+
+function getTimbMese() {
+  return state.timbrature.filter(t=>{const d=new Date(t.data);return d.getMonth()===state.filtroMese&&d.getFullYear()===state.filtroAnno;});
+}
+
+function getRiepilogo() {
+  return state.dipendenti.map(dip=>{
+    const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro");
+    const ass=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
+    const tot=turni.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
+    const diur=turni.reduce((s,t)=>s+(t.calcolo?.diurneMin||0),0);
+    const nott=turni.reduce((s,t)=>s+(t.calcolo?.notturneMin||0),0);
+    const strD=turni.reduce((s,t)=>s+(t.calcolo?.strDiurniMin||0),0);
+    const strN=turni.reduce((s,t)=>s+(t.calcolo?.strNotturniMin||0),0);
+    const assCnt={}; VOCI_ASSENZA.forEach(v=>{assCnt[v]=ass.filter(a=>a.assenza===v).length;});
+    const costo=dip.tariffaOraria?((tot/60)*dip.tariffaOraria).toFixed(2):null;
+    return {dip,tot,diur,nott,strD,strN,assCnt,nTurni:turni.length,costo};
+  });
+}
+
+function renderAdminReport() {
+  const r=getRiepilogo();
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Report mensile</h2>${filtriHTML()}
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr>${["Dipendente","Contratto","Turni","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${r.map(({dip,tot,diur,nott,strD,strN,assCnt,nTurni})=>`
+        <tr>
+          <td style="font-weight:600">${dip.nome}</td><td style="color:#6b7280">${dip.tipo}</td><td>${nTurni}</td>
+          <td style="font-weight:700">${minToHHMM(tot)}h</td><td>${minToHHMM(diur)}h</td>
+          <td style="color:${nott>0?"#4f46e5":"inherit"};font-weight:${nott>0?700:400}">${minToHHMM(nott)}h</td>
+          <td style="color:${strD>0?"#ea580c":"inherit"};font-weight:${strD>0?700:400}">${minToHHMM(strD)}h</td>
+          <td style="color:${strN>0?"#dc2626":"inherit"};font-weight:${strN>0?700:400}">${minToHHMM(strN)}h</td>
+          <td>${assCnt["Ferie"]||0}</td><td>${assCnt["Permesso"]||0}</td><td>${assCnt["Malattia"]||0}</td>
+        </tr>`).join("")}</tbody>
+    </table>
+    ${getTimbMese().length===0?`<div class="empty">Nessuna timbratura per ${MESI[state.filtroMese]} ${state.filtroAnno}</div>`:""}</div>`;
+}
+
+function renderAdminSettimane() {
+  const sett={};
+  getTimbMese().filter(t=>t.tipo==="lavoro").forEach(t=>{
+    const d=new Date(t.data),sw=new Date(d); sw.setDate(d.getDate()-d.getDay()+1);
+    const k=sw.toISOString().split("T")[0];
+    if(!sett[k]) sett[k]={}; if(!sett[k][t.dipendenteId]) sett[k][t.dipendenteId]=0;
+    sett[k][t.dipendenteId]+=t.calcolo?.totaleMin||0;
+  });
+  const keys=Object.keys(sett).sort();
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Riepilogo settimanale</h2>${filtriHTML()}
+    </div>
+    ${!keys.length?`<div class="empty">Nessun dato per ${MESI[state.filtroMese]} ${state.filtroAnno}</div>`:""}
+    ${keys.map(sw=>{
+      const fine=new Date(sw); fine.setDate(fine.getDate()+6);
+      return `<div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+        <div style="background:#fffbeb;padding:8px 14px;font-weight:700;font-size:13px;color:#92400e">Settimana ${sw} → ${fine.toISOString().split("T")[0]}</div>
+        <div style="padding:8px 14px">${state.dipendenti.map(dip=>{
+          const min=sett[sw][dip.id]||0,str=Math.max(0,min-40*60);
+          return `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f9fafb">
+            <span>${dip.nome}</span>
+            <div style="display:flex;gap:10px"><span style="font-weight:600">${minToHHMM(min)}h</span>
+            ${str>0?`<span style="color:#dc2626;font-weight:600">+${minToHHMM(str)}h STR</span>`:""}</div>
+          </div>`;}).join("")}</div>
+      </div>`;}).join("")}`;
+}
+
+function renderAdminCosti() {
+  const r=getRiepilogo(), totCosto=r.reduce((s,x)=>s+(parseFloat(x.costo)||0),0);
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>${filtriHTML()}
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Imposta la tariffa oraria nella scheda <strong>👥 Dipendenti</strong>.</p>
+    <div style="overflow-x:auto"><table>
+      <thead><tr>${["Dipendente","Contratto","Ore Lavorate","Tariffa/h","Costo Stimato"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${r.map(({dip,tot,costo})=>`<tr>
+          <td style="font-weight:600">${dip.nome}</td><td style="color:#6b7280">${dip.tipo}</td>
+          <td style="font-weight:700">${minToHHMM(tot)}h</td>
+          <td>${dip.tariffaOraria?`€ ${dip.tariffaOraria}/h`:`<span style="color:#d1d5db">—</span>`}</td>
+          <td style="font-weight:700;color:${costo?"#059669":"#d1d5db"}">${costo?`€ ${costo}`:"—"}</td>
+        </tr>`).join("")}
+        ${totCosto>0?`<tr style="background:#f0fdf4;border-top:2px solid #e5e7eb"><td colspan="4" style="text-align:right;font-weight:700;padding:8px 10px">Totale mese:</td><td style="font-weight:700;color:#059669;font-size:15px">€ ${totCosto.toFixed(2)}</td></tr>`:""}
+      </tbody>
+    </table></div>`;
+}
+
+function renderAdminDipendenti() {
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Dipendenti</h2>
+      <button class="btn btn-primary btn-sm" data-show-form-dip>+ Aggiungi</button>
+    </div>
+    <div id="form-dip" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div class="grid-auto" style="gap:10px;margin-bottom:10px">
+        <div><label>Nome Cognome</label><input id="nd-nome" placeholder="Es. Anna Neri"></div>
+        <div><label>Contratto</label><select id="nd-tipo"><option>Full Time</option><option>Part Time</option><option>Intermittente</option></select></div>
+        <div><label>Tariffa €/h</label><input id="nd-tariffa" type="number" placeholder="Es. 9.50" step="0.1"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" data-salva-dip>Salva dipendente</button>
+    </div>
+    ${state.dipendenti.map(d=>`
+      <div class="row">
+        <div style="display:flex;gap:10px;align-items:center">
+          <span style="font-weight:600">${d.nome}</span>
+          <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
+          ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€ ${d.tariffaOraria}/h</span>`:""}
+        </div>
+        <span style="color:#9ca3af;font-size:12px">${state.timbrature.filter(t=>t.dipendenteId===d.id).length} reg.</span>
+      </div>`).join("")}
+    <div class="info-box">
+      <p><strong>📋 Soglie straordinario:</strong></p>
+      <p>• Full Time: dopo 6h 40min/giorno</p>
+      <p>• Part Time / Intermittente: dopo 4h/giorno</p>
+      <p>• Ore notturne: fascia 23:00 – 06:00</p>
+    </div>`;
+}
+
+function esportaCSV() {
+  const tm=getTimbMese();
+  const righe=[["Dipendente","Tipo","Data","Tipo Reg.","Entrata","Uscita","Pausa","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Assenza"]];
+  tm.forEach(t=>{
+    const d=state.dipendenti.find(x=>x.id===t.dipendenteId);
+    righe.push([d?.nome||"",d?.tipo||"",t.data,t.tipo,t.entrata||"",t.uscita||"",t.pausa||"",
+      t.calcolo?minToHHMM(t.calcolo.totaleMin):"",t.calcolo?minToHHMM(t.calcolo.diurneMin):"",
+      t.calcolo?minToHHMM(t.calcolo.notturneMin):"",t.calcolo?minToHHMM(t.calcolo.strDiurniMin):"",
+      t.calcolo?minToHHMM(t.calcolo.strNotturniMin):"",t.assenza||""]);
+  });
+  const csv=righe.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}));
+  a.download=`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.csv`; a.click();
+}
+
+function attachEvents() {
+  document.querySelectorAll("[data-login-dip]").forEach(el=>{
+    el.onclick=()=>{ state.utenteCorrente=state.dipendenti.find(d=>d.id===el.dataset.loginDip); state.vista="dipendente"; render(); };
+  });
+  document.querySelector("[data-login-admin]")?.addEventListener("click",()=>{
+    const pin=prompt("Inserisci il PIN admin:");
+    if(pin===ADMIN_PIN){ state.vista="admin"; render(); } else if(pin!==null) alert("PIN errato!");
+  });
+  document.querySelectorAll("[data-logout]").forEach(el=>{ el.onclick=()=>{ state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; render(); }; });
+  document.querySelectorAll("[data-dip-tab]").forEach(el=>{ el.onclick=()=>{ state.dipTab=el.dataset.dipTab; render(); }; });
+  document.querySelectorAll("[data-admin-tab]").forEach(el=>{ el.onclick=()=>{ state.adminTab=el.dataset.adminTab; render(); }; });
+  document.querySelector("[data-filtro-mese]")?.addEventListener("change",e=>{ state.filtroMese=parseInt(e.target.value); render(); });
+  document.querySelector("[data-filtro-anno]")?.addEventListener("change",e=>{ state.filtroAnno=parseInt(e.target.value); render(); });
+  document.querySelector("[data-add-turno]")?.addEventListener("click",async()=>{
+    const dip=state.utenteCorrente;
+    const entrata=document.getElementById("inp-entrata")?.value;
+    const uscita=document.getElementById("inp-uscita")?.value;
+    const pausa=parseInt(document.getElementById("inp-pausa")?.value||"30");
+    if(!entrata||!uscita){ alert("Inserisci entrata e uscita!"); return; }
+    const calcolo=calcolaTurno(entrata,uscita,pausa,dip.tipo);
+    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata,uscita,pausa,calcolo});
+    alert("✅ Turno registrato!");
+  });
+  document.querySelectorAll("[data-add-assenza]").forEach(el=>{
+    el.onclick=async()=>{
+      if(!confirm(`Confermi "${el.dataset.addAssenza}" per oggi?`)) return;
+      await addDoc(collection(db,"timbrature"),{dipendenteId:state.utenteCorrente.id,data:oggi(),tipo:"assenza",assenza:el.dataset.addAssenza});
+      alert("✅ Assenza registrata!");
+    };
+  });
+  document.querySelector("[data-show-form-dip]")?.addEventListener("click",()=>{
+    const f=document.getElementById("form-dip"); if(f) f.style.display=f.style.display==="none"?"block":"none";
+  });
+  document.querySelector("[data-salva-dip]")?.addEventListener("click",async()=>{
+    const nome=document.getElementById("nd-nome")?.value?.trim();
+    const tipo=document.getElementById("nd-tipo")?.value;
+    const tariffa=parseFloat(document.getElementById("nd-tariffa")?.value)||null;
+    if(!nome){ alert("Inserisci il nome!"); return; }
+    const ref=await addDoc(collection(db,"dipendenti"),{nome,tipo,tariffaOraria:tariffa});
+    state.dipendenti.push({id:ref.id,nome,tipo,tariffaOraria:tariffa});
+    render();
+  });
+  document.querySelector("[data-export-csv]")?.addEventListener("click",esportaCSV);
+  if(state.vista==="dipendente") {
+    const tick=()=>{ const c=document.getElementById("big-clock")||document.getElementById("clock"); if(c) c.textContent=oraNow(); setTimeout(tick,30000); };
+    setTimeout(tick,1000);
+  }
+}
+
+avvia();
+</script>
+</body>
+</html>
+```
+
+---
+
+**Ultimo passo — autorizza il tuo sito su Firebase:**
+
+1. Vai su [console.firebase.google.com](https://console.firebase.google.com) → il tuo progetto
+2. **Authentication** → non serve attivarlo
+3. **Firestore Database → Regole** → incolla questo e clicca **Pubblica**:
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

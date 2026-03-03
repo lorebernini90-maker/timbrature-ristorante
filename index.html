@@ -738,22 +738,27 @@ function attachEvents() {
   attachModificaEliminaTimb();
 
   // Modale modifica timbratura
-  document.querySelectorAll("[data-chiudi-modale-timb]").forEach(el=>{ el.onclick=()=>{ state.modaleTimbratura=null; render(); }; });
-  document.querySelector("[data-salva-modifica-timb]")?.addEventListener("click",async()=>{
+ document.querySelectorAll("[data-chiudi-modale-timb]").forEach(el=>{
+    el.onclick=(e)=>{ e.stopPropagation(); state.modaleTimbratura=null; document.querySelector(".modal-bg")?.remove(); render(); };
+  });
+  document.querySelector("[data-salva-modifica-timb]")?.addEventListener("click",async(e)=>{
+    e.stopPropagation();
     const t=state.modaleTimbratura;
     const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
     let dati={};
     if(t.tipo==="lavoro"){
       const entrata=document.getElementById("mt-entrata")?.value;
       const uscita=document.getElementById("mt-uscita")?.value;
-      const pausa=parseInt(document.getElementById("mt-pausa")?.value||"30");
-      const calcolo=calcolaTurno(entrata,uscita,pausa,sogliaMinutiDip(dip));
-      dati={entrata,uscita,pausa,calcolo};
+      const pausaNum=parseInt(document.getElementById("mt-pausa")?.value)||0;
+      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
+      dati={entrata,uscita,pausa:pausaNum,calcolo};
     } else {
       dati={assenza:document.getElementById("mt-assenza")?.value};
     }
     await updateDoc(doc(db,"timbrature",t.id),dati);
-    state.modaleTimbratura=null; render();
+    state.modaleTimbratura=null;
+    document.querySelector(".modal-bg")?.remove();
+    render();
   });
 
   // Dipendenti

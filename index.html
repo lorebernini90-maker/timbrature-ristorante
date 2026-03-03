@@ -609,7 +609,7 @@ function renderAdmin() {
 function renderAdminPresenze() {
   const dataOggi=oggi();
   const timbratiOggi=new Set(state.timbrature.filter(t=>t.data===dataOggi).map(t=>t.dipendenteId));
-  const nonTimbrati=state.dipendenti.filter(d=>!timbratiOggi.has(d.id));
+  const nonTimbrati=state.dipendenti.filter(d=>!timbratiOggi.has(d.id) && d.tipo!=="Intermittente");
   const timbrati=state.dipendenti.filter(d=>timbratiOggi.has(d.id));
   return `
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">👁️ Presenze oggi — ${dataOggi}</h2>

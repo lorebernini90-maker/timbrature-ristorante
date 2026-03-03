@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timbrature Ristorante</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; min-height: 100vh; }
+.btn { border: none; border-radius: 8px; padding: 9px 18px; font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #f59e0b; color: white; }
+.btn-white { background: white; color: #d97706; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+input, select { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; background: white; }
+input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+.row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 6px; background: #f9fafb; border: 1px solid #f3f4f6; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; display: inline-block; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-green { background: #d1fae5; color: #065f46; }
+.badge-purple { background: #ede9fe; color: #5b21b6; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #f9fafb; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: center; white-space: nowrap; }
+th:first-child, th:nth-child(2) { text-align: left; }
+td { padding: 8px 10px; text-align: center; border-top: 1px solid #f3f4f6; }
+td:first-child, td:nth-child(2) { text-align: left; }
+tr:hover td { background: #fffbeb; }
+.empty { text-align: center; color: #9ca3af; padding: 32px; font-size: 14px; }
+.info-box { background: #f9fafb; border-radius: 10px; padding: 14px; font-size: 13px; color: #4b5563; margin-top: 16px; }
+.info-box p { margin: 3px 0; }
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 20px; }
+.login-card { background: white; border-radius: 16px; padding: 36px 32px; width: 100%; max-width: 400px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); text-align: center; }
+.login-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; font-size: 14px; text-align: left; }
+.login-item:hover { border-color: #f59e0b; background: #fffbeb; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.loading { display: flex; align-items: center; justify-content: center; min-height: 60vh; flex-direction: column; gap: 12px; color: #6b7280; font-size: 15px; }
+.spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #f59e0b; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="spinner"></div>Caricamento...</div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const ADMIN_PIN = "1234"; // <-- CAMBIA QUI IL TUO PIN
+const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo"];
+const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBx2VqiSLGTjWBR7s0lf96cYro1pUfTv08",
+  authDomain: "timbrature-ristorante.firebaseapp.com",
+  projectId: "timbrature-ristorante",
+  storageBucket: "timbrature-ristorante.firebasestorage.app",
+  messagingSenderId: "860258208491",
+  appId: "1:860258208491:web:acab2683716fb4161b4cae"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+let state = {
+  vista: "loading", utenteCorrente: null,
+  dipendenti: [], timbrature: [],
+  dipTab: "timbra", adminTab: "report",
+  filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
+};
+
+function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
+function minToHHMM(min) { if(!min||min<=0) return "0:00"; return `${Math.floor(min/60)}:${String(min%60).padStart(2,"0")}`; }
+function oggi() { return new Date().toISOString().split("T")[0]; }
+function oraNow() { const n=new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
+
+function calcolaTurno(entrata, uscita, pausa, tipo) {
+  if(!entrata||!uscita) return null;
+  const e=timeToMin(entrata); let u=timeToMin(uscita);
+  if(u<e) u+=1440;
+  const tot=u-e-(pausa||0);
+  const soglia=tipo==="Full Time"?400:240;
+  const str=Math.max(0,tot-soglia);
+  const N1=23*60,N2=6*60; let nott=0;
+  if(u>N1) nott+=Math.min(u,1440)-Math.max(e,N1);
+  if(u>1440) nott+=Math.min(u-1440,N2);
+  nott=Math.max(0,nott);
+  const diur=Math.max(0,tot-nott);
+  const strN=Math.min(str,nott), strD=Math.max(0,str-strN);
+  return {totaleMin:tot,diurneMin:diur,notturneMin:nott,straordinariMin:str,strDiurniMin:strD,strNotturniMin:strN};
+}
+
+async function caricaDipendenti() {
+  const snap=await getDocs(collection(db,"dipendenti"));
+  state.dipendenti=snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(state.dipendenti.length===0) {
+    const defaults=[
+      {nome:"Mario Rossi",tipo:"Full Time",tariffaOraria:9.5},
+      {nome:"Giulia Bianchi",tipo:"Part Time",tariffaOraria:9.0},
+      {nome:"Luca Verdi",tipo:"Intermittente",tariffaOraria:10.0},
+    ];
+    for(const d of defaults){
+      const ref=await addDoc(collection(db,"dipendenti"),d);
+      state.dipendenti.push({id:ref.id,...d});
+    }
+  }
+}
+
+function ascoltaTimbrature() {
+  onSnapshot(collection(db,"timbrature"),snap=>{
+    state.timbrature=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(state.vista!=="loading") render();
+  });
+}
+
+async function avvia() {
+  try {
+    await caricaDipendenti();
+    ascoltaTimbrature();
+    state.vista="login"; render();
+  } catch(e) {
+    document.getElementById("app").innerHTML=`<div class="loading"><div style="color:#dc2626">❌ Errore Firebase: ${e.message}</div></div>`;
+  }
+}
+
+function render() {
+  const app=document.getElementById("app"); if(!app) return;
+  if(state.vista==="login") app.innerHTML=renderLogin();
+  else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
+  else if(state.vista==="admin") app.innerHTML=renderAdmin();
+  attachEvents();
+}
+
+function renderLogin() {
+  return `
+    <div style="background:#f59e0b;color:white;padding:14px 20px;text-align:center">
+      <h1 style="font-size:20px;font-weight:700">🍽️ Timbrature Ristorante</h1>
+    </div>
+    <div class="login-wrap"><div class="login-card">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Chi sei?</h2>
+      <p style="color:#6b7280;font-size:14px;margin-bottom:20px">Seleziona il tuo nome per timbrare</p>
+      <div>${state.dipendenti.map(d=>`
+        <div class="login-item" data-login-dip="${d.id}">
+          <div><div style="font-weight:600">${d.nome}</div><div style="font-size:12px;color:#6b7280">${d.tipo}</div></div>
+          <span style="color:#f59e0b;font-size:20px">→</span>
+        </div>`).join("")}</div>
+      <div data-login-admin style="background:#1e293b;color:white;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px">
+        <span style="font-size:20px">🔐</span>
+        <div style="text-align:left"><div style="f

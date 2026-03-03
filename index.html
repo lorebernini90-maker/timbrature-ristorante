@@ -1185,7 +1185,7 @@ window.renderListaTimbrature=function(){
 
   // ── FOGLIO 1: RIEPILOGO ──
   const righeRiepilogo = [
-    ["Dipendente","Contratto","Turni","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie","Permessi","Malattia","Riposo Comp.","Giorno Libero"]
+    ["Dipendente","Contratto","Turni","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie (h)","Permessi (h)","Malattia (h)","Riposo Comp. (h)","Giorno Libero (h)"]
   ];
   state.dipendenti.forEach(dip => {
     const turni = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
@@ -1204,11 +1204,11 @@ window.renderListaTimbrature=function(){
       minToHHMM(nott),
       minToHHMM(strD),
       minToHHMM(strN),
-      ass.filter(a => a.assenza==="Ferie").length,
-      ass.filter(a => a.assenza==="Permesso").length,
-      ass.filter(a => a.assenza==="Malattia").length,
-      ass.filter(a => a.assenza==="Riposo Compensativo").length,
-      ass.filter(a => a.assenza==="Giorno Libero").length,
+      ass.filter(a => a.assenza==="Ferie").length * (dip.sogliaOre||6.67),
+      ass.filter(a => a.assenza==="Permesso").length * (dip.sogliaOre||6.67),
+      ass.filter(a => a.assenza==="Malattia").length * (dip.sogliaOre||6.67),
+      ass.filter(a => a.assenza==="Riposo Compensativo").length * (dip.sogliaOre||6.67),
+      ass.filter(a => a.assenza==="Giorno Libero").length * (dip.sogliaOre||6.67),
     ]);
   });
   const ws1 = XLSX.utils.aoa_to_sheet(righeRiepilogo);

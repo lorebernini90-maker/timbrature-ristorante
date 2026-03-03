@@ -201,10 +201,13 @@ function calcolaCostoAssenzeMensili(dipId) {
   const assenze = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
   const dettaglio = {};
   VOCI_ASSENZA.forEach(v => {
-    const giorni = assenze.filter(a => a.assenza === v).length;
+   // Conta solo i giorni non domenicali
+  const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0);
+  VOCI_ASSENZA.forEach(v => {
+    const giorni = assenzeValide.filter(a => a.assenza === v).length;
     dettaglio[v] = { giorni, ore: giorni * oreDip, costo: giorni * oreDip * dip.tariffaOraria };
   });
-  const totaleGiorni = assenze.length;
+  const totaleGiorni = assenzeValide.length;
   const totaleOre = totaleGiorni * oreDip;
   const totaleCosto = totaleOre * dip.tariffaOraria;
   return { dettaglio, totaleGiorni, totaleOre, totaleCosto, oreDip, tariffa: dip.tariffaOraria };

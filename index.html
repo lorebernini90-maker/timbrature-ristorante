@@ -45,7 +45,7 @@ tr:hover td { background: #fffbeb; }
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const ADMIN_PIN = "1234"; // <-- CAMBIA QUI IL TUO PIN
+const ADMIN_PIN = "1234";
 const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
@@ -448,21 +448,3 @@ avvia();
 </script>
 </body>
 </html>
-```
-
----
-
-**Ultimo passo — autorizza il tuo sito su Firebase:**
-
-1. Vai su [console.firebase.google.com](https://console.firebase.google.com) → il tuo progetto
-2. **Authentication** → non serve attivarlo
-3. **Firestore Database → Regole** → incolla questo e clicca **Pubblica**:
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}

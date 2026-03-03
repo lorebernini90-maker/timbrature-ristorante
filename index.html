@@ -59,7 +59,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const ADMIN_PIN = "1234";
-const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo"];
+const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo","Giorno Libero"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const SEDI = ["Vivandaio", "Rione Certosa"];
 
@@ -202,7 +202,7 @@ function calcolaCostoAssenzeMensili(dipId) {
   const oreDip = sogliaMinutiDip(dip) / 60;
   const assenze = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
   const dettaglio = {};
-  const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0);
+  const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0 && a.assenza !== "Giorno Libero");
   VOCI_ASSENZA.forEach(v => {
     const giorni = assenzeValide.filter(a => a.assenza === v).length;
     dettaglio[v] = { giorni, ore: giorni * oreDip, costo: giorni * oreDip * dip.tariffaOraria };
@@ -954,8 +954,8 @@ function renderAdminMaggiorazioni() {
       if(t.tipo === "lavoro" && t.calcolo){
         const r = calcolaCostoTurno(t, dip);
         if(r) costoGiorno += r.totale;
-      } else if(t.tipo === "assenza" && new Date(ds).getDay() !== 0){
-        costoGiorno += (sogliaMinutiDip(dip)/60) * dip.tariffaOraria;
+      } else if(t.tipo === "assenza" && new Date(ds).getDay() !== 0 && t.assenza !== "Giorno Libero"){
+  costoGiorno += (sogliaMinutiDip(dip)/60) * dip.tariffaOraria;
       }
     });
     costiPerGiorno[ds] = { costo: costoGiorno, timbrature: timbGiorno };
@@ -1016,9 +1016,8 @@ function renderDettaglioGiorno(dataStr) {
       const r = calcolaCostoTurno(t,dip);
       if(r){ costo=r.totale; dettaglio=`${t.entrata}→${t.uscita} (${minToHHMM(t.calcolo.totaleMin)}h)`; }
     } else if(t.tipo==="assenza"){
-      const isDom = new Date(dataStr).getDay()===0;
-      if(!isDom){ costo=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria; }
-      dettaglio=`${t.assenza}${isDom?" (domenica, non pagata)":""}`;
+  const isDom = new Date(dataStr).getDay()===0;
+  if(!isDom && t.assenza !== "Giorno Libero"){ costo=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria; }
     }
     totaleGiorno += costo;
     return `<div class="row">

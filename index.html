@@ -292,7 +292,7 @@ function render() {
 
 // Un solo listener globale — chiamato UNA volta sola
 document.addEventListener("click", async function(e) {
-  const t = e.target.closest("[data-login-dip],...,[data-export-csv],[data-export-excel]");
+  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-filtro-mese],[data-filtro-anno],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
 
   if(t.dataset.loginDip) {
     state.utenteCorrente=state.dipendenti.find(d=>d.id===t.dataset.loginDip);
@@ -430,10 +430,8 @@ const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.v
     }
     state.modaleDip=null; render();
   }
-  else if(t.dataset.exportCsv!==undefined) {
+ else if(t.dataset.exportCsv!==undefined) { esportaCSV(); }
   else if(t.dataset.exportExcel!==undefined) { esportaExcel(); }
-    esportaCSV();
-  }
 });
 
 // Listener per i select (change, non click)
@@ -1060,7 +1058,7 @@ function renderAdminFerie() {
       const ferieGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
       const permGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
       const ferieOre=ferieGiorni*oreDip, permOre=permGiorni*oreDip;
-      const monteFerie=(dip.monteFerie||0)+(dip.feriePregresse||0); montePermessi=dip.montePermessi||0;
+     const monteFerie=(dip.monteFerie||0)+(dip.feriePregresse||0); const montePermessi=dip.montePermessi||0;
       const ferieRimaste=Math.max(0,monteFerie-ferieOre);
       const permRimasti=Math.max(0,montePermessi-permOre);
       const percF=monteFerie>0?Math.min(100,(ferieOre/monteFerie)*100):0;

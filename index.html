@@ -200,8 +200,6 @@ function calcolaCostoAssenzeMensili(dipId) {
   const oreDip = sogliaMinutiDip(dip) / 60;
   const assenze = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
   const dettaglio = {};
-  VOCI_ASSENZA.forEach(v => {
-   // Conta solo i giorni non domenicali
   const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0);
   VOCI_ASSENZA.forEach(v => {
     const giorni = assenzeValide.filter(a => a.assenza === v).length;

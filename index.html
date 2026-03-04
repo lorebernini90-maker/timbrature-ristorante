@@ -23,6 +23,7 @@ input:focus, select:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(24
 .badge-green { background: #d1fae5; color: #065f46; }
 .badge-purple { background: #ede9fe; color: #5b21b6; }
 .badge-red { background: #fee2e2; color: #dc2626; }
+.badge-orange { background: #fff7ed; color: #c2410c; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { background: #f9fafb; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: center; white-space: nowrap; }
 th:first-child { text-align: left; }
@@ -41,7 +42,7 @@ tr:hover td { background: #fffbeb; }
 .spinner { width: 36px; height: 36px; border: 3px solid #e5e7eb; border-top-color: #f59e0b; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow-y: auto; }
-.modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
 .sezione { background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
 .sezione-titolo { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
 .alert-red { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -51,6 +52,95 @@ tr:hover td { background: #fffbeb; }
 .cost-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #f9fafb; }
 .cost-row:last-child { border-bottom: none; }
 .cost-total { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; font-size: 15px; font-weight: 700; border-top: 2px solid #e5e7eb; margin-top: 6px; }
+
+  /* Tooltip ? */
+  .tooltip-wrap { position:relative; display:inline-flex; align-items:center; gap:4px; }
+  .tooltip-icon { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+    background:#e5e7eb; color:#6b7280; border-radius:50%; font-size:10px; font-weight:700;
+    cursor:help; flex-shrink:0; }
+  .tooltip-icon:hover + .tooltip-text, .tooltip-text:hover { display:block; }
+  .tooltip-text { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:100; width:220px;
+    background:#1e293b; color:white; font-size:11px; font-weight:400; line-height:1.5;
+    padding:8px 10px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:none; }
+  .tooltip-text::before { content:""; position:absolute; top:-4px; left:10px;
+    border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:4px solid #1e293b; }
+
+/* ═══════════════════════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* Header admin più compatto */
+  .admin-header { flex-direction: column; align-items: flex-start !important; gap: 10px; padding: 12px 14px !important; }
+  .admin-header-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .admin-header-actions select,
+  .admin-header-actions button { font-size: 12px !important; padding: 7px 10px !important; }
+
+  /* Macro-tab scrollabili orizzontalmente */
+  .macro-tabs { display: flex; overflow-x: auto; gap: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap !important; }
+  .macro-tabs::-webkit-scrollbar { display: none; }
+  .macro-tabs button { white-space: nowrap; flex-shrink: 0; padding: 8px 14px !important; font-size: 12px !important; }
+
+  /* Sub-tab scrollabili */
+  .sub-tabs { display: flex; overflow-x: auto; gap: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap !important; padding-bottom: 2px; }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tabs button { white-space: nowrap; flex-shrink: 0; }
+
+  /* Contenuto admin padding ridotto */
+  .admin-content { padding: 14px !important; }
+
+  /* Tabelle → scroll orizzontale con indicatore */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll table { min-width: 500px; }
+
+  /* Tabelle dense → card mobile */
+  .table-to-cards thead { display: none; }
+  .table-to-cards tr { display: block; background: white; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; padding: 10px 12px; }
+  .table-to-cards td { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-top: 1px solid #f3f4f6; font-size: 13px; }
+  .table-to-cards td:first-child { border-top: none; font-weight: 700; font-size: 14px; padding-bottom: 8px; }
+  .table-to-cards td[data-label]::before { content: attr(data-label); font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+
+  /* Form: stack verticale */
+  .grid-auto { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .grid-auto.stack-mobile { grid-template-columns: 1fr !important; }
+
+  /* Bottoni grandi per touch */
+  .btn { padding: 11px 18px !important; font-size: 14px !important; min-height: 44px; }
+  .btn-sm { padding: 8px 12px !important; font-size: 13px !important; min-height: 38px; }
+
+  /* Input e select più alti */
+  input, select { padding: 11px 12px !important; font-size: 15px !important; min-height: 44px; }
+
+  /* Row responsive */
+  .row { padding: 10px 12px !important; gap: 8px !important; }
+
+  /* Modal full-screen su mobile */
+  .modal { padding: 18px !important; border-radius: 12px 12px 0 0 !important; }
+  .modal-bg { align-items: flex-end !important; padding: 0 !important; }
+
+  /* KPI cards: 2 colonne */
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* Filtri mese/anno: affiancati */
+  .filtri-wrap { flex-wrap: nowrap !important; }
+
+  /* Banca ore riepilogo cards */
+  .bancaore-cards { grid-template-columns: 1fr !important; }
+
+  /* Scheda dipendente info */
+  .scheda-info { flex-direction: column !important; }
+
+  /* Nascondi colonne secondarie tabella scheda su mobile */
+  .scheda-table td:nth-child(4),
+  .scheda-table th:nth-child(4),
+  .scheda-table td:nth-child(5),
+  .scheda-table th:nth-child(5) { display: none; }
+}
+
+@media (max-width: 380px) {
+  .grid-auto { grid-template-columns: 1fr !important; }
+  .macro-tabs button { padding: 7px 10px !important; font-size: 11px !important; }
+}
 </style>
 </head>
 <body>
@@ -64,7 +154,6 @@ const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo","Giorn
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const SEDI = ["Vivandaio", "Rione Certosa"];
 
-// ── MAGGIORAZIONI ─────────────────────────────────────────────
 const MAGGIORAZIONI = {
   strDiurno: 0.30,
   strNotturno: 0.60,
@@ -73,7 +162,6 @@ const MAGGIORAZIONI = {
   festivo: 0.20,
 };
 
-// ── FESTIVI ───────────────────────────────────────────────────
 function getPassqua(anno) {
   const a=anno%19, b=Math.floor(anno/100), c=anno%100;
   const d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25);
@@ -91,24 +179,16 @@ function isFestivo(dataStr) {
   const mm = String(d.getMonth()+1).padStart(2,"0");
   const gg = String(d.getDate()).padStart(2,"0");
   const mmgg = `${mm}-${gg}`;
-
-  // Festivi fissi
   const fissi = ["01-01","04-25","05-01","06-02","06-24","08-15","11-01","12-08","12-25","12-26"];
   if(fissi.includes(mmgg)) return true;
-
-  // Pasqua
   const pasqua = getPassqua(anno);
   const pasquetta = new Date(pasqua); pasquetta.setDate(pasqua.getDate()+1);
   if(d.toDateString()===pasqua.toDateString()) return true;
   if(d.toDateString()===pasquetta.toDateString()) return true;
-
   return false;
 }
 
-function isDomenica(dataStr) {
-  return new Date(dataStr).getDay() === 0;
-}
-
+function isDomenica(dataStr) { return new Date(dataStr).getDay() === 0; }
 function getTipoGiorno(dataStr) {
   if(isFestivo(dataStr)) return "festivo";
   if(isDomenica(dataStr)) return "domenica";
@@ -129,10 +209,11 @@ const db = getFirestore(fbApp);
 let state = {
   vista: "loading", utenteCorrente: null,
   dipendenti: [], timbrature: [],
-  dipTab: "timbra", adminTab: "presenze",
+  dipTab: "timbra", adminTab: "oggi", adminSubTab: "dashboard",
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
   filtroSede: "",
   modaleDip: null, modaleTimbratura: null,
+  schedaDipId: null,
 };
 
 function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
@@ -164,7 +245,43 @@ function sogliaMinutiDip(dip) {
   return 400;
 }
 
-// ── CALCOLO COSTO CON MAGGIORAZIONI ──────────────────────────
+// Usa sogliaCustom del turno se impostata, altrimenti quella del dipendente
+function sogliaPerTurno(timb, dip) {
+  if(timb?.sogliaCustom && timb.sogliaCustom > 0) return timb.sogliaCustom;
+  return sogliaMinutiDip(dip);
+}
+
+// ── AGGREGAZIONE TURNI SPEZZATI ────────────────────────────────
+// Raggruppa più turni dello stesso giorno per un dipendente e ricalcola
+// straordinari sul totale giornaliero (non per singolo turno)
+function aggregaTurniGiorno(turniGiorno, dip) {
+  if(!turniGiorno.length) return null;
+  if(turniGiorno.length === 1) return { turni: turniGiorno, calcolo: turniGiorno[0].calcolo };
+
+  // Somma ore per-turno senza ricalcolare straordinari
+  let totaleMin = 0, diurneMin = 0, notturneMin = 0, ordNottMin = 0;
+  turniGiorno.forEach(t => {
+    if(!t.calcolo) return;
+    totaleMin += t.calcolo.totaleMin || 0;
+    diurneMin += t.calcolo.diurneMin || 0;
+    notturneMin += t.calcolo.notturneMin || 0;
+    ordNottMin += (t.calcolo.ordNottMin || 0);
+  });
+
+  // Usa soglia custom del primo turno del giorno (se presente), altrimenti quella del dipendente
+  const primoTurno = turniGiorno[0];
+  const soglia = sogliaPerTurno(primoTurno, dip);
+  const straordinariMin = Math.max(0, totaleMin - soglia);
+  const strNotturniMin = Math.min(straordinariMin, notturneMin);
+  const strDiurniMin = Math.max(0, straordinariMin - strNotturniMin);
+  const ordNottMinCalc = Math.max(0, notturneMin - strNotturniMin);
+
+  return {
+    turni: turniGiorno,
+    calcolo: { totaleMin, diurneMin, notturneMin, straordinariMin, strDiurniMin, strNotturniMin, ordNottMin: ordNottMinCalc }
+  };
+}
+
 function calcolaCostoTurno(timb, dip) {
   if(!timb.calcolo||!dip.tariffaOraria) return null;
   const tariffa=dip.tariffaOraria;
@@ -176,13 +293,11 @@ function calcolaCostoTurno(timb, dip) {
   const oreStrNott=c.strNotturniMin/60;
   const oreOrdNott=(c.ordNottMin||0)/60;
 
-  // Costo base
   const costoOrdDiurno=oreOrdDiurne*tariffa;
   const costoStrDiurno=oreStrDiurni*tariffa*(1+MAGGIORAZIONI.strDiurno);
   const costoStrNott=oreStrNott*tariffa*(1+MAGGIORAZIONI.strNotturno);
   const costoOrdNott=oreOrdNott*tariffa*(1+MAGGIORAZIONI.ordinarioNotturno);
 
-  // Maggiorazione domenica/festivo sulle ore ordinarie diurne
   let costoMaggiorazione=0;
   if(tipo==="domenica") costoMaggiorazione=oreOrdDiurne*tariffa*MAGGIORAZIONI.domenica;
   if(tipo==="festivo") costoMaggiorazione=(oreOrdDiurne+oreOrdNott)*tariffa*MAGGIORAZIONI.festivo;
@@ -192,9 +307,15 @@ function calcolaCostoTurno(timb, dip) {
   return {
     oreOrdDiurne, oreStrDiurni, oreStrNott, oreOrdNott,
     costoOrdDiurno, costoStrDiurno, costoStrNott, costoOrdNott,
-    costoMaggiorazione, totale, tipo,
-    tariffa
+    costoMaggiorazione, totale, tipo, tariffa
   };
+}
+
+// Versione che accetta un calcolo aggregato (per spezzati)
+function calcolaCostoAggregato(calcolo, data, dip) {
+  if(!calcolo||!dip.tariffaOraria) return null;
+  const fakeTimb = { calcolo, data };
+  return calcolaCostoTurno(fakeTimb, dip);
 }
 
 function calcolaCostoAssenzeMensili(dipId) {
@@ -213,17 +334,28 @@ function calcolaCostoAssenzeMensili(dipId) {
   const totaleCosto = totaleOre * dip.tariffaOraria;
   return { dettaglio, totaleGiorni, totaleOre, totaleCosto, oreDip, tariffa: dip.tariffaOraria };
 }
+
 function calcolaCostoMensile(dipId) {
   const dip = state.dipendenti.find(d => d.id === dipId);
   if(!dip?.tariffaOraria) return null;
-  const turni = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "lavoro");
+  const turniMese = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "lavoro");
+
+  // Raggruppa per giorno e calcola costo su aggregato
+  const perGiorno = {};
+  turniMese.forEach(t => {
+    if(!perGiorno[t.data]) perGiorno[t.data] = [];
+    perGiorno[t.data].push(t);
+  });
+
   let totOrdDiurne=0, totStrDiurni=0, totStrNott=0, totOrdNott=0;
   let costoOrdDiurno=0, costoStrDiurno=0, costoStrNott=0, costoOrdNott=0;
   let costoMaggDom=0, costoMaggFest=0, totale=0;
   let giorniFestivi=0, giorniDomenica=0;
 
-  turni.forEach(t=>{
-    const r=calcolaCostoTurno(t,dip);
+  Object.entries(perGiorno).forEach(([data, turni]) => {
+    const agg = aggregaTurniGiorno(turni, dip);
+    if(!agg) return;
+    const r = calcolaCostoAggregato(agg.calcolo, data, dip);
     if(!r) return;
     totOrdDiurne+=r.oreOrdDiurne;
     totStrDiurni+=r.oreStrDiurni;
@@ -284,39 +416,42 @@ function render() {
   if(state.vista==="login") app.innerHTML=renderLogin();
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
   else if(state.vista==="admin") app.innerHTML=renderAdmin();
-  // Rimuovi modali esistenti
   document.querySelectorAll(".modal-bg").forEach(el=>el.remove());
   if(state.modaleDip) document.body.insertAdjacentHTML("beforeend",renderModaleDip());
   if(state.modaleTimbratura) document.body.insertAdjacentHTML("beforeend",renderModaleTimbratura());
 }
 
-// Un solo listener globale — chiamato UNA volta sola
 document.addEventListener("click", async function(e) {
-  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-filtro-mese],[data-filtro-anno],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
+  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
+  if(!t) return;
 
   if(t.dataset.loginDip) {
-  const dip=state.dipendenti.find(d=>d.id===t.dataset.loginDip);
-  if(dip?.pin){
-    const pin=prompt(`PIN per ${dip.nome}:`);
-    if(pin===null) return;
-    if(pin!==dip.pin){ alert("PIN errato!"); return; }
+    const dip=state.dipendenti.find(d=>d.id===t.dataset.loginDip);
+    if(dip?.pin){
+      const pin=prompt(`PIN per ${dip.nome}:`);
+      if(pin===null) return;
+      if(pin!==dip.pin){ alert("PIN errato!"); return; }
+    }
+    state.utenteCorrente=dip;
+    state.vista="dipendente"; render();
   }
-  state.utenteCorrente=dip;
-  state.vista="dipendente"; render();
-}
   else if(t.dataset.loginAdmin!==undefined) {
     const pin=prompt("Inserisci il PIN admin:");
     if(pin===ADMIN_PIN){state.vista="admin";render();} else if(pin!==null) alert("PIN errato!");
   }
   else if(t.dataset.logout!==undefined) {
-    state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; render();
+    state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; state.adminTab="oggi"; state.adminSubTab="dashboard"; render();
   }
-  else if(t.dataset.dipTab) {
-    state.dipTab=t.dataset.dipTab; render();
+  else if(t.dataset.dipTab) { state.dipTab=t.dataset.dipTab; render(); }
+  else if(t.dataset.adminMacro) {
+    state.adminTab=t.dataset.adminMacro;
+    // Sub-tab di default per ogni macro
+    const defaults={oggi:"dashboard",periodo:"report",economia:"costi",gestione:"ferie"};
+    state.adminSubTab=defaults[t.dataset.adminMacro]||"dashboard";
+    render();
   }
-  else if(t.dataset.adminTab) {
-    state.adminTab=t.dataset.adminTab; render();
-  }
+  else if(t.dataset.adminSub) { state.adminSubTab=t.dataset.adminSub; render(); }
+  else if(t.dataset.adminTab) { state.adminTab=t.dataset.adminTab; render(); }
   else if(t.dataset.addTurno!==undefined) {
     const dip=state.utenteCorrente;
     const dataTurno=document.getElementById("inp-data-turno")?.value||oggi();
@@ -324,18 +459,19 @@ document.addEventListener("click", async function(e) {
     const uscita=document.getElementById("inp-uscita")?.value;
     const pausaNum=parseInt(document.getElementById("inp-pausa")?.value)||0;
     if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
+    // Calcolo per-turno (straordinari vengono ricalcolati sull'aggregato giornaliero)
     const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-   const sede=document.getElementById("inp-sede")?.value||SEDI[0];
+    const sede=document.getElementById("inp-sede")?.value||SEDI[0];
     await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede});
     alert("✅ Turno registrato!");
   }
- else if(t.hasAttribute("data-add-assenza-btn")){
+  else if(t.hasAttribute("data-add-assenza-btn")){
     const dip=state.utenteCorrente;
     const tipoAssenza=document.getElementById("inp-tipo-assenza")?.value;
     const dates=getDateAssenza("dip");
     if(!dates.length)return;
     if(!confirm(`Confermi "${tipoAssenza}" per ${dates.length} giorno/i?\n${dates.join(", ")}`))return;
-   for(const data of dates){
+    for(const data of dates){
       const sedeAss=document.getElementById("inp-sede")?.value||SEDI[0];
       await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false,sede:sedeAss});
     }
@@ -352,15 +488,19 @@ document.addEventListener("click", async function(e) {
       const uscita=document.getElementById("ai-uscita")?.value;
       const pausaNum=parseInt(document.getElementById("ai-pausa")?.value)||0;
       if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
-      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-     const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
-      await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede:sedeAdmin});
-     }else{
+      const aiSogliaCustom = parseInt(document.getElementById("ai-soglia-custom")?.value)||0;
+      const aiSogliaEff = aiSogliaCustom > 0 ? aiSogliaCustom : sogliaMinutiDip(dip);
+      const calcolo=calcolaTurno(entrata,uscita,pausaNum,aiSogliaEff);
+      const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
+      const aiDocData={dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede:sedeAdmin};
+      if(aiSogliaCustom>0) aiDocData.sogliaCustom=aiSogliaCustom;
+      await addDoc(collection(db,"timbrature"),aiDocData);
+    } else {
       const assenza=document.getElementById("ai-assenza")?.value;
       const dates=getDateAssenza("admin");
       if(!dates.length)return;
       for(const dataAss of dates){
-       const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
+        const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
         await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data:dataAss,tipo:"assenza",assenza,sbloccata:false,sede:sedeAdmin});
       }
       alert(`Inseriti ${dates.length} giorno/i di assenza!`);
@@ -369,7 +509,7 @@ document.addEventListener("click", async function(e) {
       if(el)el.innerHTML=renderListaTimbratureHTML(document.getElementById("filtro-dip-lista")?.value||"");
       return;
     }
-   alert("Timbratura inserita!");
+    alert("Timbratura inserita!");
     window.renderListaTimbrature();
   }
   else if(t.dataset.modificaTimb) {
@@ -380,9 +520,7 @@ document.addEventListener("click", async function(e) {
     if(!confirm("Eliminare questa timbratura?")) return;
     await deleteDoc(doc(db,"timbrature",t.dataset.eliminaTimb));
   }
-  else if(t.dataset.chiudiModaleTimb!==undefined) {
-    state.modaleTimbratura=null; render();
-  }
+  else if(t.dataset.chiudiModaleTimb!==undefined) { state.modaleTimbratura=null; render(); }
   else if(t.dataset.salvaModificaTimb!==undefined) {
     const timb=state.modaleTimbratura;
     const dip=state.dipendenti.find(d=>d.id===timb.dipendenteId);
@@ -391,17 +529,17 @@ document.addEventListener("click", async function(e) {
       const entrata=document.getElementById("mt-entrata")?.value;
       const uscita=document.getElementById("mt-uscita")?.value;
       const pausaNum=parseInt(document.getElementById("mt-pausa")?.value)||0;
-      const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
-      dati={entrata,uscita,pausa:pausaNum,calcolo};
+      const mtSogliaCustom=parseInt(document.getElementById("mt-soglia-custom")?.value)||0;
+      const mtSogliaEff=mtSogliaCustom>0?mtSogliaCustom:sogliaMinutiDip(dip);
+      const calcolo=calcolaTurno(entrata,uscita,pausaNum,mtSogliaEff);
+      dati={entrata,uscita,pausa:pausaNum,calcolo,sogliaCustom:mtSogliaCustom>0?mtSogliaCustom:null};
     } else {
       dati={assenza:document.getElementById("mt-assenza")?.value};
     }
     await updateDoc(doc(db,"timbrature",timb.id),dati);
     state.modaleTimbratura=null; render();
   }
-  else if(t.dataset.apriModaleNuovo!==undefined) {
-    state.modaleDip={mode:"nuovo",dip:{}}; render();
-  }
+  else if(t.dataset.apriModaleNuovo!==undefined) { state.modaleDip={mode:"nuovo",dip:{}}; render(); }
   else if(t.dataset.modificaDip) {
     const dip=state.dipendenti.find(d=>d.id===t.dataset.modificaDip);
     state.modaleDip={mode:"modifica",dip}; render();
@@ -412,9 +550,7 @@ document.addEventListener("click", async function(e) {
     await deleteDoc(doc(db,"dipendenti",t.dataset.eliminaDip));
     state.dipendenti=state.dipendenti.filter(d=>d.id!==t.dataset.eliminaDip); render();
   }
-  else if(t.dataset.chiudiModale!==undefined) {
-    state.modaleDip=null; render();
-  }
+  else if(t.dataset.chiudiModale!==undefined) { state.modaleDip=null; render(); }
   else if(t.dataset.salvaModale!==undefined) {
     const nome=document.getElementById("md-nome")?.value?.trim();
     const tipo=document.getElementById("md-tipo")?.value;
@@ -422,7 +558,7 @@ document.addEventListener("click", async function(e) {
     const pin=document.getElementById("md-pin")?.value?.trim()||null;
     const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
     const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
-const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.value)||0;
+    const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.value)||0;
     const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
     if(!nome){alert("Inserisci il nome!");return;}
     const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin};
@@ -437,18 +573,15 @@ const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.v
     }
     state.modaleDip=null; render();
   }
- else if(t.dataset.exportCsv!==undefined) { esportaCSV(); }
+  else if(t.dataset.exportCsv!==undefined) { esportaCSV(); }
   else if(t.dataset.exportExcel!==undefined) { esportaExcel(); }
 });
 
-// Listener per i select (change, non click)
 document.addEventListener("change", function(e) {
   const t=e.target;
   if(t.dataset.filtroMese!==undefined){ state.filtroMese=parseInt(t.value); render(); }
   if(t.dataset.filtroAnno!==undefined){ state.filtroAnno=parseInt(t.value); render(); }
 });
-
-function attachEvents(){} // svuotata — tutto gestito dal listener globale
 
 function renderLogin() {
   return `
@@ -459,10 +592,10 @@ function renderLogin() {
       <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Chi sei?</h2>
       <p style="color:#6b7280;font-size:14px;margin-bottom:20px">Seleziona il tuo nome per timbrare</p>
       <div>${state.dipendenti.map(d=>`
-       <div class="login-item" data-login-dip="${d.id}">
-  <div><div style="font-weight:600">${d.nome}</div><div style="font-size:12px;color:#6b7280">${d.tipo}</div></div>
-  <span style="color:#f59e0b;font-size:20px">${d.pin?"🔒":"→"}</span>
-</div>`).join("")}
+        <div class="login-item" data-login-dip="${d.id}">
+          <div><div style="font-weight:600">${d.nome}</div><div style="font-size:12px;color:#6b7280">${d.tipo}</div></div>
+          <span style="color:#f59e0b;font-size:20px">${d.pin?"🔒":"→"}</span>
+        </div>`).join("")}
       <div data-login-admin style="background:#1e293b;color:white;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px">
         <span style="font-size:20px">🔐</span>
         <div style="text-align:left"><div style="font-weight:700;font-size:14px">Area Admin</div><div style="font-size:11px;opacity:0.7">Solo per il titolare</div></div>
@@ -499,7 +632,22 @@ function renderDipendente() {
 
 function renderDipTimbra(dip) {
   const ora=oraNow();
-  const giaTimbrato=state.timbrature.find(t=>t.dipendenteId===dip.id&&t.data===oggi());
+  // Turni già registrati oggi (può essercene più di uno — spezzato)
+  const turniOggi=state.timbrature.filter(t=>t.dipendenteId===dip.id&&t.data===oggi()&&t.tipo==="lavoro");
+  const hasAssenzaOggi=state.timbrature.find(t=>t.dipendenteId===dip.id&&t.data===oggi()&&t.tipo==="assenza");
+
+  let avvisoHTML = "";
+  if(turniOggi.length > 0) {
+    avvisoHTML = `<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;font-size:13px;color:#92400e;margin-bottom:12px">
+      ✂️ <strong>Turno spezzato</strong> — Hai già ${turniOggi.length} turno/i oggi:
+      ${turniOggi.map(t=>`<span style="display:inline-block;background:#fff;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;margin:2px 4px;font-weight:600">${t.entrata}→${t.uscita} (${minToHHMM(t.calcolo?.totaleMin||0)}h)</span>`).join("")}
+      <br><span style="font-size:12px;opacity:0.8">Puoi aggiungere un secondo turno (es. turno serale).</span>
+    </div>`;
+  }
+  if(hasAssenzaOggi) {
+    avvisoHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;font-size:13px;color:#dc2626;margin-bottom:12px">⚠️ Hai già un'assenza registrata oggi</div>`;
+  }
+
   return `
     <div class="sezione">
       <div class="sezione-titolo">🕐 Registra turno di lavoro</div>
@@ -507,50 +655,48 @@ function renderDipTimbra(dip) {
         <div style="font-size:42px;font-weight:700;color:#1e293b;letter-spacing:2px" id="big-clock">${ora}</div>
         <div style="color:#6b7280;font-size:13px">${oggi()}</div>
       </div>
-      ${giaTimbrato?`<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;text-align:center;font-size:13px;color:#92400e;margin-bottom:12px">⚠️ Hai già registrato una presenza oggi</div>`:""}
+      ${avvisoHTML}
       <div class="grid-auto" style="margin-bottom:12px">
         <div><label>Data turno</label><input type="date" id="inp-data-turno" value="${oggi()}"></div>
         <div><label>Entrata</label><input type="time" id="inp-entrata" value="${ora}"></div>
         <div><label>Uscita</label><input type="time" id="inp-uscita"></div>
         <div><label>Pausa (min)</label><input type="number" id="inp-pausa" value="30" min="0" max="120"></div>
         <div><label>Sede</label>
-          <select id="inp-sede">
-            ${SEDI.map(s=>`<option>${s}</option>`).join("")}
-          </select>
+          <select id="inp-sede">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
         </div>
+
       </div>
       <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-turno>✅ Registra turno</button>
     </div>
     <div class="sezione">
-  <div class="sezione-titolo">📅 Registra assenza</div>
-  <div class="grid-auto" style="margin-bottom:12px">
-    <div><label>Tipo assenza</label>
-      <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
-    </div>
-    <div><label>Modalità selezione</label>
-      <select id="inp-modo-assenza" onchange="toggleModoAssenza('dip')">
-        <option value="singola">Giorno singolo</option>
-        <option value="intervallo">Intervallo (da → a)</option>
-        <option value="multipla">Giorni multipli</option>
-      </select>
-    </div>
-  </div>
-  <div id="dip-assenza-singola" class="grid-auto" style="margin-bottom:12px">
-    <div><label>Data</label><input type="date" id="inp-data-assenza" value="${oggi()}"></div>
-  </div>
-  <div id="dip-assenza-intervallo" style="display:none;margin-bottom:12px">
-    <div class="grid-auto">
-      <div><label>Da</label><input type="date" id="inp-data-ass-da" value="${oggi()}"></div>
-      <div><label>A</label><input type="date" id="inp-data-ass-a" value="${oggi()}"></div>
-    </div>
-  </div>
-  <div id="dip-assenza-multipla" style="display:none;margin-bottom:12px">
-    <label>Seleziona più date (tieni premuto Ctrl/Cmd per selezionare più giorni)</label>
-    <div id="dip-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("dip")}</div>
-  </div>
-  <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>📋 Registra assenza</button>
-</div>
-`;
+      <div class="sezione-titolo">📅 Registra assenza</div>
+      <div class="grid-auto" style="margin-bottom:12px">
+        <div><label>Tipo assenza</label>
+          <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+        </div>
+        <div><label>Modalità selezione</label>
+          <select id="inp-modo-assenza" onchange="toggleModoAssenza('dip')">
+            <option value="singola">Giorno singolo</option>
+            <option value="intervallo">Intervallo (da → a)</option>
+            <option value="multipla">Giorni multipli</option>
+          </select>
+        </div>
+      </div>
+      <div id="dip-assenza-singola" class="grid-auto" style="margin-bottom:12px">
+        <div><label>Data</label><input type="date" id="inp-data-assenza" value="${oggi()}"></div>
+      </div>
+      <div id="dip-assenza-intervallo" style="display:none;margin-bottom:12px">
+        <div class="grid-auto">
+          <div><label>Da</label><input type="date" id="inp-data-ass-da" value="${oggi()}"></div>
+          <div><label>A</label><input type="date" id="inp-data-ass-a" value="${oggi()}"></div>
+        </div>
+      </div>
+      <div id="dip-assenza-multipla" style="display:none;margin-bottom:12px">
+        <label>Seleziona più date</label>
+        <div id="dip-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("dip")}</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>📋 Registra assenza</button>
+    </div>`;
 }
 
 function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {
@@ -558,64 +704,295 @@ function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {
     <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">📊 ${MESI[new Date().getMonth()]} ${new Date().getFullYear()}</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
       ${[["Ore lavorate",minToHHMM(totM)+"h","#1e293b","#f0fdf4"],["Turni",turniMese.length,"#1e293b","#eff6ff"],
-         ["Straordinari",minToHHMM(strM)+"h",strM>0?"#dc2626":"#9ca3af","#fff1f2"],
-         ["Ore notturne",minToHHMM(nottM)+"h",nottM>0?"#4f46e5":"#9ca3af","#eef2ff"],
          ["Giorni assenza",assM,assM>0?"#d97706":"#9ca3af","#fffbeb"]
         ].map(([l,v,c,bg])=>`<div style="background:${bg};border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:${c}">${v}</div><div style="font-size:12px;color:#6b7280;margin-top:2px">${l}</div></div>`).join("")}
     </div>`;
 }
 
+// ── STORICO DIPENDENTE: raggruppa turni spezzati per data ──────
 function renderDipStorico(dip) {
-  const storico=[...state.timbrature].filter(t=>t.dipendenteId===dip.id).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,30);
-  if(!storico.length) return `<div class="empty">Nessuna registrazione.</div>`;
-  return storico.map(t=>`
-    <div class="row">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-weight:600">${t.data}</span>
-        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min)</span></span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
-        ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
+  // Filtri: data singola o mese
+  const filtroData = document.getElementById("dip-filtro-data")?.value || "";
+  const filtroMese = document.getElementById("dip-filtro-mese")?.value || "";
+
+  const storico=[...state.timbrature].filter(t => {
+    if(t.dipendenteId !== dip.id) return false;
+    if(filtroData) return t.data === filtroData;
+    if(filtroMese) return t.data.startsWith(filtroMese);
+    return true;
+  }).sort((a,b)=>b.data.localeCompare(a.data));
+
+  // Raggruppa per data
+  const perData = {};
+  storico.forEach(t => {
+    if(!perData[t.data]) perData[t.data] = [];
+    perData[t.data].push(t);
+  });
+
+  const datasOrd = Object.keys(perData).sort((a,b)=>b.localeCompare(a));
+  const righe = datasOrd.map(data => {
+    const items = perData[data];
+    const turni = items.filter(t=>t.tipo==="lavoro");
+    const assenze = items.filter(t=>t.tipo==="assenza");
+
+    if(turni.length === 0 && assenze.length > 0) {
+      return assenze.map(t=>`
+        <div class="row">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-weight:600">${t.data}</span>
+            <span class="badge badge-blue">${t.assenza}</span>
+          </div>
+        </div>`).join("");
+    }
+
+    if(turni.length === 1) {
+      const t = turni[0];
+      return `<div class="row">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span style="font-weight:600">${t.data}</span>
+          <span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>
+        </div>
+        ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+      </div>`;
+    }
+
+    // Turni spezzati
+    const agg = aggregaTurniGiorno(turni, dip);
+    return `<div style="border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-bottom:6px;background:#fff7ed">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-weight:700">${data}</span>
+          <span class="badge badge-orange">✂️ Spezzato</span>
+        </div>
+        <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo.totaleMin)}h tot.</span>
       </div>
-      ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
-    </div>`).join("");
+      ${turni.map((t,i)=>`<div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#6b7280;margin-left:8px;margin-bottom:3px">
+        <span style="color:#92400e;font-weight:600">Turno ${i+1}:</span>
+        <span>${t.entrata} → ${t.uscita} (${t.pausa}min pausa)</span>
+        <span style="color:#9ca3af">${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
+      </div>`).join("")}
+    </div>`;
+  }).join("");
+
+  const oggi = new Date().toISOString().split("T")[0];
+  const meseCorrente = oggi.slice(0,7);
+
+  return `
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">🔍 Cerca turno</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:130px">
+          <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Giorno specifico</label>
+          <input type="date" id="dip-filtro-data" value="${filtroData}" max="${oggi}"
+            style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"
+            onchange="document.getElementById('dip-filtro-mese').value=''; render()">
+        </div>
+        <div style="flex:1;min-width:130px">
+          <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Mese</label>
+          <input type="month" id="dip-filtro-mese" value="${filtroMese || meseCorrente}"
+            style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"
+            onchange="document.getElementById('dip-filtro-data').value=''; render()">
+        </div>
+        <button onclick="document.getElementById('dip-filtro-data').value=''; document.getElementById('dip-filtro-mese').value=''; render()"
+          style="padding:7px 14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap">
+          🗑 Tutto
+        </button>
+      </div>
+    </div>
+    ${!datasOrd.length
+      ? `<div class="empty">Nessuna registrazione trovata${filtroData?" per "+filtroData:filtroMese?" per "+filtroMese:""}.</div>`
+      : righe}`;
 }
 
 function renderAdmin() {
-  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["giornaliero","📅 Giornaliero"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["scheda","👤 Scheda"],["dipendenti","👥 Dipendenti"]];
+  // Routing sub-tab
   let content="";
-  if(state.adminTab==="presenze") content=renderAdminPresenze();
-  else if(state.adminTab==="report") content=renderAdminReport();
-  else if(state.adminTab==="inserisci") content=renderAdminInserisci();
-  else if(state.adminTab==="settimane") content=renderAdminSettimane();
-  else if(state.adminTab==="costi") content=renderAdminCosti();
-  else if(state.adminTab==="giornaliero") content=renderAdminGiornaliero(); 
-  else if(state.adminTab==="maggiorazioni") content=renderAdminMaggiorazioni();
-  else if(state.adminTab==="ferie") content=renderAdminFerie();
-  else if(state.adminTab==="scheda") content=renderAdminScheda();
+  const sub=state.adminSubTab;
+  if(sub==="dashboard") content=renderAdminDashboard();
+  else if(sub==="presenze") content=renderAdminPresenze();
+  else if(sub==="inserisci") content=renderAdminInserisci();
+  else if(sub==="report") content=renderAdminReport();
+  else if(sub==="settimane") content=renderAdminSettimane();
+  else if(sub==="scheda") content=renderAdminScheda();
+  else if(sub==="costi") content=renderAdminCosti();
+  else if(sub==="maggiorazioni") content=renderAdminMaggiorazioni();
+  else if(sub==="bancaore") content=renderAdminBancaOre();
+  else if(sub==="ferie") content=renderAdminFerie();
+  else if(sub==="giornaliero") content=renderAdminGiornaliero();
   else content=renderAdminDipendenti();
+
+  // Macro-tab config
+  const macros=[
+    {key:"oggi", label:"📅 Oggi", subs:[["dashboard","🏠 Dashboard"],["presenze","👁️ Presenze"],["inserisci","✏️ Inserisci"]]},
+    {key:"periodo", label:"📊 Periodo", subs:[["report","📊 Report"],["settimane","📆 Settimane"],["scheda","👤 Scheda"],["giornaliero","📅 Giornaliero"]]},
+    {key:"economia", label:"💶 Economia", subs:[["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["bancaore","🏦 Banca Ore"]]},
+    {key:"gestione", label:"⚙️ Gestione", subs:[["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]]},
+  ];
+  const macroCorrente = macros.find(m=>m.subs.some(s=>s[0]===sub))?.key || state.adminTab;
+  const subCorrente = macros.find(m=>m.key===macroCorrente)?.subs || [];
   return `
-    <div style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+    <div class="admin-header" style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
       <div><h1 style="font-size:18px;font-weight:700">🔐 Area Admin</h1>
       <p style="font-size:12px;opacity:0.7">Presenze in tempo reale</p></div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div class="admin-header-actions" style="display:flex;gap:8px;align-items:center">
         <select id="admin-filtro-sede" onchange="aggiornaSede()" style="border-radius:8px;padding:6px 10px;font-size:12px;border:1px solid #475569;background:#334155;color:white">
           <option value="">Tutte le sedi</option>
           ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
         </select>
-       <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
-<button class="btn btn-sm btn-primary" data-export-excel>⬇️ Excel</button>
+        <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
+        <button class="btn btn-sm btn-primary" data-export-excel>⬇️ Excel</button>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
     </div>
     <div style="max-width:960px;margin:0 auto;padding:16px">
-      <div style="display:flex;gap:2px;border-bottom:2px solid #e5e7eb;flex-wrap:wrap">
-        ${tabs.map(([k,l])=>`<button data-admin-tab="${k}" style="padding:7px 11px;font-size:12px;font-weight:600;border:none;background:${state.adminTab===k?"white":"transparent"};color:${state.adminTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.adminTab===k?"2px solid white":"none"};margin-bottom:${state.adminTab===k?"-2px":"0"}">${l}</button>`).join("")}
+
+      <!-- MACRO TAB (livello 1) -->
+      <div class="macro-tabs" style="display:flex;gap:4px;margin-bottom:0;flex-wrap:wrap">
+        ${macros.map(m=>{
+          const isActive = m.key===macroCorrente;
+          return `<button data-admin-macro="${m.key}" style="padding:9px 18px;font-size:13px;font-weight:700;border:none;border-radius:10px 10px 0 0;cursor:pointer;transition:all 0.15s;
+            background:${isActive?"#1e293b":"#f1f5f9"};color:${isActive?"white":"#475569"};
+            border-bottom:${isActive?"2px solid #1e293b":"2px solid transparent"}">${m.label}</button>`;
+        }).join("")}
       </div>
-      <div style="background:white;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">${content}</div>
+
+      <!-- CONTENITORE principale -->
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:0 12px 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+
+        <!-- SUB-TAB (livello 2) -->
+        <div class="sub-tabs" style="display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid #f1f5f9;flex-wrap:wrap">
+          ${subCorrente.map(([k,l])=>{
+            const isActive=sub===k;
+            return `<button data-admin-sub="${k}" style="padding:6px 14px;font-size:12px;font-weight:600;border:none;border-radius:8px 8px 0 0;cursor:pointer;
+              background:${isActive?"white":"transparent"};color:${isActive?"#d97706":"#9ca3af"};
+              border-bottom:${isActive?"2px solid #d97706":"2px solid transparent"};margin-bottom:${isActive?"-1px":"0"}">${l}</button>`;
+          }).join("")}
+        </div>
+
+        <!-- CONTENUTO -->
+        <div class="admin-content" style="padding:20px">${content}</div>
+      </div>
     </div>`;
 }
 
+// ── DASHBOARD OGGI ────────────────────────────────────────────
+function renderAdminDashboard() {
+  const dataOggi = oggi();
+  const timbratureOggi = state.timbrature.filter(t => t.data === dataOggi);
+  const dipAttivi = state.dipendenti.filter(d => d.tipo !== "Intermittente");
+
+  // Presenti: almeno un turno lavoro oggi con entrata
+  const presenti = dipAttivi.filter(d => timbratureOggi.some(t => t.dipendenteId===d.id && t.tipo==="lavoro"));
+  // Assenti giustificati
+  const assentiGiust = dipAttivi.filter(d => !presenti.find(p=>p.id===d.id) && timbratureOggi.some(t=>t.dipendenteId===d.id&&t.tipo==="assenza"));
+  // Non ancora timbrati
+  const nonTimbrati = dipAttivi.filter(d => !timbratureOggi.some(t=>t.dipendenteId===d.id));
+  // Anomalie: turni con entrata ma senza uscita (ancora in servizio o dimenticati)
+  const inServizio = presenti.filter(d => {
+    const turni = timbratureOggi.filter(t=>t.dipendenteId===d.id&&t.tipo==="lavoro");
+    return turni.some(t=>t.entrata&&!t.uscita);
+  });
+  // Ore totali già registrate oggi
+  let oreTotOggi = 0;
+  timbratureOggi.filter(t=>t.tipo==="lavoro"&&t.calcolo).forEach(t=>oreTotOggi+=t.calcolo.totaleMin||0);
+
+  return `
+    <div style="margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:4px">🏠 Dashboard — ${dataOggi}</div>
+      <div style="font-size:12px;color:#9ca3af">Panoramica della giornata in corso</div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:24px">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#059669">${presenti.length}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">✅ Presenti</div>
+      </div>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#dc2626">${nonTimbrati.length}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">⏳ Non timbrati</div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#2563eb">${assentiGiust.length}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">🏖️ Assenti giust.</div>
+      </div>
+      <div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:#d97706">${minToHHMM(oreTotOggi)}h</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">⏱ Ore registrate</div>
+      </div>
+    </div>
+
+    <!-- IN SERVIZIO ADESSO -->
+    ${inServizio.length > 0 ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🟢 In servizio adesso (${inServizio.length})</div>
+      ${inServizio.map(d => {
+        const t = timbratureOggi.filter(x=>x.dipendenteId===d.id&&x.tipo==="lavoro").find(x=>!x.uscita);
+        return `<div class="row">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="color:#10b981;font-size:16px">🟢</span>
+            <span style="font-weight:600">${d.nome}</span>
+            <span style="color:#6b7280;font-size:12px">Entrata: ${t?.entrata||"—"}</span>
+          </div>
+          <span style="font-size:11px;color:#9ca3af">${d.tipo}</span>
+        </div>`;
+      }).join("")}
+    </div>` : ""}
+
+    <!-- PRESENTI OGGI (con uscita) -->
+    ${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).length > 0 ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✅ Turno completato (${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).length})</div>
+      ${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).map(d => {
+        const turni = timbratureOggi.filter(t=>t.dipendenteId===d.id&&t.tipo==="lavoro");
+        const agg = aggregaTurniGiorno(turni, d);
+        return `<div class="row">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="color:#6b7280;font-size:16px">✅</span>
+            <span style="font-weight:600">${d.nome}</span>
+            ${turni.length>1?`<span class="badge badge-orange">✂️ Spezzato</span>`:""}
+            <span style="color:#6b7280;font-size:12px">${turni.map(t=>t.entrata+"→"+t.uscita).join(" + ")}</span>
+          </div>
+          <span style="font-weight:700">${minToHHMM(agg?.calcolo?.totaleMin||turni[0]?.calcolo?.totaleMin||0)}h</span>
+        </div>`;
+      }).join("")}
+    </div>` : ""}
+
+    <!-- ASSENTI GIUSTIFICATI -->
+    ${assentiGiust.length > 0 ? `
+    <div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🏖️ Assenti giustificati (${assentiGiust.length})</div>
+      ${assentiGiust.map(d => {
+        const a = timbratureOggi.find(t=>t.dipendenteId===d.id&&t.tipo==="assenza");
+        return `<div class="row">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-weight:600">${d.nome}</span>
+            <span class="badge badge-blue">${a?.assenza||"Assenza"}</span>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>` : ""}
+
+    <!-- NON TIMBRATI -->
+    ${nonTimbrati.length > 0 ? `
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">⏳ Non ancora timbrati (${nonTimbrati.length})</div>
+      ${nonTimbrati.map(d=>`<div class="row">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="color:#dc2626">🔴</span>
+          <span style="font-weight:600">${d.nome}</span>
+          <span style="color:#9ca3af;font-size:12px">${d.tipo}</span>
+        </div>
+      </div>`).join("")}
+    </div>` : ""}
+
+    ${presenti.length===0&&nonTimbrati.length===0&&assentiGiust.length===0?`<div class="empty">Nessun dato per oggi.</div>`:""}`;
+}
+
+// ── PRESENZE: conta per data (non per timbratura) ──────────────
 function renderAdminPresenze() {
   const dataOggi=oggi();
+  // Un dipendente è "presente" se ha ALMENO una timbratura oggi
   const timbratiOggi=new Set(state.timbrature.filter(t=>t.data===dataOggi).map(t=>t.dipendenteId));
   const nonTimbrati=state.dipendenti.filter(d=>!timbratiOggi.has(d.id) && d.tipo!=="Intermittente");
   const timbrati=state.dipendenti.filter(d=>timbratiOggi.has(d.id));
@@ -630,7 +1007,23 @@ function renderAdminPresenze() {
       <div>
         <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✅ Presenti oggi (${timbrati.length})</div>
         ${timbrati.map(d=>{
-          const t=state.timbrature.find(t=>t.data===dataOggi&&t.dipendenteId===d.id);
+          const timbs=state.timbrature.filter(t=>t.data===dataOggi&&t.dipendenteId===d.id);
+          const turniOggi=timbs.filter(t=>t.tipo==="lavoro");
+          const assOggi=timbs.find(t=>t.tipo==="assenza");
+          const dip=d;
+          if(turniOggi.length > 1) {
+            const agg = aggregaTurniGiorno(turniOggi, dip);
+            return `<div class="row">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span style="color:#10b981;font-size:16px">✅</span>
+                <span style="font-weight:600">${d.nome}</span>
+                <span class="badge badge-orange">✂️ Spezzato (${turniOggi.length} turni)</span>
+                ${turniOggi.map(t=>`<span style="font-size:11px;color:#6b7280">${t.entrata}→${t.uscita||"…"}</span>`).join(" | ")}
+              </div>
+              <span style="font-weight:700">${minToHHMM(agg.calcolo.totaleMin)}h</span>
+            </div>`;
+          }
+          const t=timbs[0];
           return `<div class="row">
             <div style="display:flex;gap:8px;align-items:center">
               <span style="color:#10b981;font-size:16px">✅</span>
@@ -638,12 +1031,13 @@ function renderAdminPresenze() {
               ${t?.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita||"in corso"}</span>`:`<span class="badge badge-blue">${t?.assenza}</span>`}
             </div>
             ${t?.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
-          </div>`;}).join("")}
+          </div>`;
+        }).join("")}
       </div>`:""}`;
 }
 
 function filtriHTML() {
-  return `<div style="display:flex;gap:8px;flex-wrap:wrap">
+  return `<div class="filtri-wrap" style="display:flex;gap:8px;flex-wrap:wrap">
     <select data-filtro-mese style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
       ${MESI.map((m,i)=>`<option value="${i}"${i===state.filtroMese?" selected":""}>${m}</option>`).join("")}
     </select>
@@ -662,17 +1056,31 @@ function getTimbMese() {
   });
 }
 
+// ── RIEPILOGO: aggrega turni spezzati per giorno ───────────────
 function getRiepilogo() {
   return state.dipendenti.map(dip=>{
     const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro");
     const ass=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
-    const tot=turni.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
-    const diur=turni.reduce((s,t)=>s+(t.calcolo?.diurneMin||0),0);
-    const nott=turni.reduce((s,t)=>s+(t.calcolo?.notturneMin||0),0);
-    const strD=turni.reduce((s,t)=>s+(t.calcolo?.strDiurniMin||0),0);
-    const strN=turni.reduce((s,t)=>s+(t.calcolo?.strNotturniMin||0),0);
+
+    // Raggruppa turni per giorno
+    const perGiorno = {};
+    turni.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
+
+    let tot=0, diur=0, nott=0, strD=0, strN=0;
+    let nTurni = Object.keys(perGiorno).length; // giorni lavorati, non sotto-turni
+
+    Object.entries(perGiorno).forEach(([data, ts]) => {
+      const agg = aggregaTurniGiorno(ts, dip);
+      if(!agg) return;
+      tot += agg.calcolo.totaleMin;
+      diur += agg.calcolo.diurneMin;
+      nott += agg.calcolo.notturneMin;
+      strD += agg.calcolo.strDiurniMin;
+      strN += agg.calcolo.strNotturniMin;
+    });
+
     const assCnt={}; VOCI_ASSENZA.forEach(v=>{assCnt[v]=ass.filter(a=>a.assenza===v&&new Date(a.data).getDay()!==0).length;});
-    return {dip,tot,diur,nott,strD,strN,assCnt,nTurni:turni.length};
+    return {dip,tot,diur,nott,strD,strN,assCnt,nTurni};
   });
 }
 
@@ -682,19 +1090,21 @@ function renderAdminReport() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Report mensile</h2>${filtriHTML()}
     </div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr>${["Dipendente","Turni","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia","Riposo"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+    <div class="table-scroll"><table class="table-to-cards">
+      <thead><tr>${["Dipendente","Giorni Lav.","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Ferie","Perm.","Malattia","Riposo"].map(h=>`<th>${h}</th>`).join("")}</tr></thead>
       <tbody>${r.map(({dip,tot,diur,nott,strD,strN,assCnt,nTurni})=>`
         <tr>
-          <td style="font-weight:600">${dip.nome}</td><td>${nTurni}</td>
-          <td style="font-weight:700">${minToHHMM(tot)}h</td><td>${minToHHMM(diur)}h</td>
-          <td style="color:${nott>0?"#4f46e5":"inherit"};font-weight:${nott>0?700:400}">${minToHHMM(nott)}h</td>
-          <td style="color:${strD>0?"#ea580c":"inherit"};font-weight:${strD>0?700:400}">${minToHHMM(strD)}h</td>
-          <td style="color:${strN>0?"#dc2626":"inherit"};font-weight:${strN>0?700:400}">${minToHHMM(strN)}h</td>
-          <td>${assCnt["Ferie"]||0}g (${((assCnt["Ferie"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
-<td>${assCnt["Permesso"]||0}g (${((assCnt["Permesso"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
-<td>${assCnt["Malattia"]||0}g (${((assCnt["Malattia"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
-<td>${assCnt["Riposo Compensativo"]||0}g (${((assCnt["Riposo Compensativo"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+          <td style="font-weight:600">${dip.nome}</td>
+          <td data-label="Giorni">${nTurni}</td>
+          <td data-label="Ore Tot." style="font-weight:700">${minToHHMM(tot)}h</td>
+          <td data-label="Diurne">${minToHHMM(diur)}h</td>
+          <td data-label="Notturne" style="color:${nott>0?"#4f46e5":"inherit"};font-weight:${nott>0?700:400}">${minToHHMM(nott)}h</td>
+          <td data-label="Str.Diurni" style="color:${strD>0?"#ea580c":"inherit"};font-weight:${strD>0?700:400}">${minToHHMM(strD)}h</td>
+          <td data-label="Str.Nott." style="color:${strN>0?"#dc2626":"inherit"};font-weight:${strN>0?700:400}">${minToHHMM(strN)}h</td>
+          <td data-label="Ferie">${assCnt["Ferie"]||0}g (${((assCnt["Ferie"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+          <td data-label="Permesso">${assCnt["Permesso"]||0}g (${((assCnt["Permesso"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+          <td data-label="Malattia">${assCnt["Malattia"]||0}g (${((assCnt["Malattia"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
+          <td data-label="Riposo">${assCnt["Riposo Compensativo"]||0}g (${((assCnt["Riposo Compensativo"]||0)*(dip.sogliaOre||6.67)).toFixed(1)}h)</td>
         </tr>`).join("")}</tbody>
     </table>
     ${getTimbMese().length===0?`<div class="empty">Nessuna timbratura per ${MESI[state.filtroMese]} ${state.filtroAnno}</div>`:""}</div>`;
@@ -722,34 +1132,40 @@ function renderAdminInserisci() {
       <div><label>Entrata</label><input type="time" id="ai-entrata"></div>
       <div><label>Uscita</label><input type="time" id="ai-uscita"></div>
       <div><label>Pausa (min)</label><input type="number" id="ai-pausa" value="30" min="0"></div>
+      <div><label><span class="tooltip-wrap">Soglia str. (min) <span style="font-weight:400;color:#9ca3af">opz.</span>
+          <span class="tooltip-icon">?</span>
+          <span class="tooltip-text">La soglia è il numero di minuti giornalieri oltre i quali scattano gli straordinari. Es: 400 = 6h 40min. Lascia vuoto per usare quella del dipendente.</span>
+        </span></label>
+        <input type="number" id="ai-soglia-custom" placeholder="Default dipendente" min="0" max="720">
+      </div>
     </div>
     <div id="ai-assenza-fields" style="display:none;margin-bottom:12px">
-  <div class="grid-auto" style="margin-bottom:12px">
-    <div><label>Tipo assenza</label>
-      <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+      <div class="grid-auto" style="margin-bottom:12px">
+        <div><label>Tipo assenza</label>
+          <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+        </div>
+        <div><label>Modalità selezione</label>
+          <select id="ai-modo-assenza" onchange="toggleModoAssenza('admin')">
+            <option value="singola">Giorno singolo</option>
+            <option value="intervallo">Intervallo (da → a)</option>
+            <option value="multipla">Giorni multipli</option>
+          </select>
+        </div>
+      </div>
+      <div id="admin-assenza-singola" class="grid-auto" style="margin-bottom:12px">
+        <div><label>Data</label><input type="date" id="ai-data-assenza" value="${oggi()}"></div>
+      </div>
+      <div id="admin-assenza-intervallo" style="display:none;margin-bottom:12px">
+        <div class="grid-auto">
+          <div><label>Da</label><input type="date" id="ai-data-ass-da" value="${oggi()}"></div>
+          <div><label>A</label><input type="date" id="ai-data-ass-a" value="${oggi()}"></div>
+        </div>
+      </div>
+      <div id="admin-assenza-multipla" style="display:none;margin-bottom:12px">
+        <label>Seleziona più date</label>
+        <div id="admin-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("admin")}</div>
+      </div>
     </div>
-    <div><label>Modalità selezione</label>
-      <select id="ai-modo-assenza" onchange="toggleModoAssenza('admin')">
-        <option value="singola">Giorno singolo</option>
-        <option value="intervallo">Intervallo (da → a)</option>
-        <option value="multipla">Giorni multipli</option>
-      </select>
-    </div>
-  </div>
-  <div id="admin-assenza-singola" class="grid-auto" style="margin-bottom:12px">
-    <div><label>Data</label><input type="date" id="ai-data-assenza" value="${oggi()}"></div>
-  </div>
-  <div id="admin-assenza-intervallo" style="display:none;margin-bottom:12px">
-    <div class="grid-auto">
-      <div><label>Da</label><input type="date" id="ai-data-ass-da" value="${oggi()}"></div>
-      <div><label>A</label><input type="date" id="ai-data-ass-a" value="${oggi()}"></div>
-    </div>
-  </div>
-  <div id="admin-assenza-multipla" style="display:none;margin-bottom:12px">
-    <label>Seleziona più date</label>
-    <div id="admin-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("admin")}</div>
-  </div>
-</div>
     <button class="btn btn-primary" data-salva-timbratura-admin>💾 Salva timbratura</button>
     <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
     <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">📋 Gestisci timbrature</h3>
@@ -764,20 +1180,25 @@ function renderAdminInserisci() {
 }
 
 function renderListaTimbratureHTML(filtroDipId) {
-  let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data));
+  let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data)||a.entrata?.localeCompare(b.entrata||"")||0);
   if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
   lista=lista.slice(0,50);
   if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
   return lista.map(t=>{
     const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
     const tipo=getTipoGiorno(t.data);
+    // Controlla se è uno spezzato
+    const fratelli=state.timbrature.filter(x=>x.dipendenteId===t.dipendenteId&&x.data===t.data&&x.tipo==="lavoro");
+    const isSpezzato = fratelli.length > 1;
     return `<div class="row">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
         <span style="color:#9ca3af">${t.data}</span>
         ${tipo==="festivo"?`<span class="badge badge-red">🎉 Festivo</span>`:tipo==="domenica"?`<span class="badge badge-purple">☀️ Dom.</span>`:""}
-       ${t.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">${t.sede}</span>`:""}
+        ${isSpezzato?`<span class="badge badge-orange">✂️ Spezzato</span>`:""}
+        ${t.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">${t.sede}</span>`:""}
         ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}→${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
+        ${t.sogliaCustom?`<span class="badge" style="background:#ede9fe;color:#5b21b6">⏱ soglia ${(t.sogliaCustom/60).toFixed(2)}h</span>`:""}
         ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
       </div>
       <div style="display:flex;gap:6px;align-items:center">
@@ -801,6 +1222,12 @@ function renderModaleTimbratura() {
             <div><label>Entrata</label><input id="mt-entrata" type="time" value="${t.entrata||""}"></div>
             <div><label>Uscita</label><input id="mt-uscita" type="time" value="${t.uscita||""}"></div>
             <div><label>Pausa (min)</label><input id="mt-pausa" type="number" value="${t.pausa||30}" min="0"></div>
+            <div><label><span class="tooltip-wrap">Soglia str. (min) <span style="font-weight:400;color:#9ca3af">opz.</span>
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-text">Sovrascrive la soglia del dipendente solo per questo turno. Utile per settimane con orari diversi dal solito.</span>
+              </span></label>
+              <input id="mt-soglia-custom" type="number" value="${t.sogliaCustom||""}" placeholder="Default: ${sogliaMinutiDip(dip)}min" min="0" max="720">
+            </div>
           </div>`:`
           <div style="margin-bottom:12px">
             <label>Tipo assenza</label>
@@ -816,12 +1243,25 @@ function renderModaleTimbratura() {
 
 function renderAdminSettimane() {
   const sett={};
+  // Aggrega per dipendente+settimana tenendo conto degli spezzati
+  const perDipData = {};
   getTimbMese().filter(t=>t.tipo==="lavoro").forEach(t=>{
-    const d=new Date(t.data),sw=new Date(d); sw.setDate(d.getDate()-d.getDay()+1);
-    const k=sw.toISOString().split("T")[0];
-    if(!sett[k]) sett[k]={}; if(!sett[k][t.dipendenteId]) sett[k][t.dipendenteId]=0;
-    sett[k][t.dipendenteId]+=t.calcolo?.totaleMin||0;
+    const key = `${t.dipendenteId}__${t.data}`;
+    if(!perDipData[key]) perDipData[key] = { dipendenteId: t.dipendenteId, data: t.data, turni: [] };
+    perDipData[key].turni.push(t);
   });
+
+  Object.values(perDipData).forEach(({dipendenteId, data, turni}) => {
+    const dip = state.dipendenti.find(d=>d.id===dipendenteId);
+    const agg = dip ? aggregaTurniGiorno(turni, dip) : null;
+    const min = agg ? agg.calcolo.totaleMin : turni.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
+    const d=new Date(data), sw=new Date(d); sw.setDate(d.getDate()-d.getDay()+1);
+    const k=sw.toISOString().split("T")[0];
+    if(!sett[k]) sett[k]={};
+    if(!sett[k][dipendenteId]) sett[k][dipendenteId]=0;
+    sett[k][dipendenteId]+=min;
+  });
+
   const keys=Object.keys(sett).sort();
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
@@ -833,7 +1273,7 @@ function renderAdminSettimane() {
       return `<div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
         <div style="background:#fffbeb;padding:8px 14px;font-weight:700;font-size:13px;color:#92400e">Settimana ${sw} → ${fine.toISOString().split("T")[0]}</div>
         <div style="padding:8px 14px">${state.dipendenti.map(dip=>{
-          const min=sett[sw][dip.id]||0,str=Math.max(0,min-40*60);
+          const min=sett[sw]?.[dip.id]||0, str=Math.max(0,min-40*60);
           return `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f9fafb">
             <span>${dip.nome}</span>
             <div style="display:flex;gap:10px"><span style="font-weight:600">${minToHHMM(min)}h</span>
@@ -847,11 +1287,11 @@ function renderAdminCosti() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>${filtriHTML()}
     </div>
-    <div style="overflow-x:auto"><table>
+    <div class="table-scroll"><table>
       <thead><tr>
         <th>Dipendente</th><th>Ore Ord.</th><th>Ore Nott.</th><th>Str.Diurni</th><th>Str.Nott.</th>
-<th>Dom.</th><th>Festivi</th><th>Costo Ord.</th><th>Costo Nott.</th><th>Costo Str.D</th><th>Costo Str.N</th>
-<th>Magg.Dom</th><th>Magg.Fest</th><th style="color:#3b82f6">Assenze</th><th style="color:#059669">TOTALE</th>
+        <th>Dom.</th><th>Festivi</th><th>Costo Ord.</th><th>Costo Nott.</th><th>Costo Str.D</th><th>Costo Str.N</th>
+        <th>Magg.Dom</th><th>Magg.Fest</th><th style="color:#3b82f6">Assenze</th><th style="color:#059669">TOTALE</th>
       </tr></thead>
       <tbody>
       ${state.dipendenti.map(dip=>{
@@ -891,6 +1331,7 @@ function renderAdminCosti() {
       <p>• Ordinario notturno: +${MAGGIORAZIONI.ordinarioNotturno*100}% sulla tariffa base</p>
       <p>• Domenica: +${MAGGIORAZIONI.domenica*100}% sulle ore ordinarie</p>
       <p>• Festivo: +${MAGGIORAZIONI.festivo*100}% sulle ore ordinarie</p>
+      <p>• ✂️ Turni spezzati: gli straordinari sono calcolati sul totale giornaliero aggregato</p>
     </div>`;
 }
 
@@ -903,8 +1344,8 @@ function renderAdminMaggiorazioni() {
       const r=calcolaCostoMensile(dip.id);
       if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
       const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro");
-      const festivi=turni.filter(t=>getTipoGiorno(t.data)==="festivo");
-      const domeniche=turni.filter(t=>getTipoGiorno(t.data)==="domenica");
+      const festivi=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="festivo").map(t=>t.data))];
+      const domeniche=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="domenica").map(t=>t.data))];
       return `
         <div class="cost-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -917,9 +1358,9 @@ function renderAdminMaggiorazioni() {
           <div class="cost-row"><span style="color:#dc2626">Straordinari notturni +${MAGGIORAZIONI.strNotturno*100}% (${r.totStrNott.toFixed(2)}h)</span><span style="color:#dc2626">${euro(r.costoStrNott)}</span></div>
           ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:#7c3aed">Maggiorazione domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica} giorn${r.giorniDomenica>1?"i":"o"})</span><span style="color:#7c3aed">${euro(r.costoMaggDom)}</span></div>`:""}
           ${r.giorniFestivi>0?`<div class="cost-row"><span style="color:#b45309">Maggiorazione festivo +${MAGGIORAZIONI.festivo*100}% (${r.giorniFestivi} giorn${r.giorniFestivi>1?"i":"o"})</span><span style="color:#b45309">${euro(r.costoMaggFest)}</span></div>`:""}
-          ${festivi.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:6px">Festivi: ${festivi.map(t=>t.data).join(", ")}</div>`:""}
-          ${domeniche.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:2px">Domeniche: ${domeniche.map(t=>t.data).join(", ")}</div>`:""}
-         ${(()=>{
+          ${festivi.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:6px">Festivi: ${festivi.join(", ")}</div>`:""}
+          ${domeniche.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:2px">Domeniche: ${domeniche.join(", ")}</div>`:""}
+          ${(()=>{
             const ra=calcolaCostoAssenzeMensili(dip.id);
             if(!ra||ra.totaleGiorni===0) return "";
             return `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb">
@@ -933,48 +1374,56 @@ function renderAdminMaggiorazioni() {
             <span>Totale ${MESI[state.filtroMese]}</span>
             <span style="color:#059669">${euro(r.totale+(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0))}</span>
           </div>
-       </div>`;}).join("")}
+        </div>`;}).join("")}
     <div style="background:#1e293b;color:white;border-radius:10px;padding:16px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">
       <span style="font-weight:700;font-size:15px">Totale costo mensile</span>
       <span style="font-weight:700;font-size:20px;color:#10b981">${euro(state.dipendenti.reduce((s,dip)=>{
-  const r=calcolaCostoMensile(dip.id);
-  const ra=calcolaCostoAssenzeMensili(dip.id);
-  return s+(r?.totale||0)+(ra?.totaleCosto||0);
-},0))}</span>
+        const r=calcolaCostoMensile(dip.id);
+        const ra=calcolaCostoAssenzeMensili(dip.id);
+        return s+(r?.totale||0)+(ra?.totaleCosto||0);
+      },0))}</span>
     </div>`;
 }
 
-  function renderAdminGiornaliero() {
-  const annoCorrente = state.filtroAnno;
-  const meseCorrente = state.filtroMese;
-  const giorniMese = new Date(annoCorrente, meseCorrente+1, 0).getDate();
-
-  // Costruisci mappa data → costo totale
-  const costiPerGiorno = {};
-  for(let g=1; g<=giorniMese; g++){
-    const ds = `${annoCorrente}-${String(meseCorrente+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
-    const timbGiorno = state.timbrature.filter(t => {
-      const okData = t.data === ds;
-      const okSede = !state.filtroSede || t.sede === state.filtroSede;
-      return okData && okSede;
+function renderAdminGiornaliero() {
+  const annoCorrente=state.filtroAnno, meseCorrente=state.filtroMese;
+  const giorniMese=new Date(annoCorrente, meseCorrente+1, 0).getDate();
+  const costiPerGiorno={};
+  for(let g=1;g<=giorniMese;g++){
+    const ds=`${annoCorrente}-${String(meseCorrente+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const timbGiorno=state.timbrature.filter(t=>{
+      const okData=t.data===ds;
+      const okSede=!state.filtroSede||t.sede===state.filtroSede;
+      return okData&&okSede;
     });
-    let costoGiorno = 0;
-    timbGiorno.forEach(t => {
-      const dip = state.dipendenti.find(d => d.id === t.dipendenteId);
+    let costoGiorno=0;
+    // Aggrega per dipendente
+    const perDip={};
+    timbGiorno.forEach(t=>{
+      if(!perDip[t.dipendenteId]) perDip[t.dipendenteId]={lavoro:[],assenza:[]};
+      if(t.tipo==="lavoro") perDip[t.dipendenteId].lavoro.push(t);
+      else perDip[t.dipendenteId].assenza.push(t);
+    });
+    Object.entries(perDip).forEach(([dipId,{lavoro,assenza}])=>{
+      const dip=state.dipendenti.find(d=>d.id===dipId);
       if(!dip?.tariffaOraria) return;
-      if(t.tipo === "lavoro" && t.calcolo){
-        const r = calcolaCostoTurno(t, dip);
-        if(r) costoGiorno += r.totale;
-      } else if(t.tipo === "assenza" && new Date(ds).getDay() !== 0 && t.assenza !== "Giorno Libero"){
-  costoGiorno += (sogliaMinutiDip(dip)/60) * dip.tariffaOraria;
+      if(lavoro.length>0){
+        const agg=aggregaTurniGiorno(lavoro,dip);
+        if(agg){
+          const r=calcolaCostoAggregato(agg.calcolo,ds,dip);
+          if(r) costoGiorno+=r.totale;
+        }
       }
+      assenza.forEach(t=>{
+        if(new Date(ds).getDay()!==0&&t.assenza!=="Giorno Libero"){
+          costoGiorno+=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria;
+        }
+      });
     });
-    costiPerGiorno[ds] = { costo: costoGiorno, timbrature: timbGiorno };
+    costiPerGiorno[ds]={costo:costoGiorno,timbrature:timbGiorno};
   }
-
-  const totMese = Object.values(costiPerGiorno).reduce((s,v)=>s+v.costo,0);
-  const giorniNomiBrevi = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
-
+  const totMese=Object.values(costiPerGiorno).reduce((s,v)=>s+v.costo,0);
+  const giorniNomiBrevi=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📅 Costo giornaliero</h2>${filtriHTML()}
@@ -985,20 +1434,17 @@ function renderAdminMaggiorazioni() {
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:24px">
       ${Object.entries(costiPerGiorno).map(([ds,{costo,timbrature}])=>{
-        const d = new Date(ds);
-        const isDom = d.getDay()===0;
-        const isFest = isFestivo(ds);
-        const bg = isFest?"#fef2f2":isDom?"#f5f3ff":costo>0?"#f0fdf4":"#f9fafb";
-        const border = isFest?"#fecaca":isDom?"#ddd6fe":costo>0?"#bbf7d0":"#f3f4f6";
-        const coloreCosto = costo>0?"#059669":"#9ca3af";
+        const d=new Date(ds);
+        const isDom=d.getDay()===0, isFest=isFestivo(ds);
+        const bg=isFest?"#fef2f2":isDom?"#f5f3ff":costo>0?"#f0fdf4":"#f9fafb";
+        const border=isFest?"#fecaca":isDom?"#ddd6fe":costo>0?"#bbf7d0":"#f3f4f6";
         return `<div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:11px;font-weight:700;color:#6b7280">${giorniNomiBrevi[d.getDay()]}</div>
           <div style="font-size:20px;font-weight:700;color:#374151">${d.getDate()}</div>
           ${isFest?`<div style="font-size:10px;color:#dc2626">🎉 Festivo</div>`:""}
-          <div style="font-size:13px;font-weight:700;color:${coloreCosto};margin-top:4px">${costo>0?euro(costo):"—"}</div>
+          <div style="font-size:13px;font-weight:700;color:${costo>0?"#059669":"#9ca3af"};margin-top:4px">${costo>0?euro(costo):"—"}</div>
           <div style="font-size:10px;color:#9ca3af">${timbrature.length>0?timbrature.length+" timb.":""}</div>
-        </div>`;
-      }).join("")}
+        </div>`;}).join("")}
     </div>
     <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">🔍 Dettaglio per data</h3>
     <div class="grid-auto" style="margin-bottom:12px;max-width:300px">
@@ -1010,50 +1456,70 @@ function renderAdminMaggiorazioni() {
 }
 
 function renderDettaglioGiorno(dataStr) {
-  const timbGiorno = state.timbrature.filter(t => {
-    const okData = t.data === dataStr;
-    const okSede = !state.filtroSede || t.sede === state.filtroSede;
-    return okData && okSede;
+  const timbGiorno=state.timbrature.filter(t=>{
+    const okData=t.data===dataStr;
+    const okSede=!state.filtroSede||t.sede===state.filtroSede;
+    return okData&&okSede;
   });
   if(!timbGiorno.length) return `<div class="empty">Nessuna timbratura per ${dataStr}${state.filtroSede?" ("+state.filtroSede+")":""}.</div>`;
 
-  let totaleGiorno = 0;
-  const righe = timbGiorno.map(t => {
-    const dip = state.dipendenti.find(d => d.id === t.dipendenteId);
+  // Aggrega per dipendente
+  const perDip={};
+  timbGiorno.forEach(t=>{
+    if(!perDip[t.dipendenteId]) perDip[t.dipendenteId]={lavoro:[],assenza:[]};
+    if(t.tipo==="lavoro") perDip[t.dipendenteId].lavoro.push(t);
+    else perDip[t.dipendenteId].assenza.push(t);
+  });
+
+  let totaleGiorno=0;
+  const righe=Object.entries(perDip).map(([dipId,{lavoro,assenza}])=>{
+    const dip=state.dipendenti.find(d=>d.id===dipId);
     if(!dip) return "";
-    let costo = 0;
-    let dettaglio = "";
-    if(t.tipo==="lavoro"&&t.calcolo){
-      const r = calcolaCostoTurno(t,dip);
-      if(r){ costo=r.totale; dettaglio=`${t.entrata}→${t.uscita} (${minToHHMM(t.calcolo.totaleMin)}h)`; }
-    } else if(t.tipo==="assenza"){
-  const isDom = new Date(dataStr).getDay()===0;
-  if(!isDom && t.assenza !== "Giorno Libero"){ costo=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria; }
+    let costo=0, dettaglio="";
+    if(lavoro.length>0){
+      const agg=aggregaTurniGiorno(lavoro,dip);
+      if(agg){
+        const r=calcolaCostoAggregato(agg.calcolo,dataStr,dip);
+        if(r){ costo=r.totale; }
+        if(lavoro.length>1){
+          dettaglio=`✂️ Spezzato: ${lavoro.map(t=>`${t.entrata}→${t.uscita}`).join(" + ")} (${minToHHMM(agg.calcolo.totaleMin)}h tot.)`;
+        } else {
+          const t=lavoro[0];
+          dettaglio=`${t.entrata}→${t.uscita} (${minToHHMM(agg.calcolo.totaleMin)}h)`;
+        }
+      }
     }
-    totaleGiorno += costo;
+    assenza.forEach(t=>{
+      if(new Date(dataStr).getDay()!==0&&t.assenza!=="Giorno Libero"){
+        costo+=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria;
+        dettaglio=t.assenza;
+      }
+    });
+    totaleGiorno+=costo;
+    const sede=lavoro[0]?.sede||assenza[0]?.sede||"";
     return `<div class="row">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="font-weight:600">${dip.nome}</span>
-        ${t.sede?`<span class="badge badge-blue">${t.sede}</span>`:""}
+        ${sede?`<span class="badge badge-blue">${sede}</span>`:""}
         <span style="color:#6b7280;font-size:12px">${dettaglio}</span>
       </div>
       <span style="font-weight:700;color:#059669">${costo>0?euro(costo):"—"}</span>
     </div>`;
   }).join("");
 
-  return `
-    ${righe}
+  return `${righe}
     <div style="background:#1e293b;color:white;border-radius:8px;padding:12px 16px;margin-top:8px;display:flex;justify-content:space-between">
       <span style="font-weight:700">Totale ${dataStr}</span>
       <span style="font-weight:700;color:#10b981">${euro(totaleGiorno)}</span>
     </div>`;
 }
 
-window.aggiornaCostoGiorno = function() {
-  const data = document.getElementById("filtro-data-giorno")?.value;
-  const el = document.getElementById("dettaglio-giorno");
-  if(el&&data) el.innerHTML = renderDettaglioGiorno(data);
+window.aggiornaCostoGiorno=function(){
+  const data=document.getElementById("filtro-data-giorno")?.value;
+  const el=document.getElementById("dettaglio-giorno");
+  if(el&&data) el.innerHTML=renderDettaglioGiorno(data);
 };
+
 function renderAdminFerie() {
   const anno=state.filtroAnno;
   return `
@@ -1068,9 +1534,8 @@ function renderAdminFerie() {
       const ferieGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
       const permGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
       const ferieOre=ferieGiorni*oreDip, permOre=permGiorni*oreDip;
-     const monteFerie=(dip.monteFerie||0)+(dip.feriePregresse||0); const montePermessi=dip.montePermessi||0;
-      const ferieRimaste=Math.max(0,monteFerie-ferieOre);
-      const permRimasti=Math.max(0,montePermessi-permOre);
+      const monteFerie=(dip.monteFerie||0)+(dip.feriePregresse||0), montePermessi=dip.montePermessi||0;
+      const ferieRimaste=Math.max(0,monteFerie-ferieOre), permRimasti=Math.max(0,montePermessi-permOre);
       const percF=monteFerie>0?Math.min(100,(ferieOre/monteFerie)*100):0;
       const percP=montePermessi>0?Math.min(100,(permOre/montePermessi)*100):0;
       return `
@@ -1100,6 +1565,149 @@ function renderAdminFerie() {
         </div>`;}).join("")}`;
 }
 
+// ── BANCA ORE ─────────────────────────────────────────────────
+function calcolaBancaOre(dipId) {
+  const dip = state.dipendenti.find(d => d.id === dipId);
+  if(!dip) return null;
+  const soglia = sogliaMinutiDip(dip);
+  const tm = getTimbMese();
+  const turni = tm.filter(t => t.dipendenteId === dipId && t.tipo === "lavoro");
+  const assenze = tm.filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
+
+  const perGiorno = {};
+  turni.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
+
+  const dettaglioGiorni = [];
+  let totaleSurplus = 0, totaleDeficit = 0;
+
+  Object.entries(perGiorno).forEach(([data, ts]) => {
+    const agg = aggregaTurniGiorno(ts, dip);
+    if(!agg) return;
+    const oreMin = agg.calcolo.totaleMin;
+    // Usa soglia custom del primo turno del giorno se presente
+    const sogliaGiorno = sogliaPerTurno(ts[0], dip);
+    const diff = oreMin - sogliaGiorno;
+    if(diff >= 0) totaleSurplus += diff;
+    else totaleDeficit += Math.abs(diff);
+    dettaglioGiorni.push({ data, tipo: "lavoro", oreMin, soglia: sogliaGiorno, diff, isSpezzato: ts.length > 1, sogliaCustom: ts[0].sogliaCustom||null });
+  });
+
+  const assenzeValide = assenze.filter(a => {
+    const dow = new Date(a.data).getDay();
+    return dow !== 0 && a.assenza !== "Giorno Libero";
+  });
+  assenzeValide.forEach(a => {
+    dettaglioGiorni.push({ data: a.data, tipo: "assenza", assenza: a.assenza, oreMin: soglia, soglia, diff: 0 });
+  });
+
+  dettaglioGiorni.sort((a, b) => a.data.localeCompare(b.data));
+  const saldo = totaleSurplus - totaleDeficit;
+  return { dip, soglia, dettaglioGiorni, totaleSurplus, totaleDeficit, saldo };
+}
+
+function renderAdminBancaOre() {
+  const giorniSettimana = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  const dipAttivi = state.dipendenti.filter(d => d.tipo !== "Intermittente");
+  const bancheOre = dipAttivi.map(d => calcolaBancaOre(d.id)).filter(Boolean);
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">🏦 Banca Ore</h2>
+        <span class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <span class="tooltip-text">Confronta le ore lavorate con la soglia giornaliera. Surplus = ore extra (straordinari). Deficit = ore mancanti rispetto al contratto.</span>
+        </span>
+      </div>${filtriHTML()}
+    </div>
+    <div class="info-box" style="margin-bottom:16px">
+      <p>&#8226; <strong>Surplus</strong>: ore lavorate oltre la soglia giornaliera</p>
+      <p>&#8226; <strong>Deficit</strong>: ore mancanti rispetto alla soglia</p>
+      <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
+      <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
+    </div>
+    <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
+      ${bancheOre.map(b => {
+        const sc = b.saldo > 0 ? "#059669" : b.saldo < 0 ? "#dc2626" : "#6b7280";
+        const sbg = b.saldo > 0 ? "#f0fdf4" : b.saldo < 0 ? "#fef2f2" : "#f9fafb";
+        const sbr = b.saldo > 0 ? "#bbf7d0" : b.saldo < 0 ? "#fecaca" : "#e5e7eb";
+        const icon = b.saldo > 0 ? "📈" : b.saldo < 0 ? "📉" : "⚖️";
+        return `<div style="background:${sbg};border:1px solid ${sbr};border-radius:12px;padding:14px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px">${b.dip.nome}
+            <span style="font-weight:400;color:#6b7280;font-size:11px"> — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
+              <div style="font-size:13px;font-weight:700;color:#059669">+${minToHHMM(b.totaleSurplus)}</div>
+              <div style="font-size:10px;color:#6b7280">Surplus</div>
+            </div>
+            <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
+              <div style="font-size:13px;font-weight:700;color:#dc2626">-${minToHHMM(b.totaleDeficit)}</div>
+              <div style="font-size:10px;color:#6b7280">Deficit</div>
+            </div>
+            <div style="background:white;border-radius:8px;padding:8px;border:1px solid ${sbr}">
+              <div style="font-size:13px;font-weight:700;color:${sc}">${icon} ${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}</div>
+              <div style="font-size:10px;color:#6b7280">Saldo</div>
+            </div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+    ${bancheOre.map(b => {
+      if(!b.dettaglioGiorni.length) return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">${b.dip.nome}</div><div class="empty" style="padding:16px">Nessun dato per ${MESI[state.filtroMese]} ${state.filtroAnno}</div></div>`;
+      const sc = b.saldo > 0 ? "#059669" : b.saldo < 0 ? "#dc2626" : "#6b7280";
+      return `
+      <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:14px">
+        <div style="background:#f9fafb;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px">
+          <div style="font-weight:700;font-size:13px">${b.dip.nome}
+            <span style="font-weight:400;color:#6b7280;font-size:11px"> — ${b.dip.tipo} — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:12px;font-weight:700;flex-wrap:wrap">
+            <span style="color:#059669">+${minToHHMM(b.totaleSurplus)}h surplus</span>
+            <span style="color:#dc2626">-${minToHHMM(b.totaleDeficit)}h deficit</span>
+            <span style="color:${sc};font-size:14px">Saldo: ${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}h</span>
+          </div>
+        </div>
+        <div class="table-scroll" style="overflow-x:auto;padding:10px 14px">
+          <table class="scheda-table">
+            <thead><tr>
+              <th style="text-align:left">Data</th><th>Giorno</th><th>Tipo</th>
+              <th>Ore fatte</th><th>Soglia</th><th>Differenza</th>
+            </tr></thead>
+            <tbody>
+            ${b.dettaglioGiorni.map(g => {
+              const dow = new Date(g.data).getDay();
+              const isFest = isFestivo(g.data);
+              const rowbg = isFest ? "#fef2f2" : dow===0 ? "#f5f3ff" : g.diff < 0 ? "#fef9f0" : "";
+              const dc = g.diff > 0 ? "#059669" : g.diff < 0 ? "#dc2626" : "#9ca3af";
+              const dl = g.diff === 0 ? "—" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
+              return `<tr style="background:${rowbg}">
+                <td style="font-weight:600;font-size:12px">${g.data}</td>
+                <td style="font-size:11px">${giorniSettimana[dow]}${isFest?" 🎉":""}</td>
+                <td>${g.tipo==="assenza"
+                  ? `<span class="badge badge-blue">${g.assenza}</span>`
+                  : g.isSpezzato
+                    ? `<span class="badge badge-orange">✂️ Spezzato</span>`
+                    : `<span class="badge badge-green">Lavoro</span>`}
+                </td>
+                <td style="font-weight:600">${minToHHMM(g.oreMin)}h</td>
+                <td style="color:#6b7280">${minToHHMM(g.soglia)}h</td>
+                <td style="font-weight:700;color:${dc}">${dl}</td>
+              </tr>`;
+            }).join("")}
+            </tbody>
+            <tfoot>
+              <tr style="background:#f9fafb;border-top:2px solid #e5e7eb">
+                <td colspan="5" style="font-weight:700;text-align:right;padding-right:12px">Saldo ${MESI[state.filtroMese]}:</td>
+                <td style="font-weight:700;font-size:14px;color:${sc}">${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}h</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>`;
+    }).join("")}`;
+}
+
 function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -1126,6 +1734,7 @@ function renderAdminDipendenti() {
       <p><strong>📋 Note:</strong></p>
       <p>• Tariffa, soglia straordinario, ferie e permessi non sono visibili ai dipendenti</p>
       <p>• Festivi inclusi: 25/4, 1/5, 2/6, 24/6, 15/8, 1/11, 8/12, 25/12, 26/12, Pasqua, Pasquetta</p>
+      <p>• ✂️ Turni spezzati supportati: più timbrature nello stesso giorno vengono aggregate</p>
     </div>`;
 }
 
@@ -1144,9 +1753,9 @@ function renderModaleDip() {
           <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
-<div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
-<div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
-<div><label>PIN (4 cifre)</label><input id="md-pin" type="password" maxlength="4" placeholder="Es. 1234" value="${d.pin||""}"></div>
+          <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
+          <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
+          <div><label>PIN (4 cifre)</label><input id="md-pin" type="password" maxlength="4" placeholder="Es. 1234" value="${d.pin||""}"></div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
           <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale>Annulla</button>
@@ -1156,218 +1765,42 @@ function renderModaleDip() {
     </div>`;
 }
 
-function esportaCSV() {
-  const tm=getTimbMese();
-  const righe=[["Dipendente","Tipo","Data","Giorno","Entrata","Uscita","Pausa","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Assenza","Costo Totale"]];
-  tm.forEach(t=>{
-    const dip=state.dipendenti.find(x=>x.id===t.dipendenteId);
-    const tipo=getTipoGiorno(t.data);
-    const costo=t.calcolo&&dip?calcolaCostoTurno(t,dip):null;
-    righe.push([dip?.nome||"",dip?.tipo||"",t.data,tipo,t.entrata||"",t.uscita||"",t.pausa||"",
-      t.calcolo?minToHHMM(t.calcolo.totaleMin):"",t.calcolo?minToHHMM(t.calcolo.diurneMin):"",
-      t.calcolo?minToHHMM(t.calcolo.notturneMin):"",t.calcolo?minToHHMM(t.calcolo.strDiurniMin):"",
-      t.calcolo?minToHHMM(t.calcolo.strNotturniMin):"",t.assenza||"",
-      costo?costo.totale.toFixed(2):"" ]);
-  });
-  const csv=righe.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}));
-  a.download=`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.csv`; a.click();
-}
-
-window.toggleTipoAdmin=function(){
-  const tipo=document.getElementById("ai-tipo")?.value;
-  document.getElementById("ai-lavoro-fields").style.display=tipo==="lavoro"?"grid":"none";
-  document.getElementById("ai-assenza-fields").style.display=tipo==="assenza"?"block":"none";
-};
-window.aggiornaSede = function() {
-  state.filtroSede = document.getElementById("admin-filtro-sede")?.value || "";
-  render();
-};
-
-window.renderListaTimbrature=function(){
-  const filtro=document.getElementById("filtro-dip-lista")?.value||"";
-  const el=document.getElementById("lista-timbrature");
-  if(el) el.innerHTML=renderListaTimbratureHTML(filtro);
-  attachModificaEliminaTimb();
-};
-  function esportaExcel() {
-  const tm = getTimbMese();
-  const wb = XLSX.utils.book_new();
-
-  // ── FOGLIO 1: RIEPILOGO ──
-  const righeRiepilogo = [
-    ["Dipendente","Contratto","Turni","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie (h)","Permessi (h)","Malattia (h)","Riposo Comp. (h)","Giorno Libero (h)"]
-  ];
-  state.dipendenti.forEach(dip => {
-    const turni = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
-    const ass = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "assenza");
-    const tot = turni.reduce((s,t) => s+(t.calcolo?.totaleMin||0), 0);
-    const diur = turni.reduce((s,t) => s+(t.calcolo?.diurneMin||0), 0);
-    const nott = turni.reduce((s,t) => s+(t.calcolo?.notturneMin||0), 0);
-    const strD = turni.reduce((s,t) => s+(t.calcolo?.strDiurniMin||0), 0);
-    const strN = turni.reduce((s,t) => s+(t.calcolo?.strNotturniMin||0), 0);
-    righeRiepilogo.push([
-      dip.nome,
-      dip.tipo,
-      turni.length,
-      minToHHMM(tot),
-      minToHHMM(diur),
-      minToHHMM(nott),
-      minToHHMM(strD),
-      minToHHMM(strN),
-      ass.filter(a => a.assenza==="Ferie").length * (dip.sogliaOre||6.67),
-      ass.filter(a => a.assenza==="Permesso").length * (dip.sogliaOre||6.67),
-      ass.filter(a => a.assenza==="Malattia").length * (dip.sogliaOre||6.67),
-      ass.filter(a => a.assenza==="Riposo Compensativo").length * (dip.sogliaOre||6.67),
-      ass.filter(a => a.assenza==="Giorno Libero").length * (dip.sogliaOre||6.67),
-    ]);
-  });
-  const ws1 = XLSX.utils.aoa_to_sheet(righeRiepilogo);
-  ws1["!cols"] = [{wch:20},{wch:14},{wch:7},{wch:10},{wch:10},{wch:11},{wch:11},{wch:12},{wch:7},{wch:9},{wch:9},{wch:13},{wch:13}];
-  XLSX.utils.book_append_sheet(wb, ws1, "Riepilogo");
-
-  // ── FOGLIO 2: DETTAGLIO GIORNALIERO ──
-  const righeDettaglio = [
-    ["Dipendente","Data","Giorno","Sede","Tipo","Entrata","Uscita","Pausa (min)","Ore Totali","Assenza"]
-  ];
-  const giorniSettimana = ["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
-  [...tm].sort((a,b) => a.data.localeCompare(b.data) || (state.dipendenti.findIndex(d=>d.id===a.dipendenteId) - state.dipendenti.findIndex(d=>d.id===b.dipendenteId))).forEach(t => {
-    const dip = state.dipendenti.find(d => d.id === t.dipendenteId);
-    righeDettaglio.push([
-      dip?.nome || "",
-      t.data,
-      giorniSettimana[new Date(t.data).getDay()],
-      t.sede || "",
-      t.tipo === "lavoro" ? "Lavoro" : "Assenza",
-      t.entrata || "",
-      t.uscita || "",
-      t.tipo === "lavoro" ? (t.pausa || 0) : "",
-      t.tipo === "lavoro" ? minToHHMM(t.calcolo?.totaleMin||0) : "",
-      t.tipo === "assenza" ? t.assenza : "",
-    ]);
-  });
-  const ws2 = XLSX.utils.aoa_to_sheet(righeDettaglio);
-  ws2["!cols"] = [{wch:20},{wch:12},{wch:12},{wch:16},{wch:9},{wch:8},{wch:8},{wch:12},{wch:10},{wch:20}];
-  XLSX.utils.book_append_sheet(wb, ws2, "Dettaglio");
-
-  XLSX.writeFile(wb, `timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
-}
-
-function attachModificaEliminaTimb(){
-  document.querySelectorAll("[data-modifica-timb]").forEach(el=>{
-    el.onclick=()=>{ const t=state.timbrature.find(x=>x.id===el.dataset.modificaTimb); if(t){state.modaleTimbratura=t;render();} };
-  });
-  document.querySelectorAll("[data-elimina-timb]").forEach(el=>{
-    el.onclick=async()=>{ if(!confirm("Eliminare questa timbratura?")) return; await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb)); };
-  });
-}
-  function renderCalendarioMultiplo(prefisso) {
-  const oggi_d = new Date();
-  const anno = oggi_d.getFullYear();
-  const mese = oggi_d.getMonth();
-  const primoGiorno = new Date(anno, mese, 1).getDay();
-  const giorniMese = new Date(anno, mese+1, 0).getDate();
-  const giorni = ["Lu","Ma","Me","Gi","Ve","Sa","Do"];
-  let html = `<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;text-align:center">${MESI[mese]} ${anno}</div>`;
-  html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">`;
-  giorni.forEach(g => html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;padding:3px">${g}</div>`);
-  const offset = (primoGiorno + 6) % 7;
-  for(let i=0;i<offset;i++) html += `<div></div>`;
-  for(let g=1;g<=giorniMese;g++){
-    const ds = `${anno}-${String(mese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
-    html += `<div id="${prefisso}-giorno-${ds}" onclick="toggleGiorno('${prefisso}','${ds}')" style="cursor:pointer;padding:5px 2px;border-radius:6px;font-size:13px;border:1px solid #e5e7eb;background:white" data-data="${ds}">${g}</div>`;
-  }
-  html += `</div>`;
-  html += `<div id="${prefisso}-date-selezionate" style="margin-top:8px;font-size:12px;color:#6b7280">Nessuna data selezionata</div>`;
-  return html;
-}
-
-window._dateSelezionate = { dip: new Set(), admin: new Set() };
-
-window.toggleGiorno = function(prefisso, data) {
-  const set = window._dateSelezionate[prefisso];
-  const el = document.getElementById(`${prefisso}-giorno-${data}`);
-  if(!el) return;
-  if(set.has(data)){
-    set.delete(data);
-    el.style.background = "white";
-    el.style.color = "inherit";
-    el.style.borderColor = "#e5e7eb";
-  } else {
-    set.add(data);
-    el.style.background = "#f59e0b";
-    el.style.color = "white";
-    el.style.borderColor = "#f59e0b";
-  }
-  const info = document.getElementById(`${prefisso}-date-selezionate`);
-  if(info) info.textContent = set.size > 0 ? `${set.size} date selezionate: ${[...set].sort().join(", ")}` : "Nessuna data selezionata";
-};
-
-window.toggleModoAssenza = function(prefisso) {
-  const modo = document.getElementById(`${prefisso === "dip" ? "inp" : "ai"}-modo-assenza`)?.value;
-  const s = document.getElementById(`${prefisso}-assenza-singola`);
-  const i = document.getElementById(`${prefisso}-assenza-intervallo`);
-  const m = document.getElementById(`${prefisso}-assenza-multipla`);
-  if(s) s.style.display = modo==="singola" ? "grid" : "none";
-  if(i) i.style.display = modo==="intervallo" ? "block" : "none";
-  if(m) m.style.display = modo==="multipla" ? "block" : "none";
-  if(modo==="multipla") window._dateSelezionate[prefisso] = new Set();
-};
-
-function dateIntervallo(da, a) {
-  const dates = [];
-  const cur = new Date(da);
-  const fine = new Date(a);
-  while(cur <= fine){ dates.push(cur.toISOString().split("T")[0]); cur.setDate(cur.getDate()+1); }
-  return dates;
-}
-
-function getDateAssenza(prefisso) {
-  const modoId = prefisso === "dip" ? "inp-modo-assenza" : "ai-modo-assenza";
-  const modo = document.getElementById(modoId)?.value || "singola";
-  if(modo === "singola"){
-    const id = prefisso === "dip" ? "inp-data-assenza" : "ai-data-assenza";
-    const v = document.getElementById(id)?.value;
-    return v ? [v] : [];
-  }
-  if(modo === "intervallo"){
-    const da = document.getElementById(`${prefisso === "dip" ? "inp" : "ai"}-data-ass-da`)?.value;
-    const a  = document.getElementById(`${prefisso === "dip" ? "inp" : "ai"}-data-ass-a`)?.value;
-    if(!da||!a||da>a){ alert("Intervallo date non valido!"); return []; }
-    return dateIntervallo(da, a);
-  }
-  if(modo === "multipla"){
-    const dates = [...window._dateSelezionate[prefisso]].sort();
-    if(!dates.length){ alert("Seleziona almeno una data!"); return []; }
-    return dates;
-  }
-  return [];
-}
-
+// ── SCHEDA DIPENDENTE: aggrega turni spezzati per giorno ───────
 function renderAdminScheda() {
-  const dipId = state.schedaDipId || state.dipendenti[0]?.id || "";
-  const dip = state.dipendenti.find(d => d.id === dipId);
-  const tm = getTimbMese();
-  const turni = tm.filter(t => t.dipendenteId === dipId && t.tipo === "lavoro");
-  const ass = tm.filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
-  const tot = turni.reduce((s,t) => s+(t.calcolo?.totaleMin||0), 0);
-  const diur = turni.reduce((s,t) => s+(t.calcolo?.diurneMin||0), 0);
-  const nott = turni.reduce((s,t) => s+(t.calcolo?.notturneMin||0), 0);
-  const strD = turni.reduce((s,t) => s+(t.calcolo?.strDiurniMin||0), 0);
-  const strN = turni.reduce((s,t) => s+(t.calcolo?.strNotturniMin||0), 0);
-  const assCnt = {}; VOCI_ASSENZA.forEach(v => { assCnt[v] = ass.filter(a => a.assenza===v && new Date(a.data).getDay()!==0).length; });
+  const dipId=state.schedaDipId||state.dipendenti[0]?.id||"";
+  const dip=state.dipendenti.find(d=>d.id===dipId);
+  const tm=getTimbMese();
+  const turni=tm.filter(t=>t.dipendenteId===dipId&&t.tipo==="lavoro");
+  const ass=tm.filter(t=>t.dipendenteId===dipId&&t.tipo==="assenza");
 
-  // Tutti i giorni del mese con timbrature
-  const giorniMese = new Date(state.filtroAnno, state.filtroMese+1, 0).getDate();
-  const giorniSettimana = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
-  const righeGiorni = [];
-  for(let g=1; g<=giorniMese; g++){
-    const ds = `${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
-    const timb = tm.find(t => t.dipendenteId === dipId && t.data === ds);
-    const isDom = new Date(ds).getDay() === 0;
-    const isFest = isFestivo(ds);
-    righeGiorni.push({ds, timb, isDom, isFest, giorno: giorniSettimana[new Date(ds).getDay()]});
+  // Aggrega per giorno per i totali mensili
+  const perGiorno={};
+  turni.forEach(t=>{ if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
+  let tot=0, diur=0, nott=0, strD=0, strN=0;
+  let nGiorni=0;
+  Object.entries(perGiorno).forEach(([data,ts])=>{
+    nGiorni++;
+    const agg=dip?aggregaTurniGiorno(ts,dip):null;
+    if(!agg) return;
+    tot+=agg.calcolo.totaleMin;
+    diur+=agg.calcolo.diurneMin;
+    nott+=agg.calcolo.notturneMin;
+    strD+=agg.calcolo.strDiurniMin;
+    strN+=agg.calcolo.strNotturniMin;
+  });
+
+  const assCnt={}; VOCI_ASSENZA.forEach(v=>{assCnt[v]=ass.filter(a=>a.assenza===v&&new Date(a.data).getDay()!==0).length;});
+  const giorniMese=new Date(state.filtroAnno, state.filtroMese+1, 0).getDate();
+  const giorniSettimana=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+
+  const righeGiorni=[];
+  for(let g=1;g<=giorniMese;g++){
+    const ds=`${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const timbs=tm.filter(t=>t.dipendenteId===dipId&&t.data===ds);
+    const turniGiorno=timbs.filter(t=>t.tipo==="lavoro");
+    const assGiorno=timbs.find(t=>t.tipo==="assenza");
+    const isDom=new Date(ds).getDay()===0, isFest=isFestivo(ds);
+    righeGiorni.push({ds, turniGiorno, assGiorno, isDom, isFest, giorno:giorniSettimana[new Date(ds).getDay()]});
   }
 
   return `
@@ -1381,12 +1814,12 @@ function renderAdminScheda() {
       </div>
     </div>
 
-    ${dip ? `
+    ${dip?`
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:16px">
       <div style="font-weight:700;font-size:14px;margin-bottom:10px">${dip.nome} — ${MESI[state.filtroMese]} ${state.filtroAnno}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">
         ${[
-          ["Turni", turni.length],
+          ["Giorni lav.", nGiorni],
           ["Ore totali", minToHHMM(tot)+"h"],
           ["Ore diurne", minToHHMM(diur)+"h"],
           ["Ore notturne", minToHHMM(nott)+"h"],
@@ -1408,36 +1841,228 @@ function renderAdminScheda() {
     <div style="overflow-x:auto"><table>
       <thead><tr>
         <th style="text-align:left">Data</th><th>Giorno</th><th>Sede</th><th>Tipo</th>
-        <th>Entrata</th><th>Uscita</th><th>Pausa</th><th>Ore Tot.</th>
+        <th>Orari</th><th>Ore Tot.</th>
         <th>Diurne</th><th>Notturne</th><th>Str.D</th><th>Str.N</th><th>Assenza</th>
       </tr></thead>
       <tbody>
-      ${righeGiorni.map(({ds,timb,isDom,isFest,giorno})=>{
-        const bg = isFest?"#fef2f2":isDom?"#f5f3ff":"";
-        if(!timb) return `<tr style="background:${bg};opacity:0.4">
-          <td style="font-size:12px">${ds}</td>
-          <td><span style="font-size:11px">${giorno}</span></td>
-          <td colspan="11" style="color:#9ca3af;font-size:12px">${isFest?"🎉 Festivo":isDom?"☀️ Domenica":"—"}</td>
-        </tr>`;
+      ${righeGiorni.map(({ds,turniGiorno,assGiorno,isDom,isFest,giorno})=>{
+        const bg=isFest?"#fef2f2":isDom?"#f5f3ff":"";
+        if(turniGiorno.length===0&&!assGiorno){
+          return `<tr style="background:${bg};opacity:0.4">
+            <td style="font-size:12px">${ds}</td>
+            <td><span style="font-size:11px">${giorno}</span></td>
+            <td colspan="9" style="color:#9ca3af;font-size:12px">${isFest?"🎉 Festivo":isDom?"☀️ Domenica":"—"}</td>
+          </tr>`;
+        }
+        if(assGiorno){
+          return `<tr style="background:${bg}">
+            <td style="font-weight:600;font-size:12px">${ds}</td>
+            <td><span style="font-size:11px">${giorno}${isFest?" 🎉":isDom?" ☀️":""}</span></td>
+            <td><span style="font-size:11px">${assGiorno.sede||""}</span></td>
+            <td><span class="badge badge-blue">Assenza</span></td>
+            <td colspan="6">—</td>
+            <td>${assGiorno.assenza}</td>
+          </tr>`;
+        }
+        // Turni (anche spezzati)
+        const agg=dip?aggregaTurniGiorno(turniGiorno,dip):null;
+        const calcAgg=agg?.calcolo;
+        const isSpezzato=turniGiorno.length>1;
+        const orariHTML=isSpezzato
+          ?turniGiorno.map((t,i)=>`<span style="font-size:11px;display:block">Turno ${i+1}: ${t.entrata}→${t.uscita} (${t.pausa||0}min)</span>`).join("")
+          :`${turniGiorno[0].entrata||"—"}→${turniGiorno[0].uscita||"—"} (${turniGiorno[0].pausa||0}min)`;
+        const sede=turniGiorno[0]?.sede||"";
         return `<tr style="background:${bg}">
           <td style="font-weight:600;font-size:12px">${ds}</td>
           <td><span style="font-size:11px">${giorno}${isFest?" 🎉":isDom?" ☀️":""}</span></td>
-          <td><span style="font-size:11px">${timb.sede||""}</span></td>
-          <td><span class="badge ${timb.tipo==="lavoro"?"badge-green":"badge-blue"}">${timb.tipo==="lavoro"?"Lavoro":"Assenza"}</span></td>
-          <td>${timb.entrata||"—"}</td>
-          <td>${timb.uscita||"—"}</td>
-          <td>${timb.tipo==="lavoro"?(timb.pausa||0)+"min":"—"}</td>
-          <td style="font-weight:700">${timb.calcolo?minToHHMM(timb.calcolo.totaleMin)+"h":"—"}</td>
-          <td>${timb.calcolo?minToHHMM(timb.calcolo.diurneMin)+"h":"—"}</td>
-          <td style="color:#4f46e5">${timb.calcolo&&timb.calcolo.notturneMin>0?minToHHMM(timb.calcolo.notturneMin)+"h":"—"}</td>
-          <td style="color:#ea580c">${timb.calcolo&&timb.calcolo.strDiurniMin>0?minToHHMM(timb.calcolo.strDiurniMin)+"h":"—"}</td>
-          <td style="color:#dc2626">${timb.calcolo&&timb.calcolo.strNotturniMin>0?minToHHMM(timb.calcolo.strNotturniMin)+"h":"—"}</td>
-          <td>${timb.assenza||"—"}</td>
+          <td><span style="font-size:11px">${sede}</span></td>
+          <td>${isSpezzato?`<span class="badge badge-orange">✂️ Spezzato</span>`:`<span class="badge badge-green">Lavoro</span>`}</td>
+          <td style="font-size:11px;text-align:left">${orariHTML}</td>
+          <td style="font-weight:700">${calcAgg?minToHHMM(calcAgg.totaleMin)+"h":"—"}</td>
+          <td>${calcAgg?minToHHMM(calcAgg.diurneMin)+"h":"—"}</td>
+          <td style="color:#4f46e5">${calcAgg&&calcAgg.notturneMin>0?minToHHMM(calcAgg.notturneMin)+"h":"—"}</td>
+          <td style="color:#ea580c">${calcAgg&&calcAgg.strDiurniMin>0?minToHHMM(calcAgg.strDiurniMin)+"h":"—"}</td>
+          <td style="color:#dc2626">${calcAgg&&calcAgg.strNotturniMin>0?minToHHMM(calcAgg.strNotturniMin)+"h":"—"}</td>
+          <td>—</td>
         </tr>`;
       }).join("")}
       </tbody>
-    </table></div>` : `<div class="empty">Nessun dipendente trovato.</div>`}`;
-}  
+    </table></div>`:`<div class="empty">Nessun dipendente trovato.</div>`}`;
+}
+
+function esportaCSV() {
+  const tm=getTimbMese();
+  const righe=[["Dipendente","Tipo","Data","Giorno","Entrata","Uscita","Pausa","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Assenza","Costo Totale","Spezzato"]];
+  // Aggrega per dipendente+data
+  const perDipData={};
+  tm.filter(t=>t.tipo==="lavoro").forEach(t=>{
+    const k=`${t.dipendenteId}__${t.data}`;
+    if(!perDipData[k]) perDipData[k]={dip:state.dipendenti.find(d=>d.id===t.dipendenteId),data:t.data,turni:[]};
+    perDipData[k].turni.push(t);
+  });
+  Object.values(perDipData).forEach(({dip,data,turni})=>{
+    if(!dip) return;
+    const agg=aggregaTurniGiorno(turni,dip);
+    if(!agg) return;
+    const c=agg.calcolo, tipo=getTipoGiorno(data);
+    const costo=calcolaCostoAggregato(c,data,dip);
+    const isSpezzato=turni.length>1;
+    const orari=isSpezzato?turni.map(t=>`${t.entrata}→${t.uscita}`).join(" + "):`${turni[0].entrata||""}→${turni[0].uscita||""}`;
+    righe.push([dip.nome,dip.tipo,data,tipo,orari,"",isSpezzato?turni.reduce((s,t)=>s+(t.pausa||0),0):"",
+      minToHHMM(c.totaleMin),minToHHMM(c.diurneMin),minToHHMM(c.notturneMin),
+      minToHHMM(c.strDiurniMin),minToHHMM(c.strNotturniMin),"",
+      costo?costo.totale.toFixed(2):"",isSpezzato?"Sì":"No"]);
+  });
+  tm.filter(t=>t.tipo==="assenza").forEach(t=>{
+    const dip=state.dipendenti.find(x=>x.id===t.dipendenteId);
+    righe.push([dip?.nome||"",dip?.tipo||"",t.data,getTipoGiorno(t.data),"","","","","","","","",t.assenza||"","","No"]);
+  });
+  const csv=righe.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}));
+  a.download=`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.csv`; a.click();
+}
+
+function esportaExcel() {
+  const tm=getTimbMese();
+  const wb=XLSX.utils.book_new();
+
+  // ── FOGLIO 1: RIEPILOGO ──
+  const righeRiepilogo=[["Dipendente","Contratto","Giorni Lav.","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie (h)","Permessi (h)","Malattia (h)","Riposo Comp. (h)","Giorno Libero (h)"]];
+  state.dipendenti.forEach(dip=>{
+    const r=getRiepilogo().find(x=>x.dip.id===dip.id);
+    if(!r) return;
+    const ass=tm.filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
+    righeRiepilogo.push([dip.nome,dip.tipo,r.nTurni,minToHHMM(r.tot),minToHHMM(r.diur),minToHHMM(r.nott),minToHHMM(r.strD),minToHHMM(r.strN),
+      ass.filter(a=>a.assenza==="Ferie").length*(dip.sogliaOre||6.67),
+      ass.filter(a=>a.assenza==="Permesso").length*(dip.sogliaOre||6.67),
+      ass.filter(a=>a.assenza==="Malattia").length*(dip.sogliaOre||6.67),
+      ass.filter(a=>a.assenza==="Riposo Compensativo").length*(dip.sogliaOre||6.67),
+      ass.filter(a=>a.assenza==="Giorno Libero").length*(dip.sogliaOre||6.67),
+    ]);
+  });
+  const ws1=XLSX.utils.aoa_to_sheet(righeRiepilogo);
+  ws1["!cols"]=[{wch:20},{wch:14},{wch:10},{wch:10},{wch:10},{wch:11},{wch:11},{wch:12},{wch:7},{wch:9},{wch:9},{wch:13},{wch:13}];
+  XLSX.utils.book_append_sheet(wb,ws1,"Riepilogo");
+
+  // ── FOGLIO 2: DETTAGLIO (aggregato per giorno) ──
+  const righeDettaglio=[["Dipendente","Data","Giorno","Sede","Tipo","Orari","Pausa Tot.(min)","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Assenza","Spezzato"]];
+  const giorniSettimana=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
+
+  // Aggrega lavoro per dipendente+data
+  const perDipData={};
+  tm.filter(t=>t.tipo==="lavoro").forEach(t=>{
+    const k=`${t.dipendenteId}__${t.data}`;
+    if(!perDipData[k]) perDipData[k]={dip:state.dipendenti.find(d=>d.id===t.dipendenteId),data:t.data,turni:[],sede:t.sede||""};
+    perDipData[k].turni.push(t);
+  });
+  Object.values(perDipData).sort((a,b)=>a.data.localeCompare(b.data)).forEach(({dip,data,turni,sede})=>{
+    if(!dip) return;
+    const agg=aggregaTurniGiorno(turni,dip);
+    if(!agg) return;
+    const c=agg.calcolo;
+    const isSpezzato=turni.length>1;
+    const orari=isSpezzato?turni.map(t=>`${t.entrata}→${t.uscita}`).join(" + "):`${turni[0].entrata||""}→${turni[0].uscita||""}`;
+    const pausaTot=turni.reduce((s,t)=>s+(t.pausa||0),0);
+    righeDettaglio.push([dip.nome,data,giorniSettimana[new Date(data).getDay()],sede,"Lavoro",orari,pausaTot,
+      minToHHMM(c.totaleMin),minToHHMM(c.diurneMin),minToHHMM(c.notturneMin),
+      minToHHMM(c.strDiurniMin),minToHHMM(c.strNotturniMin),"",isSpezzato?"Sì":"No"]);
+  });
+  tm.filter(t=>t.tipo==="assenza").sort((a,b)=>a.data.localeCompare(b.data)).forEach(t=>{
+    const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
+    righeDettaglio.push([dip?.nome||"",t.data,giorniSettimana[new Date(t.data).getDay()],t.sede||"","Assenza","","","","","","","",t.assenza||"","No"]);
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(righeDettaglio);
+  ws2["!cols"]=[{wch:20},{wch:12},{wch:12},{wch:16},{wch:9},{wch:24},{wch:14},{wch:10},{wch:10},{wch:11},{wch:11},{wch:12},{wch:20},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws2,"Dettaglio");
+
+  XLSX.writeFile(wb,`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
+}
+
+window.toggleTipoAdmin=function(){
+  const tipo=document.getElementById("ai-tipo")?.value;
+  document.getElementById("ai-lavoro-fields").style.display=tipo==="lavoro"?"grid":"none";
+  document.getElementById("ai-assenza-fields").style.display=tipo==="assenza"?"block":"none";
+};
+window.aggiornaSede=function(){
+  state.filtroSede=document.getElementById("admin-filtro-sede")?.value||"";
+  render();
+};
+window.renderListaTimbrature=function(){
+  const filtro=document.getElementById("filtro-dip-lista")?.value||"";
+  const el=document.getElementById("lista-timbrature");
+  if(el) el.innerHTML=renderListaTimbratureHTML(filtro);
+};
+
+function attachModificaEliminaTimb(){
+  document.querySelectorAll("[data-modifica-timb]").forEach(el=>{
+    el.onclick=()=>{const t=state.timbrature.find(x=>x.id===el.dataset.modificaTimb);if(t){state.modaleTimbratura=t;render();}};
+  });
+  document.querySelectorAll("[data-elimina-timb]").forEach(el=>{
+    el.onclick=async()=>{if(!confirm("Eliminare questa timbratura?")) return;await deleteDoc(doc(db,"timbrature",el.dataset.eliminaTimb));};
+  });
+}
+
+function renderCalendarioMultiplo(prefisso) {
+  const oggi_d=new Date(), anno=oggi_d.getFullYear(), mese=oggi_d.getMonth();
+  const primoGiorno=new Date(anno,mese,1).getDay();
+  const giorniMese=new Date(anno,mese+1,0).getDate();
+  const giorni=["Lu","Ma","Me","Gi","Ve","Sa","Do"];
+  let html=`<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;text-align:center">${MESI[mese]} ${anno}</div>`;
+  html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">`;
+  giorni.forEach(g=>html+=`<div style="font-size:11px;font-weight:700;color:#9ca3af;padding:3px">${g}</div>`);
+  const offset=(primoGiorno+6)%7;
+  for(let i=0;i<offset;i++) html+=`<div></div>`;
+  for(let g=1;g<=giorniMese;g++){
+    const ds=`${anno}-${String(mese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    html+=`<div id="${prefisso}-giorno-${ds}" onclick="toggleGiorno('${prefisso}','${ds}')" style="cursor:pointer;padding:5px 2px;border-radius:6px;font-size:13px;border:1px solid #e5e7eb;background:white" data-data="${ds}">${g}</div>`;
+  }
+  html+=`</div><div id="${prefisso}-date-selezionate" style="margin-top:8px;font-size:12px;color:#6b7280">Nessuna data selezionata</div>`;
+  return html;
+}
+
+window._dateSelezionate={dip:new Set(),admin:new Set()};
+
+window.toggleGiorno=function(prefisso,data){
+  const set=window._dateSelezionate[prefisso];
+  const el=document.getElementById(`${prefisso}-giorno-${data}`);
+  if(!el) return;
+  if(set.has(data)){set.delete(data);el.style.background="white";el.style.color="inherit";el.style.borderColor="#e5e7eb";}
+  else{set.add(data);el.style.background="#f59e0b";el.style.color="white";el.style.borderColor="#f59e0b";}
+  const info=document.getElementById(`${prefisso}-date-selezionate`);
+  if(info) info.textContent=set.size>0?`${set.size} date selezionate: ${[...set].sort().join(", ")}`:"Nessuna data selezionata";
+};
+
+window.toggleModoAssenza=function(prefisso){
+  const modo=document.getElementById(`${prefisso==="dip"?"inp":"ai"}-modo-assenza`)?.value;
+  const s=document.getElementById(`${prefisso}-assenza-singola`);
+  const i=document.getElementById(`${prefisso}-assenza-intervallo`);
+  const m=document.getElementById(`${prefisso}-assenza-multipla`);
+  if(s) s.style.display=modo==="singola"?"grid":"none";
+  if(i) i.style.display=modo==="intervallo"?"block":"none";
+  if(m) m.style.display=modo==="multipla"?"block":"none";
+  if(modo==="multipla") window._dateSelezionate[prefisso]=new Set();
+};
+
+function dateIntervallo(da,a){
+  const dates=[]; const cur=new Date(da); const fine=new Date(a);
+  while(cur<=fine){dates.push(cur.toISOString().split("T")[0]);cur.setDate(cur.getDate()+1);}
+  return dates;
+}
+
+function getDateAssenza(prefisso){
+  const modoId=prefisso==="dip"?"inp-modo-assenza":"ai-modo-assenza";
+  const modo=document.getElementById(modoId)?.value||"singola";
+  if(modo==="singola"){const id=prefisso==="dip"?"inp-data-assenza":"ai-data-assenza";const v=document.getElementById(id)?.value;return v?[v]:[];}
+  if(modo==="intervallo"){
+    const da=document.getElementById(`${prefisso==="dip"?"inp":"ai"}-data-ass-da`)?.value;
+    const a=document.getElementById(`${prefisso==="dip"?"inp":"ai"}-data-ass-a`)?.value;
+    if(!da||!a||da>a){alert("Intervallo date non valido!");return [];}
+    return dateIntervallo(da,a);
+  }
+  if(modo==="multipla"){const dates=[...window._dateSelezionate[prefisso]].sort();if(!dates.length){alert("Seleziona almeno una data!");return [];}return dates;}
+  return [];
+}
 
 avvia();
 </script>

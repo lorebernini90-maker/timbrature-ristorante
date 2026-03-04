@@ -1220,6 +1220,16 @@ function renderAdminReport() {
 // Stato locale calendario rapido
 window._irGiorni = {}; // { "2026-03-01": {sel:true, entrata:"09:00", uscita:"17:00", pausa:30} }
 
+function getDayOfWeek(anno, mese, giorno) {
+  // Algoritmo di Zeller — non usa Date per evitare problemi di fuso orario
+  let m = mese, y = anno;
+  if(m < 3) { m += 12; y -= 1; }
+  const k = y % 100, j = Math.floor(y / 100);
+  const h = (giorno + Math.floor(13*(m+1)/5) + k + Math.floor(k/4) + Math.floor(j/4) - 2*j) % 7;
+  // h: 0=Sab,1=Dom,2=Lun,...6=Ven → converti a 0=Dom,1=Lun,...6=Sab
+  return (h + 6) % 7;
+}
+
 function renderCalendarioRapidoHTML() {
   const meseEl = document.getElementById("ir-mese");
   const mese = meseEl?.value || (new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0"));
@@ -1233,7 +1243,7 @@ function renderCalendarioRapidoHTML() {
   let html = '<div style="display:flex;flex-direction:column;gap:6px">';
   for(let g=1; g<=giorniMese; g++) {
     const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
-    const dow = new Date(anno, m-1, g).getDay();
+    const dow = getDayOfWeek(anno, m, g);
     const fest = isFestivo(dataStr);
     const dom = dow===0;
     const stato = window._irGiorni[dataStr] || {sel:false, entrata:enDef, uscita:usDef, pausa:paDef};
@@ -1336,7 +1346,7 @@ function selezionaSoloFeriali() {
     const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
     const dow = new Date(anno, m-1, g).getDay();
     if(!window._irGiorni[dataStr]) window._irGiorni[dataStr]={entrata:enDef,uscita:usDef,pausa:paDef};
-    const dow2 = new Date(anno, m-1, g).getDay();
+    const dow2 = getDayOfWeek(anno, m, g);
     window._irGiorni[dataStr].sel = dow2 !== 0; // escludi solo domenica
   }
   const el = document.getElementById("calendario-rapido");

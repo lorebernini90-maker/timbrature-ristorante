@@ -501,7 +501,7 @@ document.addEventListener("click", async function(e) {
     if(!dates.length)return;
     if(!confirm(`Confermi "${tipoAssenza}" per ${dates.length} giorno/i?\n${dates.join(", ")}`))return;
     for(const data of dates){
-      const sedeAss=document.getElementById("inp-sede")?.value||SEDI[0];
+      const sedeAss=document.getElementById("inp-sede-assenza")?.value||document.getElementById("inp-sede")?.value||SEDI[0];
       await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false,sede:sedeAss});
     }
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
@@ -765,6 +765,9 @@ function renderDipTimbra(dip) {
       <div class="grid-auto" style="margin-bottom:12px">
         <div><label>Tipo assenza</label>
           <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+        </div>
+        <div><label>Sede</label>
+          <select id="inp-sede-assenza">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
         </div>
         <div><label>Modalità selezione</label>
           <select id="inp-modo-assenza" onchange="toggleModoAssenza('dip')">
@@ -1706,6 +1709,20 @@ function renderAdminMaggiorazioni() {
     </div>`;
 }
 
+function calcolaCostoTeoricoGiorno(ds) {
+  // Costo teorico = tutti i dipendenti attivi con tariffa * ore soglia
+  // (esclusi intermittenti, escluse domeniche per semplicità)
+  if(new Date(ds).getDay()===0) return 0;
+  return getDipendentiAttivi()
+    .filter(d=>d.tariffaOraria&&d.tipo!=="Intermittente")
+    .reduce((s,d)=>{
+      // Solo se non ha giorno libero
+      const haGiornoLibero=state.timbrature.find(t=>t.dipendenteId===d.id&&t.data===ds&&t.tipo==="assenza"&&t.assenza==="Giorno Libero");
+      if(haGiornoLibero) return s;
+      return s+(sogliaMinutiDip(d)/60)*d.tariffaOraria;
+    },0);
+}
+
 function renderAdminGiornaliero() {
   const annoCorrente=state.filtroAnno, meseCorrente=state.filtroMese;
   const giorniMese=new Date(annoCorrente, meseCorrente+1, 0).getDate();
@@ -1717,8 +1734,7 @@ function renderAdminGiornaliero() {
       const okSede=!state.filtroSede||t.sede===state.filtroSede;
       return okData&&okSede;
     });
-    let costoGiorno=0;
-    // Aggrega per dipendente
+    let costoReale=0, costoConAssenze=0;
     const perDip={};
     timbGiorno.forEach(t=>{
       if(!perDip[t.dipendenteId]) perDip[t.dipendenteId]={lavoro:[],assenza:[]};
@@ -1732,38 +1748,59 @@ function renderAdminGiornaliero() {
         const agg=aggregaTurniGiorno(lavoro,dip);
         if(agg){
           const r=calcolaCostoAggregato(agg.calcolo,ds,dip);
-          if(r) costoGiorno+=r.totale;
+          if(r){ costoReale+=r.totale; costoConAssenze+=r.totale; }
         }
       }
       assenza.forEach(t=>{
         if(new Date(ds).getDay()!==0&&t.assenza!=="Giorno Libero"){
-          costoGiorno+=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria;
+          costoConAssenze+=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria;
         }
       });
     });
-    costiPerGiorno[ds]={costo:costoGiorno,timbrature:timbGiorno};
+    const costoTeorico=calcolaCostoTeoricoGiorno(ds);
+    costiPerGiorno[ds]={costoReale,costoConAssenze,costoTeorico,timbrature:timbGiorno};
   }
-  const totMese=Object.values(costiPerGiorno).reduce((s,v)=>s+v.costo,0);
+  const totReale=Object.values(costiPerGiorno).reduce((s,v)=>s+v.costoReale,0);
+  const totConAssenze=Object.values(costiPerGiorno).reduce((s,v)=>s+v.costoConAssenze,0);
+  const totTeorico=Object.values(costiPerGiorno).reduce((s,v)=>s+v.costoTeorico,0);
   const giorniNomiBrevi=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📅 Costo giornaliero</h2>${filtriHTML()}
     </div>
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-weight:700;color:#374151">Totale ${MESI[meseCorrente]} ${annoCorrente}${state.filtroSede?" — "+state.filtroSede:""}</span>
-      <span style="font-weight:700;font-size:18px;color:#059669">${euro(totMese)}</span>
+    <!-- KPI confronto mensile -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Costo reale</div>
+        <div style="font-size:20px;font-weight:700;color:#059669">${euro(totReale)}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px">solo ore lavorate</div>
+      </div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Costo con assenze</div>
+        <div style="font-size:20px;font-weight:700;color:#ea580c">${euro(totConAssenze)}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px">lavoro + ferie/permessi/malattia</div>
+      </div>
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Costo teorico</div>
+        <div style="font-size:20px;font-weight:700;color:#7c3aed">${euro(totTeorico)}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px">se tutti avessero lavorato</div>
+      </div>
     </div>
+    <!-- Calendario -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:24px">
-      ${Object.entries(costiPerGiorno).map(([ds,{costo,timbrature}])=>{
+      ${Object.entries(costiPerGiorno).map(([ds,{costoReale,costoConAssenze,costoTeorico,timbrature}])=>{
         const d=new Date(ds);
         const isDom=d.getDay()===0, isFest=isFestivo(ds);
-        const bg=isFest?"#fef2f2":isDom?"#f5f3ff":costo>0?"#f0fdf4":"#f9fafb";
-        const border=isFest?"#fecaca":isDom?"#ddd6fe":costo>0?"#bbf7d0":"#f3f4f6";
+        const bg=isFest?"#fef2f2":isDom?"#f5f3ff":costoReale>0?"#f0fdf4":"#f9fafb";
+        const border=isFest?"#fecaca":isDom?"#ddd6fe":costoReale>0?"#bbf7d0":"#f3f4f6";
+        const risparmio=costoTeorico-costoConAssenze;
         return `<div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:11px;font-weight:700;color:#6b7280">${giorniNomiBrevi[d.getDay()]}</div>
           <div style="font-size:20px;font-weight:700;color:#374151">${d.getDate()}</div>
           ${isFest?`<div style="font-size:10px;color:#dc2626">🎉 Festivo</div>`:""}
-          <div style="font-size:13px;font-weight:700;color:${costo>0?"#059669":"#9ca3af"};margin-top:4px">${costo>0?euro(costo):"—"}</div>
+          <div style="font-size:12px;font-weight:700;color:${costoReale>0?"#059669":"#9ca3af"};margin-top:4px">${costoReale>0?euro(costoReale):"—"}</div>
+          ${costoConAssenze>costoReale?`<div style="font-size:10px;color:#ea580c">${euro(costoConAssenze)} +ass.</div>`:""}
+          ${costoTeorico>0&&costoConAssenze<costoTeorico?`<div style="font-size:10px;color:#7c3aed">${euro(costoTeorico)} teo.</div>`:""}
           <div style="font-size:10px;color:#9ca3af">${timbrature.length>0?timbrature.length+" timb.":""}</div>
         </div>`;}).join("")}
     </div>
@@ -1810,28 +1847,50 @@ function renderDettaglioGiorno(dataStr) {
         }
       }
     }
+    let costoAssenza=0;
     assenza.forEach(t=>{
       if(new Date(dataStr).getDay()!==0&&t.assenza!=="Giorno Libero"){
-        costo+=(sogliaMinutiDip(dip)/60)*dip.tariffaOraria;
+        costoAssenza+=(sogliaMinutiDip(dip)/60)*(dip.tariffaOraria||0);
         dettaglio=t.assenza;
       }
     });
-    totaleGiorno+=costo;
+    const costoTotale=costo+costoAssenza;
+    totaleGiorno+=costoTotale;
+    const costoTeorico=dip.tariffaOraria&&dip.tipo!=="Intermittente"&&new Date(dataStr).getDay()!==0
+      ?(sogliaMinutiDip(dip)/60)*dip.tariffaOraria:0;
     const sede=lavoro[0]?.sede||assenza[0]?.sede||"";
     return `<div class="row">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="font-weight:600">${dip.nome}</span>
         ${sede?`<span class="badge badge-blue">${sede}</span>`:""}
         <span style="color:#6b7280;font-size:12px">${dettaglio}</span>
+        ${costoAssenza>0?`<span class="badge" style="background:#fff7ed;color:#ea580c">+${euro(costoAssenza)} ass.</span>`:""}
       </div>
-      <span style="font-weight:700;color:#059669">${costo>0?euro(costo):"—"}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        <span style="font-weight:700;color:#059669">${costoTotale>0?euro(costoTotale):"—"}</span>
+        ${costoTeorico>0&&costoTotale<costoTeorico?`<span style="font-size:11px;color:#7c3aed">${euro(costoTeorico)} teo.</span>`:""}
+      </div>
     </div>`;
   }).join("");
 
+  const totaleReale=Object.values(Object.fromEntries(Object.entries(perDip).map(([id,{lavoro,assenza}])=>{
+    const dip=state.dipendenti.find(d=>d.id===id);
+    if(!dip?.tariffaOraria) return [id,0];
+    let c=0;
+    if(lavoro.length>0){const agg=aggregaTurniGiorno(lavoro,dip);if(agg){const r=calcolaCostoAggregato(agg.calcolo,dataStr,dip);if(r)c+=r.totale;}}
+    return [id,c];
+  }))).reduce((s,v)=>s+v,0);
+
   return `${righe}
-    <div style="background:#1e293b;color:white;border-radius:8px;padding:12px 16px;margin-top:8px;display:flex;justify-content:space-between">
-      <span style="font-weight:700">Totale ${dataStr}</span>
-      <span style="font-weight:700;color:#10b981">${euro(totaleGiorno)}</span>
+    <div style="background:#1e293b;color:white;border-radius:8px;padding:12px 16px;margin-top:8px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-weight:700">Totale con assenze</span>
+        <span style="font-weight:700;color:#10b981">${euro(totaleGiorno)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;opacity:0.8">
+        <span>Solo ore lavorate</span>
+        <span style="color:#6ee7b7">${euro(totaleReale)}</span>
+      </div>
     </div>`;
 }
 

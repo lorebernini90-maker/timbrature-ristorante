@@ -179,7 +179,7 @@ function isFestivo(dataStr) {
   const mm = String(d.getMonth()+1).padStart(2,"0");
   const gg = String(d.getDate()).padStart(2,"0");
   const mmgg = `${mm}-${gg}`;
-  const fissi = ["01-01","04-25","05-01","06-02","06-24","08-15","11-01","12-08","12-25","12-26"];
+  const fissi = ["01-01","01-06","04-25","05-01","06-02","06-24","08-15","11-01","12-08","12-25","12-26"];
   if(fissi.includes(mmgg)) return true;
   const pasqua = getPassqua(anno);
   const pasquetta = new Date(pasqua); pasquetta.setDate(pasqua.getDate()+1);

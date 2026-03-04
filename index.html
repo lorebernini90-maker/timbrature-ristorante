@@ -580,7 +580,7 @@ function renderDipStorico(dip) {
 }
 
 function renderAdmin() {
-  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["giornaliero","📅 Giornaliero"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]];
+  const tabs=[["presenze","👁️ Presenze"],["report","📊 Report"],["inserisci","✏️ Inserisci"],["settimane","📅 Settimane"],["costi","💶 Costi"],["giornaliero","📅 Giornaliero"],["maggiorazioni","📈 Maggiorazioni"],["ferie","🏖️ Ferie"],["scheda","👤 Scheda"],["dipendenti","👥 Dipendenti"]];
   let content="";
   if(state.adminTab==="presenze") content=renderAdminPresenze();
   else if(state.adminTab==="report") content=renderAdminReport();
@@ -590,6 +590,7 @@ function renderAdmin() {
   else if(state.adminTab==="giornaliero") content=renderAdminGiornaliero(); 
   else if(state.adminTab==="maggiorazioni") content=renderAdminMaggiorazioni();
   else if(state.adminTab==="ferie") content=renderAdminFerie();
+  else if(state.adminTab==="scheda") content=renderAdminScheda();
   else content=renderAdminDipendenti();
   return `
     <div style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
@@ -1343,6 +1344,100 @@ function getDateAssenza(prefisso) {
   }
   return [];
 }
+
+function renderAdminScheda() {
+  const dipId = state.schedaDipId || state.dipendenti[0]?.id || "";
+  const dip = state.dipendenti.find(d => d.id === dipId);
+  const tm = getTimbMese();
+  const turni = tm.filter(t => t.dipendenteId === dipId && t.tipo === "lavoro");
+  const ass = tm.filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
+  const tot = turni.reduce((s,t) => s+(t.calcolo?.totaleMin||0), 0);
+  const diur = turni.reduce((s,t) => s+(t.calcolo?.diurneMin||0), 0);
+  const nott = turni.reduce((s,t) => s+(t.calcolo?.notturneMin||0), 0);
+  const strD = turni.reduce((s,t) => s+(t.calcolo?.strDiurniMin||0), 0);
+  const strN = turni.reduce((s,t) => s+(t.calcolo?.strNotturniMin||0), 0);
+  const assCnt = {}; VOCI_ASSENZA.forEach(v => { assCnt[v] = ass.filter(a => a.assenza===v && new Date(a.data).getDay()!==0).length; });
+
+  // Tutti i giorni del mese con timbrature
+  const giorniMese = new Date(state.filtroAnno, state.filtroMese+1, 0).getDate();
+  const giorniSettimana = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  const righeGiorni = [];
+  for(let g=1; g<=giorniMese; g++){
+    const ds = `${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const timb = tm.find(t => t.dipendenteId === dipId && t.data === ds);
+    const isDom = new Date(ds).getDay() === 0;
+    const isFest = isFestivo(ds);
+    righeGiorni.push({ds, timb, isDom, isFest, giorno: giorniSettimana[new Date(ds).getDay()]});
+  }
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">👤 Scheda dipendente</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select onchange="state.schedaDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
+          ${state.dipendenti.map(d=>`<option value="${d.id}"${d.id===dipId?" selected":""}>${d.nome}</option>`).join("")}
+        </select>
+        ${filtriHTML()}
+      </div>
+    </div>
+
+    ${dip ? `
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px">${dip.nome} — ${MESI[state.filtroMese]} ${state.filtroAnno}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">
+        ${[
+          ["Turni", turni.length],
+          ["Ore totali", minToHHMM(tot)+"h"],
+          ["Ore diurne", minToHHMM(diur)+"h"],
+          ["Ore notturne", minToHHMM(nott)+"h"],
+          ["Str. diurni", minToHHMM(strD)+"h"],
+          ["Str. notturni", minToHHMM(strN)+"h"],
+          ["Ferie", assCnt["Ferie"]+"g ("+((assCnt["Ferie"]||0)*(dip.sogliaOre||6.67)).toFixed(1)+"h)"],
+          ["Permessi", assCnt["Permesso"]+"g ("+((assCnt["Permesso"]||0)*(dip.sogliaOre||6.67)).toFixed(1)+"h)"],
+          ["Malattia", assCnt["Malattia"]+"g ("+((assCnt["Malattia"]||0)*(dip.sogliaOre||6.67)).toFixed(1)+"h)"],
+          ["Riposo Comp.", assCnt["Riposo Compensativo"]+"g"],
+          ["Giorno Libero", assCnt["Giorno Libero"]+"g"],
+        ].map(([l,v])=>`<div style="background:white;border-radius:8px;padding:10px;text-align:center;border:1px solid #e5e7eb">
+          <div style="font-size:14px;font-weight:700;color:#1e293b">${v}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px">${l}</div>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:10px">📋 Dettaglio giornaliero</h3>
+    <div style="overflow-x:auto"><table>
+      <thead><tr>
+        <th style="text-align:left">Data</th><th>Giorno</th><th>Sede</th><th>Tipo</th>
+        <th>Entrata</th><th>Uscita</th><th>Pausa</th><th>Ore Tot.</th>
+        <th>Diurne</th><th>Notturne</th><th>Str.D</th><th>Str.N</th><th>Assenza</th>
+      </tr></thead>
+      <tbody>
+      ${righeGiorni.map(({ds,timb,isDom,isFest,giorno})=>{
+        const bg = isFest?"#fef2f2":isDom?"#f5f3ff":"";
+        if(!timb) return `<tr style="background:${bg};opacity:0.4">
+          <td style="font-size:12px">${ds}</td>
+          <td><span style="font-size:11px">${giorno}</span></td>
+          <td colspan="11" style="color:#9ca3af;font-size:12px">${isFest?"🎉 Festivo":isDom?"☀️ Domenica":"—"}</td>
+        </tr>`;
+        return `<tr style="background:${bg}">
+          <td style="font-weight:600;font-size:12px">${ds}</td>
+          <td><span style="font-size:11px">${giorno}${isFest?" 🎉":isDom?" ☀️":""}</span></td>
+          <td><span style="font-size:11px">${timb.sede||""}</span></td>
+          <td><span class="badge ${timb.tipo==="lavoro"?"badge-green":"badge-blue"}">${timb.tipo==="lavoro"?"Lavoro":"Assenza"}</span></td>
+          <td>${timb.entrata||"—"}</td>
+          <td>${timb.uscita||"—"}</td>
+          <td>${timb.tipo==="lavoro"?(timb.pausa||0)+"min":"—"}</td>
+          <td style="font-weight:700">${timb.calcolo?minToHHMM(timb.calcolo.totaleMin)+"h":"—"}</td>
+          <td>${timb.calcolo?minToHHMM(timb.calcolo.diurneMin)+"h":"—"}</td>
+          <td style="color:#4f46e5">${timb.calcolo&&timb.calcolo.notturneMin>0?minToHHMM(timb.calcolo.notturneMin)+"h":"—"}</td>
+          <td style="color:#ea580c">${timb.calcolo&&timb.calcolo.strDiurniMin>0?minToHHMM(timb.calcolo.strDiurniMin)+"h":"—"}</td>
+          <td style="color:#dc2626">${timb.calcolo&&timb.calcolo.strNotturniMin>0?minToHHMM(timb.calcolo.strNotturniMin)+"h":"—"}</td>
+          <td>${timb.assenza||"—"}</td>
+        </tr>`;
+      }).join("")}
+      </tbody>
+    </table></div>` : `<div class="empty">Nessun dipendente trovato.</div>`}`;
+}  
 
 avvia();
 </script>

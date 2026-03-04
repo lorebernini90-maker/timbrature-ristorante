@@ -2291,6 +2291,13 @@ function esportaExcel() {
   XLSX.writeFile(wb,`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
 }
 
+window.selezionaTuttiGiorni=selezionaTuttiGiorni;
+window.selezionaSoloFeriali=selezionaSoloFeriali;
+window.aggiornaDefaultOrari=aggiornaDefaultOrari;
+window.toggleGiornoRapido=toggleGiornoRapido;
+window.aggiornaGiornoRapido=aggiornaGiornoRapido;
+window.renderCalendarioRapido=renderCalendarioRapido;
+
 window.toggleTipoAdmin=function(){
   const tipo=document.getElementById("ai-tipo")?.value;
   document.getElementById("ai-lavoro-fields").style.display=tipo==="lavoro"?"grid":"none";

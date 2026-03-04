@@ -2334,10 +2334,10 @@ function renderAdminImpostazioni() {
       </div>
       <div style="margin-top:10px;font-size:12px;color:#6b7280">
         Dipendenti senza PIN: ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length}
-        \${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
-          ? `<span style="color:#dc2626"> (\${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`
+        ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
+          ? `<span style="color:#dc2626"> (${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`
           : ' ✅'}
-        \${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
+        ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
           ? `<button onclick="window.assegnaPinMancanti()" class="btn btn-primary btn-sm" style="margin-top:8px">🔑 Assegna PIN automatici</button>`
           : ""}
       </div>

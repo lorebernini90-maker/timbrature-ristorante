@@ -432,7 +432,7 @@ function render() {
 }
 
 document.addEventListener("click", async function(e) {
-  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-timbra-entrata],[data-timbra-uscita],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-salva-inserimento-rapido],[data-toggle-giorno-rapido],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
+  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-timbra-entrata],[data-timbra-uscita],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-salva-inserimento-rapido],[data-toggle-giorno-rapido],[data-modifica-timb],[data-elimina-timb],[data-elimina-selezionati],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
   if(!t) return;
 
   if(t.dataset.loginDip) {
@@ -573,6 +573,16 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
   else if(t.dataset.modificaTimb) {
     const timb=state.timbrature.find(x=>x.id===t.dataset.modificaTimb);
     if(timb){state.modaleTimbratura=timb; render();}
+  }
+  else if(t.dataset.eliminaSelezionati!==undefined) {
+    const checked = [...document.querySelectorAll(".timb-check:checked")].map(el=>el.dataset.id);
+    if(!checked.length){alert("Seleziona almeno una timbratura!");return;}
+    if(!confirm(`Eliminare ${checked.length} timbratura/e selezionata/e?`))return;
+    for(const id of checked){
+      await deleteDoc(doc(db,"timbrature",id));
+      state.timbrature=state.timbrature.filter(t=>t.id!==id);
+    }
+    window.renderListaTimbrature();
   }
   else if(t.dataset.eliminaTimb) {
     if(!confirm("Eliminare questa timbratura?")) return;
@@ -1475,14 +1485,16 @@ function renderListaTimbratureHTML(filtroDipId) {
   if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
   lista=lista.slice(0,50);
   if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
-  return lista.map(t=>{
+  const righe = lista.map(t=>{
     const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
     const tipo=getTipoGiorno(t.data);
-    // Controlla se è uno spezzato
     const fratelli=state.timbrature.filter(x=>x.dipendenteId===t.dipendenteId&&x.data===t.data&&x.tipo==="lavoro");
     const isSpezzato = fratelli.length > 1;
-    return `<div class="row">
+    return `<div class="row" style="cursor:default">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="checkbox" class="timb-check" data-id="${t.id}"
+          style="width:16px;height:16px;cursor:pointer;accent-color:#ef4444;flex-shrink:0"
+          onchange="aggiornaBarraEliminazione()">
         <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
         <span style="color:#9ca3af">${t.data}</span>
         ${tipo==="festivo"?`<span class="badge badge-red">🎉 Festivo</span>`:tipo==="domenica"?`<span class="badge badge-purple">☀️ Dom.</span>`:""}
@@ -1498,6 +1510,16 @@ function renderListaTimbratureHTML(filtroDipId) {
         <button class="btn btn-sm btn-danger" data-elimina-timb="${t.id}">🗑️</button>
       </div>
     </div>`;}).join("");
+  return `
+    <div id="barra-eliminazione" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:10px;display:none;align-items:center;justify-content:space-between;gap:8px">
+      <span id="contatore-selezionati" style="font-size:13px;font-weight:600;color:#dc2626">0 selezionate</span>
+      <div style="display:flex;gap:6px">
+        <button onclick="selezionaTutteTimbrature(true)" style="padding:5px 10px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">Seleziona tutte</button>
+        <button onclick="selezionaTutteTimbrature(false)" style="padding:5px 10px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">Deseleziona</button>
+        <button class="btn btn-sm btn-danger" data-elimina-selezionati>🗑️ Elimina selezionate</button>
+      </div>
+    </div>
+    ${righe}`;
 }
 
 function renderModaleTimbratura() {
@@ -2291,6 +2313,17 @@ function esportaExcel() {
   XLSX.writeFile(wb,`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
 }
 
+window.aggiornaBarraEliminazione=function(){
+  const checked=[...document.querySelectorAll(".timb-check:checked")];
+  const barra=document.getElementById("barra-eliminazione");
+  const contatore=document.getElementById("contatore-selezionati");
+  if(barra){barra.style.display=checked.length>0?"flex":"none";}
+  if(contatore){contatore.textContent=checked.length+" selezionat"+(checked.length===1?"a":"e");}
+};
+window.selezionaTutteTimbrature=function(sel){
+  document.querySelectorAll(".timb-check").forEach(el=>{el.checked=sel;});
+  window.aggiornaBarraEliminazione();
+};
 window.selezionaTuttiGiorni=selezionaTuttiGiorni;
 window.selezionaSoloFeriali=selezionaSoloFeriali;
 window.aggiornaDefaultOrari=aggiornaDefaultOrari;

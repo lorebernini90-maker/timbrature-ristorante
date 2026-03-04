@@ -2605,7 +2605,7 @@ function esportaExcel() {
       mov.assenze.forEach(ass => {
         const abbr = abbrAssenza[ass.assenza] || ass.assenza;
         if(ass.assenza === "Riposo Compensativo") {
-          parti.push("RIP 0:00"); // ore non conteggiate
+          parti.push("RIP"); // ore non conteggiate
         } else {
           parti.push(abbr);
         }

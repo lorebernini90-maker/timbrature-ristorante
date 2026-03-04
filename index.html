@@ -222,6 +222,10 @@ let state = {
   schedaDipId: null,
 };
 
+function generaPIN4() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
 function minToHHMM(min) { if(!min||min<=0) return "0:00"; return `${Math.floor(min/60)}:${String(min%60).padStart(2,"0")}`; }
 function oggi() { return new Date().toISOString().split("T")[0]; }
@@ -715,7 +719,7 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     await updateDoc(doc(db,"timbrature",timb.id),dati);
     state.modaleTimbratura=null; render();
   }
-  else if(t.dataset.apriModaleNuovo!==undefined) { state.modaleDip={mode:"nuovo",dip:{}}; render(); }
+  else if(t.dataset.apriModaleNuovo!==undefined) { window._nuovoPinGenerato=generaPIN4(); state.modaleDip={mode:"nuovo",dip:{}}; render(); }
   else if(t.dataset.modificaDip) {
     const dip=state.dipendenti.find(d=>d.id===t.dataset.modificaDip);
     state.modaleDip={mode:"modifica",dip}; render();
@@ -739,7 +743,8 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const attivo=document.getElementById("md-attivo")?.checked !== false;
     const fineContratto=document.getElementById("md-fine-contratto")?.value||null;
     if(!nome){alert("Inserisci il nome!");return;}
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin,attivo,fineContratto:fineContratto||null};
+    const pinFinale = pin || generaPIN4();
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin:pinFinale,attivo,fineContratto:fineContratto||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -2329,9 +2334,12 @@ function renderAdminImpostazioni() {
       </div>
       <div style="margin-top:10px;font-size:12px;color:#6b7280">
         Dipendenti senza PIN: ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length}
-        ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
-          ? `<span style="color:#dc2626"> (${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`
+        \${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
+          ? `<span style="color:#dc2626"> (\${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`
           : ' ✅'}
+        \${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
+          ? `<button onclick="window.assegnaPinMancanti()" class="btn btn-primary btn-sm" style="margin-top:8px">🔑 Assegna PIN automatici</button>`
+          : ""}
       </div>
     </div>
 
@@ -2420,7 +2428,7 @@ function renderModaleDip() {
           <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
           <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
-          <div><label>PIN (4 cifre)</label><input id="md-pin" type="password" maxlength="4" placeholder="Es. 1234" value="${d.pin||""}"></div>
+          <div><label>PIN (4 cifre)</label><div style="display:flex;gap:6px"><input id="md-pin" type="text" maxlength="4" placeholder="Auto" value="${d.pin||(state.modaleDip.mode==='nuovo'?window._nuovoPinGenerato||'':'')}" style="font-size:18px;letter-spacing:4px;font-weight:700"><button type="button" onclick="document.getElementById('md-pin').value=generaPIN4()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;cursor:pointer;font-size:12px;white-space:nowrap">🔄 Genera</button></div></div>
           <div><label>Data fine contratto</label><input id="md-fine-contratto" type="date" value="${d.fineContratto||""}"></div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f3f4f6;margin-top:4px">
@@ -2802,6 +2810,25 @@ function esportaExcel() {
 }
 
 window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
+window.assegnaPinMancanti=async function(){
+  const senzaPin = state.dipendenti.filter(d=>!d.pin);
+  if(senzaPin.length===0){alert("✅ Tutti i dipendenti hanno già un PIN!");return;}
+  const conf = confirm(`Assegnare un PIN a ${senzaPin.length} dipendenti senza PIN?`);
+  if(!conf) return;
+  const nuoviPin = [];
+  for(const dip of senzaPin){
+    const pin = generaPIN4();
+    await updateDoc(doc(db,"dipendenti",dip.id),{pin});
+    const idx = state.dipendenti.findIndex(d=>d.id===dip.id);
+    if(idx>=0) state.dipendenti[idx].pin = pin;
+    nuoviPin.push({nome:dip.nome, pin});
+  }
+  render();
+  // Mostra riepilogo PIN assegnati
+  const lista = nuoviPin.map(x=>`${x.nome}: ${x.pin}`).join("\n");
+  alert("✅ PIN assegnati:\n\n"+lista+"\n\nAnnotati e distribuili ai dipendenti!");
+};
+
 window.setBancaOreModo=function(multi){window._bancaOreMultiMese=multi;render();};
 window.toggleImpostazione=function(quale){
   if(quale==='pin') window._pinObbligatorio=!window._pinObbligatorio;

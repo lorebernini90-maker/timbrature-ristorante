@@ -1233,7 +1233,7 @@ function renderCalendarioRapidoHTML() {
   let html = '<div style="display:flex;flex-direction:column;gap:6px">';
   for(let g=1; g<=giorniMese; g++) {
     const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
-    const dow = new Date(dataStr).getDay();
+    const dow = new Date(anno, m-1, g).getDay();
     const fest = isFestivo(dataStr);
     const dom = dow===0;
     const stato = window._irGiorni[dataStr] || {sel:false, entrata:enDef, uscita:usDef, pausa:paDef};
@@ -1334,9 +1334,10 @@ function selezionaSoloFeriali() {
   const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
   for(let g=1; g<=giorniMese; g++) {
     const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
-    const dow = new Date(dataStr).getDay();
+    const dow = new Date(anno, m-1, g).getDay();
     if(!window._irGiorni[dataStr]) window._irGiorni[dataStr]={entrata:enDef,uscita:usDef,pausa:paDef};
-    window._irGiorni[dataStr].sel = dow !== 0; // escludi solo domenica
+    const dow2 = new Date(anno, m-1, g).getDay();
+    window._irGiorni[dataStr].sel = dow2 !== 0; // escludi solo domenica
   }
   const el = document.getElementById("calendario-rapido");
   if(el) el.innerHTML = renderCalendarioRapidoHTML();

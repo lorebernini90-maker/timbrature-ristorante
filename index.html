@@ -432,7 +432,7 @@ function render() {
 }
 
 document.addEventListener("click", async function(e) {
-  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-timbra-entrata],[data-timbra-uscita],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
+  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-timbra-entrata],[data-timbra-uscita],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-salva-inserimento-rapido],[data-toggle-giorno-rapido],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
   if(!t) return;
 
   if(t.dataset.loginDip) {
@@ -506,6 +506,35 @@ document.addEventListener("click", async function(e) {
     }
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
     window._dateSelezionate["dip"]=new Set();
+  }
+  else if(t.dataset.salvaInserimentoRapido!==undefined) {
+    const dipId = document.getElementById("ir-dip")?.value;
+    const sede = document.getElementById("ir-sede")?.value||SEDI[0];
+    const sogliaCustom = parseInt(document.getElementById("ir-soglia-default")?.value)||0;
+    const dip = state.dipendenti.find(d=>d.id===dipId);
+    if(!dip){alert("Seleziona un dipendente!");return;}
+    const giorni = Object.entries(window._irGiorni||{}).filter(([d,v])=>v.sel);
+    if(!giorni.length){alert("Seleziona almeno un giorno!");return;}
+    // Controlla duplicati
+    const duplicati = giorni.filter(([data])=>state.timbrature.some(t=>t.dipendenteId===dipId&&t.data===data&&t.tipo==="lavoro"));
+    if(duplicati.length){
+      const nomi = duplicati.map(([d])=>d).join(", ");
+      if(!confirm(`Attenzione: esistono già turni per ${duplicati.length} giorno/i (${nomi}).
+Vuoi inserire comunque (i turni esistenti restano)?`)) return;
+    }
+    let inseriti=0;
+    for(const [data,v] of giorni) {
+      const sogliaEff = sogliaCustom>0?sogliaCustom:sogliaMinutiDip(dip);
+      const calcolo = calcolaTurno(v.entrata, v.uscita, v.pausa, sogliaEff);
+      const docData = {dipendenteId:dipId,data,tipo:"lavoro",entrata:v.entrata,uscita:v.uscita,pausa:v.pausa,calcolo,sede};
+      if(sogliaCustom>0) docData.sogliaCustom=sogliaCustom;
+      await addDoc(collection(db,"timbrature"),docData);
+      inseriti++;
+    }
+    window._irGiorni={};
+    const el=document.getElementById("calendario-rapido");
+    if(el) el.innerHTML=renderCalendarioRapidoHTML();
+    alert(`✅ Inseriti ${inseriti} turni per ${dip.nome}!`);
   }
   else if(t.dataset.salvaTimbraturaAdmin!==undefined) {
     const dipId=document.getElementById("ai-dip")?.value;
@@ -1187,6 +1216,132 @@ function renderAdminReport() {
     ${getTimbMese().length===0?`<div class="empty">Nessuna timbratura per ${MESI[state.filtroMese]} ${state.filtroAnno}</div>`:""}</div>`;
 }
 
+// ── INSERIMENTO RAPIDO MENSILE ─────────────────────────────────
+// Stato locale calendario rapido
+window._irGiorni = {}; // { "2026-03-01": {sel:true, entrata:"09:00", uscita:"17:00", pausa:30} }
+
+function renderCalendarioRapidoHTML() {
+  const meseEl = document.getElementById("ir-mese");
+  const mese = meseEl?.value || (new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0"));
+  const [anno, m] = mese.split("-").map(Number);
+  const giorniMese = new Date(anno, m, 0).getDate();
+  const gg = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
+  const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
+  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+
+  let html = '<div style="display:flex;flex-direction:column;gap:6px">';
+  for(let g=1; g<=giorniMese; g++) {
+    const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const dow = new Date(dataStr).getDay();
+    const fest = isFestivo(dataStr);
+    const dom = dow===0;
+    const stato = window._irGiorni[dataStr] || {sel:false, entrata:enDef, uscita:usDef, pausa:paDef};
+    const sel = stato.sel;
+    const bg = sel ? "#f0fdf4" : "#f9fafb";
+    const border = sel ? "1px solid #86efac" : "1px solid #e5e7eb";
+    const label = dom ? `<span style="color:#7c3aed;font-weight:700">${gg[dow]}</span>` :
+                  fest ? `<span style="color:#dc2626;font-weight:700">${gg[dow]} 🎉</span>` :
+                  `<span style="color:#374151;font-weight:600">${gg[dow]}</span>`;
+    html += `<div style="background:${bg};border:${border};border-radius:8px;padding:8px 10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="checkbox" ${sel?"checked":""} onchange="toggleGiornoRapido('${dataStr}',this.checked)"
+          style="width:18px;height:18px;cursor:pointer;accent-color:#059669;flex-shrink:0">
+        <span style="min-width:30px;font-size:13px">${String(g).padStart(2,"0")}</span>
+        ${label}
+        ${fest?`<span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:6px">Festivo</span>`:""}
+        ${sel?`
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto">
+          <input type="time" value="${stato.entrata}" onchange="aggiornaGiornoRapido('${dataStr}','entrata',this.value)"
+            style="width:90px;padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
+          <span style="color:#9ca3af;font-size:12px">→</span>
+          <input type="time" value="${stato.uscita}" onchange="aggiornaGiornoRapido('${dataStr}','uscita',this.value)"
+            style="width:90px;padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
+          <input type="number" value="${stato.pausa}" min="0" max="120" onchange="aggiornaGiornoRapido('${dataStr}','pausa',parseInt(this.value)||0)"
+            style="width:60px;padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:6px" placeholder="pausa">
+          <span style="font-size:11px;color:#9ca3af">min</span>
+        </div>`:""}
+      </div>
+    </div>`;
+  }
+  html += "</div>";
+  return html;
+}
+
+function renderCalendarioRapido() {
+  window._irGiorni = {};
+  const el = document.getElementById("calendario-rapido");
+  if(el) el.innerHTML = renderCalendarioRapidoHTML();
+}
+
+function toggleGiornoRapido(data, checked) {
+  const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
+  const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
+  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  if(!window._irGiorni[data]) window._irGiorni[data]={sel:false,entrata:enDef,uscita:usDef,pausa:paDef};
+  window._irGiorni[data].sel = checked;
+  const el = document.getElementById("calendario-rapido");
+  if(el) el.innerHTML = renderCalendarioRapidoHTML();
+}
+
+function aggiornaGiornoRapido(data, campo, valore) {
+  if(!window._irGiorni[data]) return;
+  window._irGiorni[data][campo] = valore;
+}
+
+function aggiornaDefaultOrari() {
+  const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
+  const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
+  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  // Aggiorna solo i giorni che non sono stati modificati manualmente
+  Object.keys(window._irGiorni).forEach(data => {
+    if(!window._irGiorni[data]._modificato) {
+      window._irGiorni[data].entrata = enDef;
+      window._irGiorni[data].uscita = usDef;
+      window._irGiorni[data].pausa = paDef;
+    }
+  });
+  const el = document.getElementById("calendario-rapido");
+  if(el) el.innerHTML = renderCalendarioRapidoHTML();
+}
+
+function selezionaTuttiGiorni(sel) {
+  const meseEl = document.getElementById("ir-mese");
+  const mese = meseEl?.value || "";
+  if(!mese) return;
+  const [anno, m] = mese.split("-").map(Number);
+  const giorniMese = new Date(anno, m, 0).getDate();
+  const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
+  const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
+  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  for(let g=1; g<=giorniMese; g++) {
+    const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    if(!window._irGiorni[dataStr]) window._irGiorni[dataStr]={entrata:enDef,uscita:usDef,pausa:paDef};
+    window._irGiorni[dataStr].sel = sel;
+  }
+  const el = document.getElementById("calendario-rapido");
+  if(el) el.innerHTML = renderCalendarioRapidoHTML();
+}
+
+function selezionaSoloFeriali() {
+  const meseEl = document.getElementById("ir-mese");
+  const mese = meseEl?.value || "";
+  if(!mese) return;
+  const [anno, m] = mese.split("-").map(Number);
+  const giorniMese = new Date(anno, m, 0).getDate();
+  const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
+  const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
+  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  for(let g=1; g<=giorniMese; g++) {
+    const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const dow = new Date(dataStr).getDay();
+    if(!window._irGiorni[dataStr]) window._irGiorni[dataStr]={entrata:enDef,uscita:usDef,pausa:paDef};
+    window._irGiorni[dataStr].sel = dow !== 0; // escludi solo domenica
+  }
+  const el = document.getElementById("calendario-rapido");
+  if(el) el.innerHTML = renderCalendarioRapidoHTML();
+}
+
 function renderAdminInserisci() {
   return `
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
@@ -1257,6 +1412,41 @@ function renderAdminInserisci() {
       </div>
     </div>
     <button class="btn btn-primary" data-salva-timbratura-admin>💾 Salva timbratura</button>
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
+
+    <!-- INSERIMENTO RAPIDO MENSILE -->
+    <div style="margin-bottom:24px">
+      <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">⚡ Inserimento rapido mensile</h3>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:14px">Seleziona i giorni nel calendario, imposta l'orario di default e personalizza singolo giorno se necessario.</p>
+      <div class="grid-auto" style="margin-bottom:12px">
+        <div><label>Dipendente</label>
+          <select id="ir-dip" onchange="renderCalendarioRapido()">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
+        </div>
+        <div><label>Mese</label>
+          <input type="month" id="ir-mese" value="${new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')}" onchange="renderCalendarioRapido()">
+        </div>
+        <div><label>Sede</label>
+          <select id="ir-sede">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
+        </div>
+      </div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px">Orario default (si applica a tutti i giorni selezionati)</div>
+        <div class="grid-auto">
+          <div><label>Entrata</label><input type="time" id="ir-entrata-default" value="09:00" oninput="aggiornaDefaultOrari()"></div>
+          <div><label>Uscita</label><input type="time" id="ir-uscita-default" value="17:00" oninput="aggiornaDefaultOrari()"></div>
+          <div><label>Pausa (min)</label><input type="number" id="ir-pausa-default" value="30" min="0" max="120" oninput="aggiornaDefaultOrari()"></div>
+          <div><label>Soglia str. (min) <span style="font-weight:400;color:#9ca3af">opz.</span></label><input type="number" id="ir-soglia-default" placeholder="Default dip." min="0" max="720"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button onclick="selezionaTuttiGiorni(true)" style="padding:6px 12px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer">✅ Seleziona tutti</button>
+        <button onclick="selezionaTuttiGiorni(false)" style="padding:6px 12px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer">⬜ Deseleziona tutti</button>
+        <button onclick="selezionaSoloFeriali()" style="padding:6px 12px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer">📅 Solo Lun–Sab</button>
+      </div>
+      <div id="calendario-rapido" style="margin-bottom:14px">${renderCalendarioRapidoHTML()}</div>
+      <button class="btn btn-primary" style="width:100%" data-salva-inserimento-rapido>⚡ Inserisci tutti i turni selezionati</button>
+    </div>
+
     <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
     <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">📋 Gestisci timbrature</h3>
     <div style="margin-bottom:12px;max-width:300px">

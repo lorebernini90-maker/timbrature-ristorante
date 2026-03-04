@@ -665,18 +665,33 @@ document.addEventListener("change", function(e) {
 });
 
 function renderLogin() {
+  const dipAttivi = getDipendentiAttivi();
+  const cerca = state._loginCerca||"";
+  const filtrati = cerca.trim()
+    ? dipAttivi.filter(d=>d.nome.toLowerCase().includes(cerca.toLowerCase()))
+    : dipAttivi;
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;text-align:center">
       <h1 style="font-size:20px;font-weight:700">🍽️ Timbrature Ristorante</h1>
     </div>
     <div class="login-wrap"><div class="login-card">
       <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Chi sei?</h2>
-      <p style="color:#6b7280;font-size:14px;margin-bottom:20px">Seleziona il tuo nome per timbrare</p>
-      <div>${getDipendentiAttivi().map(d=>`
+      <p style="color:#6b7280;font-size:14px;margin-bottom:14px">Seleziona il tuo nome per timbrare</p>
+      <div style="position:relative;margin-bottom:16px">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:16px">🔍</span>
+        <input type="text" placeholder="Cerca il tuo nome..." value="${cerca}"
+          oninput="window._loginCerca=this.value;state._loginCerca=this.value;renderLoginList()"
+          style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none"
+          autofocus>
+      </div>
+      <div id="login-list">
+        ${filtrati.map(d=>`
         <div class="login-item" data-login-dip="${d.id}">
-          <div><div style="font-weight:600">${d.nome}</div><div style="font-size:12px;color:#6b7280">${d.tipo}</div></div>
+          <div style="font-weight:600">${d.nome}</div>
           <span style="color:#f59e0b;font-size:20px">${d.pin?"🔒":"→"}</span>
         </div>`).join("")}
+        ${filtrati.length===0?`<div style="text-align:center;color:#9ca3af;padding:20px;font-size:14px">Nessun dipendente trovato</div>`:""}
+      </div>
       <div data-login-admin style="background:#1e293b;color:white;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px">
         <span style="font-size:20px">🔐</span>
         <div style="text-align:left"><div style="font-weight:700;font-size:14px">Area Admin</div><div style="font-size:11px;opacity:0.7">Solo per il titolare</div></div>
@@ -2392,6 +2407,19 @@ function esportaExcel() {
 }
 
 window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
+window._loginCerca="";
+window.renderLoginList=function(){
+  const cerca=window._loginCerca||"";
+  const dipAttivi=getDipendentiAttivi();
+  const filtrati=cerca.trim()?dipAttivi.filter(d=>d.nome.toLowerCase().includes(cerca.toLowerCase())):dipAttivi;
+  const el=document.getElementById("login-list");
+  if(!el)return;
+  el.innerHTML=filtrati.map(d=>`
+    <div class="login-item" data-login-dip="${d.id}">
+      <div style="font-weight:600">${d.nome}</div>
+      <span style="color:#f59e0b;font-size:20px">${d.pin?"🔒":"→"}</span>
+    </div>`).join("")+(filtrati.length===0?`<div style="text-align:center;color:#9ca3af;padding:20px;font-size:14px">Nessun dipendente trovato</div>`:"");
+};
 window.aggiornaBarraEliminazione=function(){
   const checked=[...document.querySelectorAll(".timb-check:checked")];
   const barra=document.getElementById("barra-eliminazione");

@@ -2163,9 +2163,9 @@ function renderAdminBancaOre() {
     </div>
     <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
       ${bancheOre.map(b => {
-        const sc = b.saldo > 0 ? "#059669" : b.saldo < 0 ? "#dc2626" : "#6b7280";
-        const sbg = b.saldo > 0 ? "#f0fdf4" : b.saldo < 0 ? "#fef2f2" : "#f9fafb";
-        const sbr = b.saldo > 0 ? "#bbf7d0" : b.saldo < 0 ? "#fecaca" : "#e5e7eb";
+        const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
+        const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
+        const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
         const icon = b.saldo > 0 ? "📈" : b.saldo < 0 ? "📉" : "⚖️";
         return `<div style="background:${sbg};border:1px solid ${sbr};border-radius:12px;padding:14px">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px">${b.dip.nome}
@@ -2173,11 +2173,11 @@ function renderAdminBancaOre() {
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
             <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
-              <div style="font-size:13px;font-weight:700;color:#059669">+${minToHHMM(b.totaleSurplus)}</div>
+              <div style="font-size:13px;font-weight:700;color:#dc2626">+${minToHHMM(b.totaleSurplus)}</div>
               <div style="font-size:10px;color:#6b7280">Surplus</div>
             </div>
             <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
-              <div style="font-size:13px;font-weight:700;color:#dc2626">-${minToHHMM(b.totaleDeficit)}</div>
+              <div style="font-size:13px;font-weight:700;color:#059669">-${minToHHMM(b.totaleDeficit)}</div>
               <div style="font-size:10px;color:#6b7280">Deficit</div>
             </div>
             <div style="background:white;border-radius:8px;padding:8px;border:1px solid ${sbr}">
@@ -2190,7 +2190,7 @@ function renderAdminBancaOre() {
     </div>
     ${bancheOre.map(b => {
       if(!b.dettaglioGiorni.length) return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">${b.dip.nome}</div><div class="empty" style="padding:16px">Nessun dato per ${MESI[state.filtroMese]} ${state.filtroAnno}</div></div>`;
-      const sc = b.saldo > 0 ? "#059669" : b.saldo < 0 ? "#dc2626" : "#6b7280";
+      const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
       return `
       <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:14px">
         <div style="background:#f9fafb;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px">
@@ -2198,8 +2198,8 @@ function renderAdminBancaOre() {
             <span style="font-weight:400;color:#6b7280;font-size:11px"> — ${b.dip.tipo} — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
           </div>
           <div style="display:flex;gap:12px;font-size:12px;font-weight:700;flex-wrap:wrap">
-            <span style="color:#059669">+${minToHHMM(b.totaleSurplus)}h surplus</span>
-            <span style="color:#dc2626">-${minToHHMM(b.totaleDeficit)}h deficit</span>
+            <span style="color:#dc2626">+${minToHHMM(b.totaleSurplus)}h surplus</span>
+            <span style="color:#059669">-${minToHHMM(b.totaleDeficit)}h deficit</span>
             <span style="color:${sc};font-size:14px">Saldo: ${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}h</span>
           </div>
         </div>
@@ -2214,7 +2214,7 @@ function renderAdminBancaOre() {
               const dow = new Date(g.data).getDay();
               const isFest = isFestivo(g.data);
               const rowbg = isFest ? "#fef2f2" : dow===0 ? "#f5f3ff" : g.diff < 0 ? "#fef9f0" : "";
-              const dc = g.diff > 0 ? "#059669" : g.diff < 0 ? "#dc2626" : "#9ca3af";
+              const dc = g.diff > 0 ? "#dc2626" : g.diff < 0 ? "#059669" : "#9ca3af";
               const dl = g.diff === 0 ? "—" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
               return `<tr style="background:${rowbg}">
                 <td style="font-weight:600;font-size:12px">${g.data}</td>

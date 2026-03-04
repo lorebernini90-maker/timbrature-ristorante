@@ -574,8 +574,7 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
       state._saving=false;
       alert(`Inseriti ${dates.length} giorno/i di assenza!`);
       window._dateSelezionate["admin"]=new Set();
-      const el=document.getElementById("lista-timbrature");
-      if(el)el.innerHTML=renderListaTimbratureHTML(document.getElementById("filtro-dip-lista")?.value||"");
+      render();
       return;
     }
     alert("Timbratura inserita!");

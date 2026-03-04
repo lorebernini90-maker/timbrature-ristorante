@@ -156,7 +156,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const ADMIN_PIN = "1234";
-const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo","Giorno Libero"];
+const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo","Congedo Parentale","Giorno Libero"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const SEDI = ["Vivandaio", "Rione Certosa"];
 
@@ -423,7 +423,9 @@ function calcolaCostoAssenzeMensili(dipId) {
   VOCI_ASSENZA.forEach(v => {
     if(v === "Malattia" || v === "Giorno Libero") return;
     const giorni = assenzeValide.filter(a => a.assenza === v).length;
-    dettaglio[v] = { giorni, ore: giorni * oreDip, costo: giorni * costoGiorno };
+    // Congedo Parentale: costo 0 per azienda (INPS eroga 30% direttamente al dipendente)
+    const costo = v === "Congedo Parentale" ? 0 : giorni * costoGiorno;
+    dettaglio[v] = { giorni, ore: giorni * oreDip, costo, costoZero: v === "Congedo Parentale" };
   });
   const giorniMalattia = dateMailattiaMese.length;
   dettaglio["Malattia"] = {
@@ -1772,6 +1774,7 @@ function renderAdminCosti() {
       <p>• Giorni 4–20: 50% a carico azienda (INPS copre 50%)</p>
       <p>• Giorni 21+: 33% a carico azienda (INPS copre 67%)</p>
       <p style="font-size:11px;color:#6b7280">* Giorni consecutivi (con gap ≤3gg) contano come stesso episodio</p>
+      <p style="margin-top:6px"><strong>👶 Congedo Parentale:</strong> costo aziendale 0% — INPS eroga il 30% direttamente al dipendente</p>
     </div>
     <div class="info-box" style="margin-top:16px">
       <p><strong>📋 Maggiorazioni applicate:</strong></p>
@@ -1823,10 +1826,14 @@ function renderAdminMaggiorazioni() {
                   if(dm.parziale>0) parti.push(`${dm.parziale}g INPS 50%`);
                   if(dm.ridotto>0) parti.push(`${dm.ridotto}g INPS 67%`);
                   return `<div class="cost-row">
-                    <span style="color:#3b82f6">
-                      Malattia (${det.giorni}g — ${parti.join(", ")})
-                    </span>
+                    <span style="color:#3b82f6">Malattia (${det.giorni}g — ${parti.join(", ")})</span>
                     <span style="color:#3b82f6">${euro(det.costo)}</span>
+                  </div>`;
+                }
+                if(v==="Congedo Parentale"){
+                  return `<div class="cost-row">
+                    <span style="color:#8b5cf6">Congedo Parentale (${det.giorni}g — INPS 30%, costo azienda 0)</span>
+                    <span style="color:#8b5cf6">€ 0,00</span>
                   </div>`;
                 }
                 return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;

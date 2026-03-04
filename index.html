@@ -652,11 +652,12 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
       const uscita=document.getElementById("ai-uscita")?.value;
       const pausaNum=parseInt(document.getElementById("ai-pausa")?.value)||0;
       if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
+      const aiNote = document.getElementById("ai-note")?.value||"";
       const aiSogliaCustom = parseInt(document.getElementById("ai-soglia-custom")?.value)||0;
       const aiSogliaEff = aiSogliaCustom > 0 ? aiSogliaCustom : sogliaMinutiDip(dip);
       const calcolo=calcolaTurno(entrata,uscita,pausaNum,aiSogliaEff);
       const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
-      const aiDocData={dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede:sedeAdmin};
+      const aiDocData={dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede:sedeAdmin};if(aiNote) aiDocData.note=aiNote;
       if(aiSogliaCustom>0) aiDocData.sogliaCustom=aiSogliaCustom;
       await addDoc(collection(db,"timbrature"),aiDocData);
     } else {
@@ -1044,14 +1045,15 @@ function renderAdmin() {
   else if(sub==="bancaore") content=renderAdminBancaOre();
   else if(sub==="ferie") content=renderAdminFerie();
   else if(sub==="giornaliero") content=renderAdminGiornaliero();
+  else if(sub==="impostazioni") content=renderAdminImpostazioni();
   else content=renderAdminDipendenti();
 
   // Macro-tab config
   const macros=[
-    {key:"oggi", label:"📅 Oggi", subs:[["dashboard","🏠 Dashboard"],["presenze","👁️ Presenze"],["inserisci","✏️ Inserisci"]]},
+    {key:"oggi", label:"📅 Oggi", subs:[["dashboard","🏠 Dashboard"],["presenze",`👁️ Presenze${getAlertUsciteMancanti&&getAlertUsciteMancanti().length>0?` <span style="background:#ef4444;color:white;border-radius:10px;padding:0 5px;font-size:10px">${getAlertUsciteMancanti().length}</span>`:""}`],["inserisci","✏️ Inserisci"]]},
     {key:"periodo", label:"📊 Periodo", subs:[["report","📊 Report"],["settimane","📆 Settimane"],["scheda","👤 Scheda"],["giornaliero","📅 Giornaliero"]]},
     {key:"economia", label:"💶 Economia", subs:[["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["bancaore","🏦 Banca Ore"]]},
-    {key:"gestione", label:"⚙️ Gestione", subs:[["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"]]},
+    {key:"gestione", label:"⚙️ Gestione", subs:[["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"],["impostazioni","⚙️ Impostazioni"]]},
   ];
   const macroCorrente = macros.find(m=>m.subs.some(s=>s[0]===sub))?.key || state.adminTab;
   const subCorrente = macros.find(m=>m.key===macroCorrente)?.subs || [];
@@ -1101,6 +1103,27 @@ function renderAdmin() {
 }
 
 // ── DASHBOARD OGGI ────────────────────────────────────────────
+function getAlertUsciteMancanti() {
+  const oggiStr = oggi();
+  const oraCorrente = timeToMin(oraNow());
+  const alerts = [];
+  getDipendentiAttivi().forEach(dip => {
+    const turniOggi = state.timbrature.filter(t =>
+      t.dipendenteId === dip.id && t.data === oggiStr && t.tipo === "lavoro"
+    );
+    turniOggi.forEach(t => {
+      if(t.entrata && !t.uscita) {
+        const minutiIn = timeToMin(t.entrata);
+        const minutiPassati = oraCorrente - minutiIn;
+        if(minutiPassati > (sogliaMinutiDip(dip) + 60)) { // soglia + 1h di tolleranza
+          alerts.push({ dip, entrata: t.entrata, minutiPassati });
+        }
+      }
+    });
+  });
+  return alerts;
+}
+
 function renderAdminDashboard() {
   const dataOggi = oggi();
   const timbratureOggi = state.timbrature.filter(t => t.data === dataOggi);
@@ -2101,6 +2124,45 @@ function renderAdminFerie() {
 }
 
 // ── BANCA ORE ─────────────────────────────────────────────────
+// Calcola banca ore cumulativa da inizio anno (o da mese selezionato indietro)
+function calcolaBancaOreMultiMese(dipId) {
+  const dip = state.dipendenti.find(d => d.id === dipId);
+  if(!dip) return null;
+  const soglia = sogliaMinutiDip(dip);
+  // Prendi tutte le timbrature da gennaio dell'anno filtrato fino al mese selezionato
+  const annoFiltro = state.filtroAnno;
+  const meseFiltro = state.filtroMese;
+  const tmTutte = state.timbrature.filter(t => {
+    const d = new Date(t.data);
+    return t.dipendenteId === dipId &&
+      d.getFullYear() === annoFiltro &&
+      d.getMonth() <= meseFiltro;
+  });
+  const turni = tmTutte.filter(t => t.tipo === "lavoro");
+  const assenze = tmTutte.filter(t => t.tipo === "assenza");
+  const perGiorno = {};
+  turni.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
+  let totaleSurplus = 0, totaleDeficit = 0;
+  const dettaglioMesi = {};
+  Object.entries(perGiorno).forEach(([data, ts]) => {
+    const mese = new Date(data).getMonth();
+    const agg = aggregaTurniGiorno(ts, dip);
+    if(!agg) return;
+    const oreMin = agg.calcolo.totaleMin;
+    const sogliaGiorno = sogliaPerTurno(ts[0], dip);
+    const diff = oreMin - sogliaGiorno;
+    if(diff >= 0) totaleSurplus += diff;
+    else totaleDeficit += Math.abs(diff);
+    if(!dettaglioMesi[mese]) dettaglioMesi[mese] = { surplus: 0, deficit: 0 };
+    if(diff >= 0) dettaglioMesi[mese].surplus += diff;
+    else dettaglioMesi[mese].deficit += Math.abs(diff);
+  });
+  const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0 && a.assenza !== "Giorno Libero");
+  // assenze neutre: non cambiano surplus/deficit
+  const saldo = totaleSurplus - totaleDeficit;
+  return { dip, soglia, totaleSurplus, totaleDeficit, saldo, dettaglioMesi, periodoLabel: `Gen–${MESI[meseFiltro]} ${annoFiltro}` };
+}
+
 function calcolaBancaOre(dipId) {
   const dip = state.dipendenti.find(d => d.id === dipId);
   if(!dip) return null;
@@ -2161,8 +2223,14 @@ function renderAdminBancaOre() {
       <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
       <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
     </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;color:#6b7280">Visualizzazione:</span>
+      <button onclick="window._bancaOreMultiMese=false;render()" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;background:${!window._bancaOreMultiMese?'#f59e0b':'white'};color:${!window._bancaOreMultiMese?'white':'#374151'};font-weight:600">Solo mese</button>
+      <button onclick="window._bancaOreMultiMese=true;render()" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;background:${window._bancaOreMultiMese?'#f59e0b':'white'};color:${window._bancaOreMultiMese?'white':'#374151'};font-weight:600">Cumulativo anno</button>
+      ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo accumulato da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
+    </div>
     <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
-      ${bancheOre.map(b => {
+      ${(window._bancaOreMultiMese ? dipAttivi.map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre).map(b => {
         const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
         const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
         const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
@@ -2241,6 +2309,57 @@ function renderAdminBancaOre() {
         </div>
       </div>`;
     }).join("")}`;
+}
+
+function renderAdminImpostazioni() {
+  return `
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">⚙️ Impostazioni</h2>
+
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">🔐 Sicurezza accessi</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6">
+        <div>
+          <div style="font-size:13px;font-weight:600">PIN obbligatorio</div>
+          <div style="font-size:11px;color:#6b7280">I dipendenti senza PIN non possono accedere</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;margin:0">
+          <input type="checkbox" ${window._pinObbligatorio?"checked":""} onchange="window._pinObbligatorio=this.checked" style="opacity:0;width:0;height:0">
+          <span onclick="window._pinObbligatorio=!window._pinObbligatorio;render()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${window._pinObbligatorio?"#f59e0b":"#e5e7eb"};border-radius:24px;transition:0.3s">
+            <span style="position:absolute;height:18px;width:18px;left:${window._pinObbligatorio?"22px":"3px"};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
+          </span>
+        </label>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#6b7280">
+        Dipendenti senza PIN: ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length} 
+        ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0?`<span style="color:#dc2626">(${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`:"✅"}
+      </div>
+    </div>
+
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">🏦 Banca Ore</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+        <div>
+          <div style="font-size:13px;font-weight:600">Visualizzazione cumulativa di default</div>
+          <div style="font-size:11px;color:#6b7280">Mostra saldo da inizio anno invece del solo mese</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;margin:0">
+          <span onclick="window._bancaOreMultiMese=!window._bancaOreMultiMese;render()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${window._bancaOreMultiMese?"#f59e0b":"#e5e7eb"};border-radius:24px;transition:0.3s">
+            <span style="position:absolute;height:18px;width:18px;left:${window._bancaOreMultiMese?"22px":"3px"};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">💾 Backup dati</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Esporta tutti i dati in JSON per backup o ripristino</div>
+      <button onclick="window.esportaBackup()" class="btn btn-primary" style="margin-right:8px">⬇️ Esporta backup JSON</button>
+      <label class="btn" style="background:#e5e7eb;color:#374151;cursor:pointer;display:inline-block;padding:9px 18px;font-weight:700;font-size:13px;border-radius:8px">
+        ⬆️ Importa backup
+        <input type="file" accept=".json" onchange="window.importaBackup(this)" style="display:none">
+      </label>
+    </div>
+  `;
 }
 
 function renderAdminDipendenti() {
@@ -2684,6 +2803,59 @@ function esportaExcel() {
 }
 
 window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
+
+window.esportaBackup=function(){
+  const backup = {
+    versione: "1.0",
+    data: new Date().toISOString(),
+    dipendenti: state.dipendenti,
+    timbrature: state.timbrature
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `backup_timbrature_${oggi()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.importaBackup=async function(input){
+  const file = input.files[0];
+  if(!file) return;
+  const text = await file.text();
+  try {
+    const backup = JSON.parse(text);
+    if(!backup.dipendenti || !backup.timbrature) throw new Error("Formato non valido");
+    const conf = confirm(`Importare backup del ${new Date(backup.data).toLocaleDateString("it-IT")}?\n\nAttenzione: questa operazione aggiunge i dati del backup a quelli esistenti. I dati attuali NON vengono cancellati.`);
+    if(!conf) return;
+    // Importa solo dipendenti nuovi (non esistenti)
+    let dipImportati = 0;
+    for(const dip of backup.dipendenti){
+      if(!state.dipendenti.find(d=>d.nome===dip.nome)){
+        const {id,...data}=dip;
+        await addDoc(collection(db,"dipendenti"),data);
+        dipImportati++;
+      }
+    }
+    // Importa timbrature che non esistono già
+    let timbImportate = 0;
+    for(const t of backup.timbrature){
+      const {id,...data}=t;
+      const esiste = state.timbrature.find(x=>
+        x.dipendenteId===data.dipendenteId && x.data===data.data &&
+        x.entrata===data.entrata && x.tipo===data.tipo
+      );
+      if(!esiste){
+        await addDoc(collection(db,"timbrature"),data);
+        timbImportate++;
+      }
+    }
+    alert(`✅ Backup importato!\n${dipImportati} dipendenti aggiunti\n${timbImportate} timbrature aggiunte`);
+  } catch(e) {
+    alert("❌ Errore: " + e.message);
+  }
+};
 window._loginCerca="";
 window.renderLoginList=function(){
   const cerca=window._loginCerca||"";

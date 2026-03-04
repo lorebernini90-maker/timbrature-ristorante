@@ -422,6 +422,7 @@ async function avvia() {
 }
 
 function render() {
+  if(state._saving) return;
   const app=document.getElementById("app"); if(!app) return;
   if(state.vista==="login") app.innerHTML=renderLogin();
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
@@ -500,10 +501,12 @@ document.addEventListener("click", async function(e) {
     const dates=getDateAssenza("dip");
     if(!dates.length)return;
     if(!confirm(`Confermi "${tipoAssenza}" per ${dates.length} giorno/i?\n${dates.join(", ")}`))return;
+    const sedeAss=document.getElementById("inp-sede-assenza")?.value||SEDI[0];
+    state._saving=true;
     for(const data of dates){
-      const sedeAss=document.getElementById("inp-sede-assenza")?.value||document.getElementById("inp-sede")?.value||SEDI[0];
       await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data,tipo:"assenza",assenza:tipoAssenza,sbloccata:false,sede:sedeAss});
     }
+    state._saving=false;
     alert(`Registrati ${dates.length} giorno/i di assenza!`);
     window._dateSelezionate["dip"]=new Set();
   }
@@ -557,10 +560,12 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
       const assenza=document.getElementById("ai-assenza")?.value;
       const dates=getDateAssenza("admin");
       if(!dates.length)return;
+      const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
+      state._saving=true;
       for(const dataAss of dates){
-        const sedeAdmin=document.getElementById("ai-sede")?.value||SEDI[0];
         await addDoc(collection(db,"timbrature"),{dipendenteId:dipId,data:dataAss,tipo:"assenza",assenza,sbloccata:false,sede:sedeAdmin});
       }
+      state._saving=false;
       alert(`Inseriti ${dates.length} giorno/i di assenza!`);
       window._dateSelezionate["admin"]=new Set();
       const el=document.getElementById("lista-timbrature");

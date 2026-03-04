@@ -2213,7 +2213,7 @@ function renderAdminScheda() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">👤 Scheda dipendente</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <select onchange="state.schedaDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
+        <select onchange="window.cambiaSchedaDip(this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
           ${state.dipendenti.map(d=>`<option value="${d.id}"${d.id===dipId?" selected":""}>${d.nome}</option>`).join("")}
         </select>
         ${filtriHTML()}
@@ -2385,6 +2385,7 @@ function esportaExcel() {
   XLSX.writeFile(wb,`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
 }
 
+window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
 window.aggiornaBarraEliminazione=function(){
   const checked=[...document.querySelectorAll(".timb-check:checked")];
   const barra=document.getElementById("barra-eliminazione");

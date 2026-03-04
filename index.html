@@ -2532,113 +2532,153 @@ function esportaExcel() {
   ws2["!cols"]=[{wch:20},{wch:12},{wch:12},{wch:16},{wch:9},{wch:24},{wch:14},{wch:10},{wch:10},{wch:11},{wch:11},{wch:12},{wch:20},{wch:8}];
   XLSX.utils.book_append_sheet(wb,ws2,"Dettaglio");
 
-  // ── FOGLIO 3: MOVIMENTO GIORNALIERO (per consulente) ──
-  // Ogni giorno del mese per ogni dipendente: lavoro + assenze
-  // Riposo Compensativo = riga lavoro con ore 0 (visibile ma non sommato)
-  const righeMovimento=[["Dipendente","Matricola","Data","Giorno","Tipo Giorno","Sede","Movimento","Entrata","Uscita","Pausa (min)","Ore Lavorate","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Note"]];
+  // ── FOGLIO 3: TABELLONE PRESENZE (giorni × dipendenti) ──
+  // Righe = giorni del mese, Colonne = dipendenti
+  // Cella = tipo movimento + ore (LAV 8:30 / FER / MAL / ecc.)
+  const anno = state.filtroAnno;
+  const mese = state.filtroMese; // 0-based
+  const giorniDelMese = new Date(anno, mese+1, 0).getDate();
+  const dipAttivi = state.dipendenti.filter(d => {
+    // includi solo dipendenti con almeno una timbratura nel mese
+    return tm.some(t => t.dipendenteId === d.id);
+  });
 
-  // Costruisci mappa per dipendente → giorni
-  state.dipendenti.forEach(dip => {
-    const turniDip = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
+  // Intestazione: [Giorno, Giorno settimana, dip1, dip2, ...]
+  const intestazione = ["Data", "Giorno", ...dipAttivi.map(d => d.nome)];
+  const righeTab = [intestazione];
+
+  // Costruisci mappa rapida: dipId+data → cella
+  const mappaMovimenti = {};
+  dipAttivi.forEach(dip => {
+    const turniDip   = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
     const assenzeDip = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "assenza");
 
-    // Raccogli tutti i giorni con attività
-    const giorniAttivi = new Set([
-      ...turniDip.map(t => t.data),
-      ...assenzeDip.map(t => t.data)
-    ]);
-
-    [...giorniAttivi].sort().forEach(data => {
-      const dow = new Date(data+"T12:00:00").getDay();
-      const nomeGiorno = giorniSettimana[dow];
-      const tipoG = getTipoGiorno(data); // domenica/festivo/feriale
-      const tipoGLabel = tipoG === "domenica" ? "Domenica" : tipoG === "festivo" ? "Festivo 🎉" : "Feriale";
-
-      // Turni di lavoro quel giorno
-      const turniGiorno = turniDip.filter(t => t.data === data);
-      // Assenze quel giorno
-      const assenzeGiorno = assenzeDip.filter(t => t.data === data);
-
-      if(turniGiorno.length > 0) {
-        // Aggrega turni del giorno
-        const agg = aggregaTurniGiorno(turniGiorno, dip);
-        const c = agg ? agg.calcolo : null;
-        const isSpezzato = turniGiorno.length > 1;
-        const orari = isSpezzato
-          ? turniGiorno.map(t=>`${t.entrata}→${t.uscita}`).join(" + ")
-          : `${turniGiorno[0].entrata||""}→${turniGiorno[0].uscita||""}`;
-        const pausaTot = turniGiorno.reduce((s,t)=>s+(t.pausa||0),0);
-        righeMovimento.push([
-          dip.nome, dip.matricola||"", data, nomeGiorno, tipoGLabel,
-          turniGiorno[0].sede||"",
-          isSpezzato ? "Lavoro (spezzato)" : "Lavoro",
-          turniGiorno[0].entrata||"",
-          turniGiorno[turniGiorno.length-1].uscita||"",
-          pausaTot,
-          c ? minToHHMM(c.totaleMin) : "",
-          c ? minToHHMM(c.diurneMin) : "",
-          c ? minToHHMM(c.notturneMin) : "",
-          c ? minToHHMM(c.strDiurniMin) : "",
-          c ? minToHHMM(c.strNotturniMin) : "",
-          isSpezzato ? "Turno spezzato" : ""
-        ]);
-      }
-
-      assenzeGiorno.forEach(ass => {
-        const isRiposo = ass.assenza === "Riposo Compensativo";
-        righeMovimento.push([
-          dip.nome, dip.matricola||"", data, nomeGiorno, tipoGLabel,
-          ass.sede||"",
-          // Riposo Compensativo appare come "Lavoro" ma ore a 0
-          isRiposo ? "Riposo Compensativo (già pagato)" : `Assenza: ${ass.assenza}`,
-          "", "", "",
-          isRiposo ? "00:00" : "",  // ore 0 per riposo compensativo
-          "", "", "", "",
-          isRiposo ? "Giorno di recupero - ore non conteggiate" : (ass.assenza||"")
-        ]);
-      });
-    });
-
-    // ── RIGA TOTALI per questo dipendente ──
-    const oreDip = sogliaMinutiDip(dip) / 60;
-    let totLavMin=0, totDiurMin=0, totNottMin=0, totStrDMin=0, totStrNMin=0;
     turniDip.forEach(t => {
-      if(t.calcolo) {
-        totLavMin  += t.calcolo.totaleMin    || 0;
-        totDiurMin += t.calcolo.diurneMin    || 0;
-        totNottMin += t.calcolo.notturneMin  || 0;
-        totStrDMin += t.calcolo.strDiurniMin || 0;
-        totStrNMin += t.calcolo.strNotturniMin || 0;
+      const key = `${dip.id}__${t.data}`;
+      if(!mappaMovimenti[key]) mappaMovimenti[key] = { turni: [], assenze: [] };
+      mappaMovimenti[key].turni.push(t);
+    });
+    assenzeDip.forEach(t => {
+      const key = `${dip.id}__${t.data}`;
+      if(!mappaMovimenti[key]) mappaMovimenti[key] = { turni: [], assenze: [] };
+      mappaMovimenti[key].assenze.push(t);
+    });
+  });
+
+  // Abbreviazioni assenze
+  const abbrAssenza = {
+    "Ferie": "FER",
+    "Permesso": "PER",
+    "Malattia": "MAL",
+    "Riposo Compensativo": "RIP",
+    "Congedo Parentale": "CON",
+    "Giorno Libero": "LIB"
+  };
+
+  // Riga per ogni giorno
+  for(let g=1; g<=giorniDelMese; g++) {
+    const dataStr = `${anno}-${String(mese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
+    const dow = new Date(dataStr+"T12:00:00").getDay();
+    const nomeG = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][dow];
+    const tipoG = getTipoGiorno(dataStr);
+    const labelG = tipoG==="festivo" ? `${nomeG} 🎉` : tipoG==="domenica" ? `${nomeG} ☀️` : nomeG;
+
+    const riga = [`${g} ${String(mese+1).padStart(2,"0")}/${anno}`, labelG];
+
+    dipAttivi.forEach(dip => {
+      const key = `${dip.id}__${dataStr}`;
+      const mov = mappaMovimenti[key];
+      if(!mov) { riga.push(""); return; }
+
+      const parti = [];
+
+      // Turni di lavoro
+      if(mov.turni.length > 0) {
+        const agg = aggregaTurniGiorno(mov.turni, dip);
+        const c = agg ? agg.calcolo : null;
+        const oreStr = c ? minToHHMM(c.totaleMin) : "";
+        const isSpezzato = mov.turni.length > 1;
+        parti.push(`LAV ${oreStr}${isSpezzato?" (sp)":""}`);
+      }
+
+      // Assenze
+      mov.assenze.forEach(ass => {
+        const abbr = abbrAssenza[ass.assenza] || ass.assenza;
+        if(ass.assenza === "Riposo Compensativo") {
+          parti.push("RIP 0:00"); // ore non conteggiate
+        } else {
+          parti.push(abbr);
+        }
+      });
+
+      riga.push(parti.join(" / "));
+    });
+
+    righeTab.push(riga);
+  }
+
+  // ── RIGA TOTALE ORE LAVORATE ──
+  const rigaTotLav = ["TOTALE ORE LAV.", ""];
+  const rigaTotStr = ["di cui STR.", ""];
+  const rigaTotNott = ["di cui NOTT.", ""];
+  const rigaFerie   = ["Ferie (h)", ""];
+  const rigaPermessi= ["Permessi (h)", ""];
+  const rigaMalattia= ["Malattia (h)", ""];
+  const rigaRiposo  = ["Rip.Comp. (g)", ""];
+  const rigaCongedo = ["Congedo (h)", ""];
+
+  dipAttivi.forEach(dip => {
+    const oreDip = sogliaMinutiDip(dip) / 60;
+    const turniDip   = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
+    const assenzeDip = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "assenza");
+
+    let totLav=0, totStr=0, totNott=0;
+    // Aggrega per giorno per evitare doppio conteggio su spezzati
+    const perGiorno = {};
+    turniDip.forEach(t => {
+      if(!perGiorno[t.data]) perGiorno[t.data] = [];
+      perGiorno[t.data].push(t);
+    });
+    Object.values(perGiorno).forEach(turni => {
+      const agg = aggregaTurniGiorno(turni, dip);
+      if(agg?.calcolo) {
+        totLav  += agg.calcolo.totaleMin || 0;
+        totStr  += (agg.calcolo.strDiurniMin||0) + (agg.calcolo.strNotturniMin||0);
+        totNott += agg.calcolo.notturneMin || 0;
       }
     });
-    // Ore assenze (escluso Riposo Compensativo che è 0)
+
     const gFerie    = assenzeDip.filter(a=>a.assenza==="Ferie").length;
     const gPermesso = assenzeDip.filter(a=>a.assenza==="Permesso").length;
     const gMalattia = assenzeDip.filter(a=>a.assenza==="Malattia").length;
     const gRiposo   = assenzeDip.filter(a=>a.assenza==="Riposo Compensativo").length;
     const gCongedo  = assenzeDip.filter(a=>a.assenza==="Congedo Parentale").length;
-    const hFerie    = (gFerie    * oreDip).toFixed(2);
-    const hPermesso = (gPermesso * oreDip).toFixed(2);
-    const hMalattia = (gMalattia * oreDip).toFixed(2);
-    const hCongedo  = (gCongedo  * oreDip).toFixed(2);
 
-    righeMovimento.push([
-      `TOTALE ${dip.nome}`, "", "", "", "", "", "",  "", "", "",
-      minToHHMM(totLavMin),
-      minToHHMM(totDiurMin),
-      minToHHMM(totNottMin),
-      minToHHMM(totStrDMin),
-      minToHHMM(totStrNMin),
-      `Ferie: ${hFerie}h | Permessi: ${hPermesso}h | Malattia: ${hMalattia}h | Rip.Comp.: ${gRiposo}g (0h) | Congedo: ${hCongedo}h`
-    ]);
-
-    // Riga separatrice tra dipendenti
-    righeMovimento.push(["","","","","","","","","","","","","","","",""]);
+    rigaTotLav.push(minToHHMM(totLav));
+    rigaTotStr.push(minToHHMM(totStr));
+    rigaTotNott.push(minToHHMM(totNott));
+    rigaFerie.push((gFerie    * oreDip).toFixed(2)+"h");
+    rigaPermessi.push((gPermesso * oreDip).toFixed(2)+"h");
+    rigaMalattia.push((gMalattia * oreDip).toFixed(2)+"h");
+    rigaRiposo.push(gRiposo+"g");
+    rigaCongedo.push((gCongedo  * oreDip).toFixed(2)+"h");
   });
 
-  const ws3 = XLSX.utils.aoa_to_sheet(righeMovimento);
-  ws3["!cols"]=[{wch:22},{wch:10},{wch:12},{wch:12},{wch:14},{wch:16},{wch:26},{wch:9},{wch:9},{wch:12},{wch:12},{wch:11},{wch:12},{wch:11},{wch:12},{wch:32}];
-  XLSX.utils.book_append_sheet(wb,ws3,"Movimento Giornaliero");
+  righeTab.push([]); // riga vuota separatrice
+  righeTab.push(rigaTotLav);
+  righeTab.push(rigaTotStr);
+  righeTab.push(rigaTotNott);
+  righeTab.push([]);
+  righeTab.push(rigaFerie);
+  righeTab.push(rigaPermessi);
+  righeTab.push(rigaMalattia);
+  righeTab.push(rigaRiposo);
+  righeTab.push(rigaCongedo);
+
+  const ws3 = XLSX.utils.aoa_to_sheet(righeTab);
+  // Larghezza colonne: prime 2 fisse, poi 16 per ogni dipendente
+  ws3["!cols"] = [{wch:18},{wch:10},...dipAttivi.map(()=>({wch:16}))];
+  XLSX.utils.book_append_sheet(wb,ws3,"Tabellone Presenze");
 
   XLSX.writeFile(wb,`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
 }

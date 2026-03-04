@@ -1213,8 +1213,8 @@ function renderModaleTimbratura() {
   const t=state.modaleTimbratura;
   const dip=state.dipendenti.find(d=>d.id===t.dipendenteId);
   return `
-    <div class="modal-bg" data-chiudi-modale-timb>
-      <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-bg" onclick="if(event.target===this){state.modaleTimbratura=null;render()}">
+      <div class="modal">
         <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">✏️ Modifica timbratura</h3>
         <p style="font-size:13px;color:#6b7280;margin-bottom:16px">${dip?.nome} — ${t.data}</p>
         ${t.tipo==="lavoro"?`
@@ -1742,8 +1742,8 @@ function renderModaleDip() {
   const d=state.modaleDip?.dip||{};
   const titolo=state.modaleDip?.mode==="modifica"?"✏️ Modifica dipendente":"➕ Nuovo dipendente";
   return `
-    <div class="modal-bg" data-chiudi-modale>
-      <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-bg" onclick="if(event.target===this){state.modaleDip=null;render()}">
+      <div class="modal">
         <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">${titolo}</h3>
         <div class="grid-auto" style="gap:12px;margin-bottom:12px">
           <div><label>Nome Cognome</label><input id="md-nome" value="${d.nome||""}" placeholder="Es. Anna Neri"></div>

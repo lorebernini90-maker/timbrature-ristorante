@@ -432,7 +432,7 @@ function render() {
 }
 
 document.addEventListener("click", async function(e) {
-  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
+  const t = e.target.closest("[data-login-dip],[data-login-admin],[data-logout],[data-dip-tab],[data-admin-tab],[data-admin-macro],[data-admin-sub],[data-filtro-mese],[data-filtro-anno],[data-timbra-entrata],[data-timbra-uscita],[data-add-turno],[data-add-assenza-btn],[data-salva-timbratura-admin],[data-modifica-timb],[data-elimina-timb],[data-chiudi-modale-timb],[data-salva-modifica-timb],[data-apri-modale-nuovo],[data-modifica-dip],[data-elimina-dip],[data-chiudi-modale],[data-salva-modale],[data-export-csv],[data-export-excel]");
   if(!t) return;
 
   if(t.dataset.loginDip) {
@@ -462,6 +462,26 @@ document.addEventListener("click", async function(e) {
   }
   else if(t.dataset.adminSub) { state.adminSubTab=t.dataset.adminSub; render(); }
   else if(t.dataset.adminTab) { state.adminTab=t.dataset.adminTab; render(); }
+  else if(t.dataset.timbraEntrata!==undefined) {
+    const dip=state.utenteCorrente;
+    const ora=oraNow();
+    const sede=document.getElementById("inp-sede-entrata")?.value||SEDI[0];
+    if(!confirm(`Confermi entrata alle ${ora}?`))return;
+    await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
+    alert(`✅ Entrata registrata alle ${ora}`);
+  }
+  else if(t.dataset.timbraUscita!==undefined) {
+    const dip=state.utenteCorrente;
+    const timbId=t.dataset.timbraUscita;
+    const timb=state.timbrature.find(x=>x.id===timbId);
+    if(!timb){alert("Turno non trovato!");return;}
+    const ora=oraNow();
+    const pausaNum=parseInt(document.getElementById("inp-pausa-uscita")?.value)||0;
+    if(!confirm(`Confermi uscita alle ${ora} con ${pausaNum} min di pausa?`))return;
+    const calcolo=calcolaTurno(timb.entrata,ora,pausaNum,sogliaMinutiDip(dip));
+    await updateDoc(doc(db,"timbrature",timbId),{uscita:ora,pausa:pausaNum,calcolo,aperto:false});
+    alert(`✅ Uscita registrata alle ${ora}`);
+  }
   else if(t.dataset.addTurno!==undefined) {
     const dip=state.utenteCorrente;
     const dataTurno=document.getElementById("inp-data-turno")?.value||oggi();
@@ -469,7 +489,6 @@ document.addEventListener("click", async function(e) {
     const uscita=document.getElementById("inp-uscita")?.value;
     const pausaNum=parseInt(document.getElementById("inp-pausa")?.value)||0;
     if(!entrata||!uscita){alert("Inserisci entrata e uscita!");return;}
-    // Calcolo per-turno (straordinari vengono ricalcolati sull'aggregato giornaliero)
     const calcolo=calcolaTurno(entrata,uscita,pausaNum,sogliaMinutiDip(dip));
     const sede=document.getElementById("inp-sede")?.value||SEDI[0];
     await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede});
@@ -644,41 +663,55 @@ function renderDipendente() {
 
 function renderDipTimbra(dip) {
   const ora=oraNow();
-  // Turni già registrati oggi (può essercene più di uno — spezzato)
   const turniOggi=state.timbrature.filter(t=>t.dipendenteId===dip.id&&t.data===oggi()&&t.tipo==="lavoro");
+  const turnoAperto=turniOggi.find(t=>t.aperto===true||(!t.uscita&&t.entrata));
+  const turniChiusi=turniOggi.filter(t=>t.uscita);
   const hasAssenzaOggi=state.timbrature.find(t=>t.dipendenteId===dip.id&&t.data===oggi()&&t.tipo==="assenza");
-
-  let avvisoHTML = "";
-  if(turniOggi.length > 0) {
-    avvisoHTML = `<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;font-size:13px;color:#92400e;margin-bottom:12px">
-      ✂️ <strong>Turno spezzato</strong> — Hai già ${turniOggi.length} turno/i oggi:
-      ${turniOggi.map(t=>`<span style="display:inline-block;background:#fff;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;margin:2px 4px;font-weight:600">${t.entrata}→${t.uscita} (${minToHHMM(t.calcolo?.totaleMin||0)}h)</span>`).join("")}
-      <br><span style="font-size:12px;opacity:0.8">Puoi aggiungere un secondo turno (es. turno serale).</span>
-    </div>`;
-  }
-  if(hasAssenzaOggi) {
-    avvisoHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;font-size:13px;color:#dc2626;margin-bottom:12px">⚠️ Hai già un'assenza registrata oggi</div>`;
-  }
 
   return `
     <div class="sezione">
-      <div class="sezione-titolo">🕐 Registra turno di lavoro</div>
-      <div style="text-align:center;margin-bottom:14px">
-        <div style="font-size:42px;font-weight:700;color:#1e293b;letter-spacing:2px" id="big-clock">${ora}</div>
+      <div class="sezione-titolo">🕐 Timbratura</div>
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:48px;font-weight:700;color:#1e293b;letter-spacing:2px" id="big-clock">${ora}</div>
         <div style="color:#6b7280;font-size:13px">${oggi()}</div>
       </div>
-      ${avvisoHTML}
-      <div class="grid-auto" style="margin-bottom:12px">
-        <div><label>Data turno</label><input type="date" id="inp-data-turno" value="${oggi()}"></div>
-        <div><label>Entrata</label><input type="time" id="inp-entrata" value="${ora}"></div>
-        <div><label>Uscita</label><input type="time" id="inp-uscita"></div>
-        <div><label>Pausa (min)</label><input type="number" id="inp-pausa" value="30" min="0" max="120"></div>
-        <div><label>Sede</label>
-          <select id="inp-sede">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
-        </div>
 
+      ${hasAssenzaOggi?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;text-align:center;font-size:13px;color:#dc2626;margin-bottom:12px">⚠️ Hai già un'assenza registrata oggi</div>`:""}
+
+      ${turniChiusi.length>0?`
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Turni completati oggi</div>
+        ${turniChiusi.map(t=>`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span>✅ ${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>
+          <span style="font-weight:700;color:#059669">${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
+        </div>`).join("")}
+      </div>`:""}
+
+      ${turnoAperto?`
+      <!-- TURNO APERTO: mostra uscita -->
+      <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px">🟡 Turno in corso — entrata alle ${turnoAperto.entrata}</div>
+        <div style="margin-bottom:12px">
+          <label>Pausa effettuata (min)</label>
+          <input type="number" id="inp-pausa-uscita" value="30" min="0" max="120" style="max-width:120px">
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:14px;font-size:16px;font-weight:700" data-timbra-uscita="${turnoAperto.id}">
+          🔴 Timbra Uscita — ${ora}
+        </button>
       </div>
-      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-turno>✅ Registra turno</button>
+      `:`
+      <!-- NESSUN TURNO APERTO: mostra entrata -->
+      ${!hasAssenzaOggi?`
+      <div style="margin-bottom:14px">
+        <label>Sede</label>
+        <select id="inp-sede-entrata" style="margin-bottom:12px">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:16px;font-size:18px;font-weight:700;background:#059669" data-timbra-entrata>
+        🟢 Timbra Entrata — ${ora}
+      </button>
+      ${turniChiusi.length>0?`<div style="text-align:center;margin-top:10px;font-size:12px;color:#9ca3af">Hai già completato ${turniChiusi.length} turno/i oggi. Premi per aggiungere un turno spezzato.</div>`:""}
+      `:""}
+      `}
     </div>
     <div class="sezione">
       <div class="sezione-titolo">📅 Registra assenza</div>
@@ -759,12 +792,16 @@ function renderDipStorico(dip) {
 
     if(turni.length === 1) {
       const t = turni[0];
-      return `<div class="row">
+      const aperto = t.aperto===true||(!t.uscita&&t.entrata);
+      return `<div class="row" style="${aperto?"background:#fef9f0;border-color:#fde68a":""}">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span style="font-weight:600">${t.data}</span>
-          <span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>
+          ${aperto
+            ?`<span style="color:#d97706">⚠️ ${t.entrata} → in corso</span>`
+            :`<span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>`
+          }
         </div>
-        ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+        ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:aperto?`<span style="color:#d97706;font-size:12px">in corso</span>`:""}
       </div>`;
     }
 
@@ -987,7 +1024,7 @@ function renderAdminDashboard() {
 
     <!-- NON TIMBRATI -->
     ${nonTimbrati.length > 0 ? `
-    <div>
+    <div style="margin-bottom:20px">
       <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">⏳ Non ancora timbrati (${nonTimbrati.length})</div>
       ${nonTimbrati.map(d=>`<div class="row">
         <div style="display:flex;gap:8px;align-items:center">
@@ -997,6 +1034,25 @@ function renderAdminDashboard() {
         </div>
       </div>`).join("")}
     </div>` : ""}
+
+    ${(()=>{
+      const turniAperti = state.timbrature.filter(t=>t.data===dataOggi&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
+      if(!turniAperti.length) return "";
+      return `<div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">⚠️ Turni aperti senza uscita (${turniAperti.length})</div>
+        ${turniAperti.map(t=>{
+          const d=state.dipendenti.find(x=>x.id===t.dipendenteId);
+          return `<div class="row" style="background:#fef9f0;border-color:#fde68a">
+            <div style="display:flex;gap:8px;align-items:center">
+              <span>⚠️</span>
+              <span style="font-weight:600">${d?.nome||"?"}</span>
+              <span style="color:#92400e;font-size:12px">Entrata: ${t.entrata} — uscita non registrata</span>
+            </div>
+            <span style="font-size:11px;color:#9ca3af">Chiudi dall'Inserimento manuale</span>
+          </div>`;
+        }).join("")}
+      </div>`;
+    })()}
 
     ${presenti.length===0&&nonTimbrati.length===0&&assentiGiust.length===0?`<div class="empty">Nessun dato per oggi.</div>`:""}`;
 }
@@ -1072,7 +1128,7 @@ function getTimbMese() {
 // ── RIEPILOGO: aggrega turni spezzati per giorno ───────────────
 function getRiepilogo() {
   return state.dipendenti.map(dip=>{
-    const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro");
+    const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
     const ass=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
 
     // Raggruppa turni per giorno
@@ -1126,6 +1182,19 @@ function renderAdminReport() {
 function renderAdminInserisci() {
   return `
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
+    ${(()=>{
+      const turniAperti=state.timbrature.filter(t=>t.data===oggi()&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
+      if(!turniAperti.length) return "";
+      return `<div style="background:#fef9f0;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">⚠️ Turni aperti oggi — aggiungi l'uscita manualmente</div>
+        ${turniAperti.map(t=>{
+          const d=state.dipendenti.find(x=>x.id===t.dipendenteId);
+          return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 0">
+            <span><strong>${d?.nome||"?"}</strong> — entrata ${t.entrata}</span>
+          </div>`;
+        }).join("")}
+      </div>`;
+    })()}
     <div class="grid-auto" style="margin-bottom:12px">
       <div><label>Dipendente</label>
         <select id="ai-dip">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
@@ -1356,7 +1425,7 @@ function renderAdminMaggiorazioni() {
     ${state.dipendenti.map(dip=>{
       const r=calcolaCostoMensile(dip.id);
       if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
-      const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro");
+      const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
       const festivi=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="festivo").map(t=>t.data))];
       const domeniche=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="domenica").map(t=>t.data))];
       return `

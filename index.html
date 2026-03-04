@@ -423,9 +423,11 @@ function calcolaCostoAssenzeMensili(dipId) {
   VOCI_ASSENZA.forEach(v => {
     if(v === "Malattia" || v === "Giorno Libero") return;
     const giorni = assenzeValide.filter(a => a.assenza === v).length;
-    // Congedo Parentale: costo 0 per azienda (INPS eroga 30% direttamente al dipendente)
-    const costo = v === "Congedo Parentale" ? 0 : giorni * costoGiorno;
-    dettaglio[v] = { giorni, ore: giorni * oreDip, costo, costoZero: v === "Congedo Parentale" };
+    // Congedo Parentale: costo 0 (INPS eroga 30% direttamente al dipendente)
+    // Riposo Compensativo: costo 0 (già pagato nel giorno lavorato extra)
+    const costoZero = v === "Congedo Parentale" || v === "Riposo Compensativo";
+    const costo = costoZero ? 0 : giorni * costoGiorno;
+    dettaglio[v] = { giorni, ore: giorni * oreDip, costo, costoZero };
   });
   const giorniMalattia = dateMailattiaMese.length;
   dettaglio["Malattia"] = {
@@ -1775,6 +1777,7 @@ function renderAdminCosti() {
       <p>• Giorni 21+: 33% a carico azienda (INPS copre 67%)</p>
       <p style="font-size:11px;color:#6b7280">* Giorni consecutivi (con gap ≤3gg) contano come stesso episodio</p>
       <p style="margin-top:6px"><strong>👶 Congedo Parentale:</strong> costo aziendale 0% — INPS eroga il 30% direttamente al dipendente</p>
+      <p style="margin-top:4px"><strong>😴 Riposo Compensativo:</strong> costo aziendale 0% — già contabilizzato nel giorno lavorato extra</p>
     </div>
     <div class="info-box" style="margin-top:16px">
       <p><strong>📋 Maggiorazioni applicate:</strong></p>
@@ -1834,6 +1837,12 @@ function renderAdminMaggiorazioni() {
                   return `<div class="cost-row">
                     <span style="color:#8b5cf6">Congedo Parentale (${det.giorni}g — INPS 30%, costo azienda 0)</span>
                     <span style="color:#8b5cf6">€ 0,00</span>
+                  </div>`;
+                }
+                if(v==="Riposo Compensativo"){
+                  return `<div class="cost-row">
+                    <span style="color:#6b7280">Riposo Compensativo (${det.giorni}g — già pagato nel giorno lavorato, costo 0)</span>
+                    <span style="color:#6b7280">€ 0,00</span>
                   </div>`;
                 }
                 return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;

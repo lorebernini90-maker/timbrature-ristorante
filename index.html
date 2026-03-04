@@ -2225,9 +2225,9 @@ function renderAdminBancaOre() {
     </div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="font-size:12px;color:#6b7280">Visualizzazione:</span>
-      <button onclick="window._bancaOreMultiMese=false;render()" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;background:${!window._bancaOreMultiMese?'#f59e0b':'white'};color:${!window._bancaOreMultiMese?'white':'#374151'};font-weight:600">Solo mese</button>
-      <button onclick="window._bancaOreMultiMese=true;render()" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;background:${window._bancaOreMultiMese?'#f59e0b':'white'};color:${window._bancaOreMultiMese?'white':'#374151'};font-weight:600">Cumulativo anno</button>
-      ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo accumulato da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
+      <button onclick="window.setBancaOreModo(false)" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;font-weight:600;background:${window._bancaOreMultiMese?'white':'#f59e0b'};color:${window._bancaOreMultiMese?'#374151':'white'}">Solo mese</button>
+      <button onclick="window.setBancaOreModo(true)" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;font-weight:600;background:${window._bancaOreMultiMese?'#f59e0b':'white'};color:${window._bancaOreMultiMese?'white':'#374151'}">Cumulativo anno</button>
+      ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
     </div>
     <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
       ${(window._bancaOreMultiMese ? dipAttivi.map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre).map(b => {
@@ -2322,16 +2322,16 @@ function renderAdminImpostazioni() {
           <div style="font-size:13px;font-weight:600">PIN obbligatorio</div>
           <div style="font-size:11px;color:#6b7280">I dipendenti senza PIN non possono accedere</div>
         </div>
-        <label style="position:relative;display:inline-block;width:44px;height:24px;margin:0">
-          <input type="checkbox" ${window._pinObbligatorio?"checked":""} onchange="window._pinObbligatorio=this.checked" style="opacity:0;width:0;height:0">
-          <span onclick="window._pinObbligatorio=!window._pinObbligatorio;render()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${window._pinObbligatorio?"#f59e0b":"#e5e7eb"};border-radius:24px;transition:0.3s">
-            <span style="position:absolute;height:18px;width:18px;left:${window._pinObbligatorio?"22px":"3px"};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
-          </span>
-        </label>
+        <div id="toggle-pin" onclick="window.toggleImpostazione('pin')"
+          style="width:44px;height:24px;border-radius:24px;cursor:pointer;position:relative;transition:background 0.3s;background:${window._pinObbligatorio?'#f59e0b':'#e5e7eb'}">
+          <div style="position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:${window._pinObbligatorio?'23px':'3px'};transition:left 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div>
+        </div>
       </div>
       <div style="margin-top:10px;font-size:12px;color:#6b7280">
-        Dipendenti senza PIN: ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length} 
-        ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0?`<span style="color:#dc2626">(${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`:"✅"}
+        Dipendenti senza PIN: ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length}
+        ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
+          ? `<span style="color:#dc2626"> (${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`
+          : ' ✅'}
       </div>
     </div>
 
@@ -2342,11 +2342,10 @@ function renderAdminImpostazioni() {
           <div style="font-size:13px;font-weight:600">Visualizzazione cumulativa di default</div>
           <div style="font-size:11px;color:#6b7280">Mostra saldo da inizio anno invece del solo mese</div>
         </div>
-        <label style="position:relative;display:inline-block;width:44px;height:24px;margin:0">
-          <span onclick="window._bancaOreMultiMese=!window._bancaOreMultiMese;render()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${window._bancaOreMultiMese?"#f59e0b":"#e5e7eb"};border-radius:24px;transition:0.3s">
-            <span style="position:absolute;height:18px;width:18px;left:${window._bancaOreMultiMese?"22px":"3px"};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
-          </span>
-        </label>
+        <div id="toggle-banca" onclick="window.toggleImpostazione('banca')"
+          style="width:44px;height:24px;border-radius:24px;cursor:pointer;position:relative;transition:background 0.3s;background:${window._bancaOreMultiMese?'#f59e0b':'#e5e7eb'}">
+          <div style="position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:${window._bancaOreMultiMese?'23px':'3px'};transition:left 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></div>
+        </div>
       </div>
     </div>
 
@@ -2803,6 +2802,12 @@ function esportaExcel() {
 }
 
 window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
+window.setBancaOreModo=function(multi){window._bancaOreMultiMese=multi;render();};
+window.toggleImpostazione=function(quale){
+  if(quale==='pin') window._pinObbligatorio=!window._pinObbligatorio;
+  if(quale==='banca') window._bancaOreMultiMese=!window._bancaOreMultiMese;
+  render();
+};
 
 window.esportaBackup=function(){
   const backup = {

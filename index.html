@@ -245,6 +245,16 @@ function sogliaMinutiDip(dip) {
   return 400;
 }
 
+// Dipendenti attivi (attivo !== false E fineContratto non ancora passata)
+function getDipendentiAttivi() {
+  const oggi_str = oggi();
+  return state.dipendenti.filter(d => {
+    if(d.attivo === false) return false;
+    if(d.fineContratto && d.fineContratto < oggi_str) return false;
+    return true;
+  });
+}
+
 // Usa sogliaCustom del turno se impostata, altrimenti quella del dipendente
 function sogliaPerTurno(timb, dip) {
   if(timb?.sogliaCustom && timb.sogliaCustom > 0) return timb.sogliaCustom;
@@ -560,8 +570,10 @@ document.addEventListener("click", async function(e) {
     const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
     const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.value)||0;
     const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
+    const attivo=document.getElementById("md-attivo")?.checked !== false;
+    const fineContratto=document.getElementById("md-fine-contratto")?.value||null;
     if(!nome){alert("Inserisci il nome!");return;}
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin};
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin,attivo,fineContratto:fineContratto||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -591,7 +603,7 @@ function renderLogin() {
     <div class="login-wrap"><div class="login-card">
       <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Chi sei?</h2>
       <p style="color:#6b7280;font-size:14px;margin-bottom:20px">Seleziona il tuo nome per timbrare</p>
-      <div>${state.dipendenti.map(d=>`
+      <div>${getDipendentiAttivi().map(d=>`
         <div class="login-item" data-login-dip="${d.id}">
           <div><div style="font-weight:600">${d.nome}</div><div style="font-size:12px;color:#6b7280">${d.tipo}</div></div>
           <span style="color:#f59e0b;font-size:20px">${d.pin?"🔒":"→"}</span>
@@ -879,7 +891,7 @@ function renderAdmin() {
 function renderAdminDashboard() {
   const dataOggi = oggi();
   const timbratureOggi = state.timbrature.filter(t => t.data === dataOggi);
-  const dipAttivi = state.dipendenti.filter(d => d.tipo !== "Intermittente");
+  const dipAttivi = getDipendentiAttivi().filter(d => d.tipo !== "Intermittente");
 
   // Presenti: almeno un turno lavoro oggi con entrata
   const presenti = dipAttivi.filter(d => timbratureOggi.some(t => t.dipendenteId===d.id && t.tipo==="lavoro"));
@@ -992,10 +1004,11 @@ function renderAdminDashboard() {
 // ── PRESENZE: conta per data (non per timbratura) ──────────────
 function renderAdminPresenze() {
   const dataOggi=oggi();
+  const dipPresenze = getDipendentiAttivi();
   // Un dipendente è "presente" se ha ALMENO una timbratura oggi
   const timbratiOggi=new Set(state.timbrature.filter(t=>t.data===dataOggi).map(t=>t.dipendenteId));
-  const nonTimbrati=state.dipendenti.filter(d=>!timbratiOggi.has(d.id) && d.tipo!=="Intermittente");
-  const timbrati=state.dipendenti.filter(d=>timbratiOggi.has(d.id));
+  const nonTimbrati=dipPresenze.filter(d=>!timbratiOggi.has(d.id) && d.tipo!=="Intermittente");
+  const timbrati=dipPresenze.filter(d=>timbratiOggi.has(d.id));
   return `
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">👁️ Presenze oggi — ${dataOggi}</h2>
     ${nonTimbrati.length>0?`
@@ -1115,7 +1128,7 @@ function renderAdminInserisci() {
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
     <div class="grid-auto" style="margin-bottom:12px">
       <div><label>Dipendente</label>
-        <select id="ai-dip">${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
+        <select id="ai-dip">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
       </div>
       <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
       <div><label>Sede</label>
@@ -1607,7 +1620,7 @@ function calcolaBancaOre(dipId) {
 
 function renderAdminBancaOre() {
   const giorniSettimana = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
-  const dipAttivi = state.dipendenti.filter(d => d.tipo !== "Intermittente");
+  const dipAttivi = getDipendentiAttivi().filter(d => d.tipo !== "Intermittente");
   const bancheOre = dipAttivi.map(d => calcolaBancaOre(d.id)).filter(Boolean);
 
   return `
@@ -1714,22 +1727,34 @@ function renderAdminDipendenti() {
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Dipendenti</h2>
       <button class="btn btn-primary btn-sm" data-apri-modale-nuovo>+ Aggiungi</button>
     </div>
-    ${state.dipendenti.map(d=>`
-      <div class="row">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span style="font-weight:600">${d.nome}</span>
-          <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
-          <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
-          ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
-          ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
-          ${d.monteFerie?`<span style="color:#6b7280;font-size:12px">🏖️${d.monteFerie}h</span>`:""}
-          ${d.montePermessi?`<span style="color:#6b7280;font-size:12px">📋${d.montePermessi}h</span>`:""}
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
-          <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
-        </div>
-      </div>`).join("")}
+    ${(()=>{
+      const attivi = state.dipendenti.filter(d=>d.attivo!==false);
+      const inattivi = state.dipendenti.filter(d=>d.attivo===false);
+      const renderDip = d => {
+        const isAttivo = d.attivo !== false;
+        return `<div class="row" style="opacity:${isAttivo?1:0.6}">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-weight:600">${d.nome}</span>
+            ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">⏸ Inattivo</span>`:""}
+            <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
+            <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
+            ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
+            ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
+            ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
+            <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
+          </div>
+        </div>`;
+      };
+      let html = attivi.map(renderDip).join("");
+      if(inattivi.length) {
+        html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Inattivi (${inattivi.length})</div>`;
+        html += inattivi.map(renderDip).join("");
+      }
+      return html;
+    })()}
     <div class="info-box">
       <p><strong>📋 Note:</strong></p>
       <p>• Tariffa, soglia straordinario, ferie e permessi non sono visibili ai dipendenti</p>
@@ -1756,8 +1781,17 @@ function renderModaleDip() {
           <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
           <div><label>PIN (4 cifre)</label><input id="md-pin" type="password" maxlength="4" placeholder="Es. 1234" value="${d.pin||""}"></div>
+          <div><label>Data fine contratto</label><input id="md-fine-contratto" type="date" value="${d.fineContratto||""}"></div>
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f3f4f6;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#374151;margin:0">
+            <input id="md-attivo" type="checkbox" ${d.attivo===false?"":"checked"}
+              style="width:18px;height:18px;min-height:unset;cursor:pointer;accent-color:#f59e0b">
+            Dipendente attivo
+          </label>
+          <span style="font-size:11px;color:#9ca3af">Se disattivato non compare nelle presenze e negli inserimenti</span>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-chiudi-modale>Annulla</button>
           <button class="btn btn-primary btn-sm" data-salva-modale>Salva</button>
         </div>

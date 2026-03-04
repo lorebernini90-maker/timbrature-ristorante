@@ -334,21 +334,114 @@ function calcolaCostoAggregato(calcolo, data, dip) {
   return calcolaCostoTurno(fakeTimb, dip);
 }
 
+// Raggruppa date consecutive in episodi (gap <= 3 giorni incluse domeniche/festivi)
+function raggruppaEpisodiMalattia(date) {
+  if(!date.length) return [];
+  const sorted = [...date].sort();
+  const episodi = [];
+  let episodio = [sorted[0]];
+  for(let i=1; i<sorted.length; i++) {
+    const prev = new Date(sorted[i-1]);
+    const cur  = new Date(sorted[i]);
+    const diffGiorni = Math.round((cur - prev) / 86400000);
+    // Considera stesso episodio se distanza <= 3 (weekend/festivi in mezzo)
+    if(diffGiorni <= 3) {
+      episodio.push(sorted[i]);
+    } else {
+      episodi.push(episodio);
+      episodio = [sorted[i]];
+    }
+  }
+  episodi.push(episodio);
+  return episodi;
+}
+
+// Calcola costo malattia CCNL Turismo con integrazione INPS
+// Giorno 1-3 (carenza): 100% a carico azienda
+// Giorno 4-20: 50% a carico azienda (INPS copre 50%)
+// Giorno 21+: 33.33% a carico azienda (INPS copre 66.67%)
+function calcolaCostoMalattiaEpisodio(numGiorni, costoGiorno) {
+  let costo = 0;
+  for(let g=1; g<=numGiorni; g++) {
+    if(g <= 3)       costo += costoGiorno * 1.00;   // carenza: 100%
+    else if(g <= 20) costo += costoGiorno * 0.50;   // INPS 50%
+    else             costo += costoGiorno * 0.3333; // INPS 66.67%
+  }
+  return costo;
+}
+
 function calcolaCostoAssenzeMensili(dipId) {
   const dip = state.dipendenti.find(d => d.id === dipId);
   if(!dip?.tariffaOraria) return null;
   const oreDip = sogliaMinutiDip(dip) / 60;
-  const assenze = getTimbMese().filter(t => t.dipendenteId === dipId && t.tipo === "assenza");
-  const dettaglio = {};
-  const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0 && a.assenza !== "Giorno Libero");
-  VOCI_ASSENZA.forEach(v => {
-    const giorni = assenzeValide.filter(a => a.assenza === v).length;
-    dettaglio[v] = { giorni, ore: giorni * oreDip, costo: giorni * oreDip * dip.tariffaOraria };
+  const costoGiorno = oreDip * dip.tariffaOraria;
+
+  // Tutte le assenze del dipendente (non solo del mese) per calcolare episodi completi
+  const tutteAssenze = state.timbrature.filter(t =>
+    t.dipendenteId === dipId && t.tipo === "assenza" && t.assenza === "Malattia"
+  );
+  const assenzeMese = getTimbMese().filter(t =>
+    t.dipendenteId === dipId && t.tipo === "assenza"
+  );
+  const assenzeValide = assenzeMese.filter(a =>
+    new Date(a.data).getDay() !== 0 && a.assenza !== "Giorno Libero"
+  );
+
+  // Calcolo malattia con episodi (usa tutte le date per contesto, poi filtra costo al mese)
+  const dateMalattiaTutte = tutteAssenze
+    .filter(a => new Date(a.data).getDay() !== 0)
+    .map(a => a.data);
+  const episodi = raggruppaEpisodiMalattia(dateMalattiaTutte);
+
+  // Costruisce mappa data→{episodioIndex, giornoProgressivo}
+  const mapaGiornoProgressivo = {};
+  episodi.forEach((ep, idx) => {
+    ep.forEach((data, i) => {
+      mapaGiornoProgressivo[data] = { episodio: idx, giornoProgressivo: i+1, totEpisodio: ep.length };
+    });
   });
+
+  // Calcola costo malattia solo per i giorni del mese corrente
+  const dateMailattiaMese = assenzeValide
+    .filter(a => a.assenza === "Malattia")
+    .map(a => a.data)
+    .filter(d => new Date(d).getDay() !== 0);
+
+  let costoMalattia = 0;
+  let dettaglioMalattia = { carenza: 0, parziale: 0, ridotto: 0 }; // giorni per fascia
+  dateMailattiaMese.forEach(data => {
+    const info = mapaGiornoProgressivo[data];
+    if(!info) { costoMalattia += costoGiorno; return; }
+    const g = info.giornoProgressivo;
+    if(g <= 3)       { costoMalattia += costoGiorno * 1.00;   dettaglioMalattia.carenza++; }
+    else if(g <= 20) { costoMalattia += costoGiorno * 0.50;   dettaglioMalattia.parziale++; }
+    else             { costoMalattia += costoGiorno * 0.3333; dettaglioMalattia.ridotto++; }
+  });
+
+  // Calcolo altre assenze (costo pieno)
+  const dettaglio = {};
+  VOCI_ASSENZA.forEach(v => {
+    if(v === "Malattia" || v === "Giorno Libero") return;
+    const giorni = assenzeValide.filter(a => a.assenza === v).length;
+    dettaglio[v] = { giorni, ore: giorni * oreDip, costo: giorni * costoGiorno };
+  });
+  const giorniMalattia = dateMailattiaMese.length;
+  dettaglio["Malattia"] = {
+    giorni: giorniMalattia,
+    ore: giorniMalattia * oreDip,
+    costo: costoMalattia,
+    dettaglioINPS: dettaglioMalattia
+  };
+
+  const altreAssenzeCosto = Object.entries(dettaglio)
+    .filter(([v]) => v !== "Malattia")
+    .reduce((s, [,v]) => s + v.costo, 0);
   const totaleGiorni = assenzeValide.length;
   const totaleOre = totaleGiorni * oreDip;
-  const totaleCosto = totaleOre * dip.tariffaOraria;
-  return { dettaglio, totaleGiorni, totaleOre, totaleCosto, oreDip, tariffa: dip.tariffaOraria };
+  const totaleCosto = altreAssenzeCosto + costoMalattia;
+
+  return { dettaglio, totaleGiorni, totaleOre, totaleCosto, oreDip,
+           tariffa: dip.tariffaOraria, costoMalattia, dettaglioMalattia };
 }
 
 function calcolaCostoMensile(dipId) {
@@ -1673,6 +1766,13 @@ function renderAdminCosti() {
         </tr>
       </tfoot>
     </table></div>
+    <div class="info-box" style="margin-top:16px;background:#eff6ff;border-color:#bfdbfe">
+      <p><strong>🏥 Malattia (CCNL Turismo + integrazione INPS):</strong></p>
+      <p>• Giorni 1–3 (carenza): 100% a carico azienda</p>
+      <p>• Giorni 4–20: 50% a carico azienda (INPS copre 50%)</p>
+      <p>• Giorni 21+: 33% a carico azienda (INPS copre 67%)</p>
+      <p style="font-size:11px;color:#6b7280">* Giorni consecutivi (con gap ≤3gg) contano come stesso episodio</p>
+    </div>
     <div class="info-box" style="margin-top:16px">
       <p><strong>📋 Maggiorazioni applicate:</strong></p>
       <p>• Straordinario diurno: +${MAGGIORAZIONI.strDiurno*100}% sulla tariffa base</p>
@@ -1714,9 +1814,23 @@ function renderAdminMaggiorazioni() {
             if(!ra||ra.totaleGiorni===0) return "";
             return `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb">
               <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Assenze pagate</div>
-              ${VOCI_ASSENZA.filter(v=>ra.dettaglio[v].giorni>0).map(v=>`
-                <div class="cost-row"><span style="color:#3b82f6">${v} (${ra.dettaglio[v].giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(ra.dettaglio[v].costo)}</span></div>
-              `).join("")}
+              ${VOCI_ASSENZA.filter(v=>ra.dettaglio[v]&&ra.dettaglio[v].giorni>0).map(v=>{
+                const det=ra.dettaglio[v];
+                if(v==="Malattia"&&det.dettaglioINPS){
+                  const dm=det.dettaglioINPS;
+                  const parti=[];
+                  if(dm.carenza>0) parti.push(`${dm.carenza}g carenza 100%`);
+                  if(dm.parziale>0) parti.push(`${dm.parziale}g INPS 50%`);
+                  if(dm.ridotto>0) parti.push(`${dm.ridotto}g INPS 67%`);
+                  return `<div class="cost-row">
+                    <span style="color:#3b82f6">
+                      Malattia (${det.giorni}g — ${parti.join(", ")})
+                    </span>
+                    <span style="color:#3b82f6">${euro(det.costo)}</span>
+                  </div>`;
+                }
+                return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;
+              }).join("")}
             </div>`;
           })()}
           <div class="cost-total">

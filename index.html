@@ -2636,8 +2636,16 @@ window.toggleModoAssenza=function(prefisso){
 };
 
 function dateIntervallo(da,a){
-  const dates=[]; const cur=new Date(da); const fine=new Date(a);
-  while(cur<=fine){dates.push(cur.toISOString().split("T")[0]);cur.setDate(cur.getDate()+1);}
+  const dates=[]; 
+  const cur=new Date(da+"T12:00:00"); 
+  const fine=new Date(a+"T12:00:00");
+  while(cur<=fine){
+    const ds=cur.toISOString().split("T")[0];
+    const dow=cur.getDay();
+    // Escludi domeniche (0) e festivi
+    if(dow!==0 && !isFestivo(ds)) dates.push(ds);
+    cur.setDate(cur.getDate()+1);
+  }
   return dates;
 }
 

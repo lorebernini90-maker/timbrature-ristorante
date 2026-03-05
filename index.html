@@ -1050,6 +1050,9 @@ function renderDipStorico(dip) {
 }
 
 function renderAdmin() {
+  // Precarica timbrature mese corrente per i calendari colorati
+  const mc = `${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}`;
+  caricaTimbratureMese(mc);
   // Routing sub-tab
   let content="";
   const sub=state.adminSubTab;
@@ -1564,7 +1567,7 @@ function renderAdminInserisci() {
     })()}
     <div class="grid-auto" style="margin-bottom:12px">
       <div><label>Dipendente</label>
-        <select id="ai-dip">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
+        <select id="ai-dip" onchange="(async()=>{const meseEl=document.getElementById('admin-mese-multiplo');const mv=meseEl?.value||(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0'));await caricaTimbratureMese(mv);const el=document.getElementById('admin-calendario-multiplo');if(el)el.innerHTML=renderCalendarioMultiplo('admin');})()">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
       </div>
       <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
       <div><label>Sede</label>
@@ -3183,7 +3186,7 @@ function renderCalendarioMultiplo(prefisso) {
     const sel=set.has(ds);
     // Controlla timbrature esistenti per questo giorno
     const dipIdMulti = prefisso==="admin"
-      ? document.getElementById("ir-dip")?.value || null
+      ? (document.getElementById("ai-dip")?.value || document.getElementById("ir-dip")?.value || null)
       : state.dipendente?.id || null;
     const timbrGiorno = dipIdMulti
       ? getTimbrMeseCalendario(meseVal, dipIdMulti).filter(t => t.data===ds)

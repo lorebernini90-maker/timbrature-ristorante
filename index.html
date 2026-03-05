@@ -153,7 +153,7 @@ tr:hover td { background: #fffbeb; }
 <div id="app"><div class="loading"><div class="spinner"></div>Caricamento...</div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const ADMIN_PIN = "1234";
 const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo","Congedo Parentale","Giorno Libero"];
@@ -513,9 +513,18 @@ async function caricaDipendenti() {
   }
 }
 
-function ascoltaTimbrature() {
-  onSnapshot(collection(db,"timbrature"),snap=>{
-    state.timbrature=snap.docs.map(d=>({id:d.id,...d.data()}));
+// Riferimento al listener attivo (per poterlo cancellare quando cambia anno)
+let _unsubTimbrature = null;
+
+function ascoltaTimbrature(anno) {
+  anno = anno || state.filtroAnno || new Date().getFullYear();
+  const annoStr = String(anno);
+  // Cancella listener precedente se esiste
+  if(_unsubTimbrature) { _unsubTimbrature(); _unsubTimbrature = null; }
+  // Query filtrata: solo documenti con data che inizia per l'anno selezionato
+  const q = query(collection(db,"timbrature"), where("data",">=",annoStr+"-01-01"), where("data","<=",annoStr+"-12-31"));
+  _unsubTimbrature = onSnapshot(q, snap=>{
+    state.timbrature = snap.docs.map(d=>({id:d.id,...d.data()}));
     if(state.vista!=="loading") render();
   });
 }
@@ -742,13 +751,14 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
     const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.value)||0;
     const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
+    const oreSett=parseFloat(document.getElementById("md-ore-sett")?.value)||40;
     const attivo=document.getElementById("md-attivo")?.checked !== false;
     const fineContratto=document.getElementById("md-fine-contratto")?.value||null;
     if(!nome){alert("Inserisci il nome!");return;}
     const pinFinale = pin || generaPIN4();
     const email = document.getElementById("md-email")?.value?.trim()||null;
     const telefono = document.getElementById("md-telefono")?.value?.trim()||null;
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin:pinFinale,attivo,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -767,7 +777,7 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
 document.addEventListener("change", function(e) {
   const t=e.target;
   if(t.dataset.filtroMese!==undefined){ state.filtroMese=parseInt(t.value); render(); }
-  if(t.dataset.filtroAnno!==undefined){ state.filtroAnno=parseInt(t.value); render(); }
+  if(t.dataset.filtroAnno!==undefined){ state.filtroAnno=parseInt(t.value); ascoltaTimbrature(state.filtroAnno); }
 });
 
 function renderLogin() {
@@ -1319,7 +1329,7 @@ function filtriHTML() {
       ${MESI.map((m,i)=>`<option value="${i}"${i===state.filtroMese?" selected":""}>${m}</option>`).join("")}
     </select>
     <select data-filtro-anno style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
-      ${[2024,2025,2026].map(y=>`<option${y===state.filtroAnno?" selected":""}>${y}</option>`).join("")}
+      ${[2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040].map(y=>`<option${y===state.filtroAnno?" selected":""}>${y}</option>`).join("")}
     </select>
   </div>`;
 }
@@ -2057,7 +2067,7 @@ function renderAdminFerie() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">🏖️ Monte Ferie & Permessi ${anno}</h2>
       <select data-filtro-anno style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
-        ${[2024,2025,2026].map(y=>`<option${y===anno?" selected":""}>${y}</option>`).join("")}
+        ${[2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040].map(y=>`<option${y===anno?" selected":""}>${y}</option>`).join("")}
       </select>
     </div>
     ${state.dipendenti.map(dip=>{
@@ -2172,7 +2182,37 @@ function calcolaBancaOre(dipId) {
 
   dettaglioGiorni.sort((a, b) => a.data.localeCompare(b.data));
   const saldo = totaleSurplus - totaleDeficit;
-  return { dip, soglia, dettaglioGiorni, totaleSurplus, totaleDeficit, saldo };
+
+  // Calcolo ore per settimana (lun-dom)
+  const oreSett = dip.oreSett || 40;
+  const settimaneAlert = [];
+  const turniPerData = {};
+  turni.forEach(t => { if(!turniPerData[t.data]) turniPerData[t.data]=[]; turniPerData[t.data].push(t); });
+  // Trova il range di date del mese
+  const anno = state.filtroAnno, mese = state.filtroMese;
+  const giorniMese = new Date(anno, mese+1, 0).getDate();
+  // Raggruppa per settimana ISO (lunedì)
+  const orePerSett = {};
+  for(let g=1; g<=giorniMese; g++){
+    const dataStr = `${anno}-${String(mese+1).padStart(2,'0')}-${String(g).padStart(2,'0')}`;
+    const d = new Date(dataStr+'T12:00:00');
+    // Lunedì della settimana
+    const dow = d.getDay(); const offsetLun = dow===0?-6:1-dow;
+    const lun = new Date(d); lun.setDate(d.getDate()+offsetLun);
+    const lunStr = lun.toISOString().slice(0,10);
+    if(!orePerSett[lunStr]) orePerSett[lunStr] = 0;
+    if(turniPerData[dataStr]){
+      const agg = aggregaTurniGiorno(turniPerData[dataStr], dip);
+      if(agg?.calcolo) orePerSett[lunStr] += agg.calcolo.totaleMin || 0;
+    }
+  }
+  Object.entries(orePerSett).forEach(([lunStr, minLav]) => {
+    const oreLav = minLav/60;
+    const eccedenza = oreLav - oreSett;
+    if(eccedenza > 0) settimaneAlert.push({ lunStr, oreLav, eccedenza });
+  });
+
+  return { dip, soglia, dettaglioGiorni, totaleSurplus, totaleDeficit, saldo, settimaneAlert };
 }
 
 function renderAdminBancaOre() {
@@ -2212,6 +2252,8 @@ function renderAdminBancaOre() {
         return `<div style="background:${sbg};border:1px solid ${sbr};border-radius:12px;padding:14px">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px">${b.dip.nome}
             <span style="font-weight:400;color:#6b7280;font-size:11px"> — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+            ${(()=>{ const eccMens=((b.totaleSurplus-b.totaleDeficit)/60); if(eccMens>2) return `<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">⚠️ +${eccMens.toFixed(1)}h/mese</span>`; if(eccMens<-2) return `<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#059669;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">📉 ${eccMens.toFixed(1)}h/mese</span>`; return ''; })()}
+            ${(()=>{ const sw=(b.settimaneAlert||[]).filter(s=>s.eccedenza>0); if(sw.length) return `<span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">⚠️ ${sw.length} sett. >40h</span>`; return ''; })()}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
             <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
@@ -2238,6 +2280,8 @@ function renderAdminBancaOre() {
         <div style="background:#f9fafb;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px">
           <div style="font-weight:700;font-size:13px">${b.dip.nome}
             <span style="font-weight:400;color:#6b7280;font-size:11px"> — ${b.dip.tipo} — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+            ${(()=>{ const eccMens=(b.totaleSurplus-b.totaleDeficit)/60; if(eccMens>2) return `<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">⚠️ +${eccMens.toFixed(1)}h eccedenza mensile</span>`; return ''; })()}
+            ${(()=>{ const sw=(b.settimaneAlert||[]).filter(s=>s.eccedenza>0); if(!sw.length) return ''; return sw.map(s=>`<span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">⚠️ Sett. ${s.lunStr.slice(5).replace('-','/')}: ${s.oreLav.toFixed(1)}h (+${s.eccedenza.toFixed(1)}h)</span>`).join(''); })()}
           </div>
           <div style="display:flex;gap:12px;font-size:12px;font-weight:700;flex-wrap:wrap">
             <span style="color:#dc2626">+${minToHHMM(b.totaleSurplus)}h surplus</span>
@@ -2401,6 +2445,7 @@ function renderModaleDip() {
           </div>
           <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
+          <div><label>Ore settimanali contratto</label><input id="md-ore-sett" type="number" step="0.5" placeholder="Es. 40" value="${d.oreSett||40}"></div>
           <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
           <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
@@ -2783,6 +2828,54 @@ function esportaExcel() {
   // Larghezza colonne: prime 2 fisse, poi 16 per ogni dipendente
   ws3["!cols"] = [{wch:18},{wch:10},...dipAttivi.map(()=>({wch:16}))];
   XLSX.utils.book_append_sheet(wb,ws3,"Tabellone Presenze");
+
+
+  // ── FOGLIO 4: ORE MENSILI PER DIPENDENTE ──
+  const righeOreM = [["Dipendente","Contratto","Ore Sett. Contratto","Ore Mensili Teoriche","Ore Lavorate","Differenza","Straordinari Giorn.","Note"]];
+
+  dipAttivi.forEach(dip => {
+    const oreSett = dip.oreSett || 40;
+    const turniDip = tm.filter(t => t.dipendenteId === dip.id && t.tipo === "lavoro");
+
+    // Ore teoriche mensili: (oreSett/5) * giorni lavorativi del mese (lun-sab)
+    let giorniLavMese = 0;
+    for(let g=1; g<=giorniDelMese; g++){
+      const dow = new Date(anno, mese, g).getDay();
+      if(dow !== 0) giorniLavMese++; // esclude domeniche
+    }
+    const oreTeoriche = Math.round((oreSett / 6) * giorniLavMese * 10) / 10;
+
+    // Ore effettivamente lavorate
+    const perGiorno = {};
+    turniDip.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
+    let minLavorati = 0, minStr = 0;
+    Object.values(perGiorno).forEach(turni => {
+      const agg = aggregaTurniGiorno(turni, dip);
+      if(agg?.calcolo){
+        minLavorati += agg.calcolo.totaleMin || 0;
+        minStr += (agg.calcolo.strDiurniMin||0) + (agg.calcolo.strNotturniMin||0);
+      }
+    });
+    const oreLav = minLavorati / 60;
+    const oreStr = minStr / 60;
+    const diff = oreLav - oreTeoriche;
+    const nota = diff > 2 ? "⚠️ Eccedenza" : diff < -2 ? "⚠️ Mancanti" : "✅ Regolare";
+
+    righeOreM.push([
+      dip.nome,
+      dip.tipo,
+      oreSett + "h/sett",
+      oreTeoriche.toFixed(1) + "h",
+      oreLav.toFixed(2) + "h",
+      (diff >= 0 ? "+" : "") + diff.toFixed(2) + "h",
+      oreStr.toFixed(2) + "h",
+      nota
+    ]);
+  });
+
+  const ws4 = XLSX.utils.aoa_to_sheet(righeOreM);
+  ws4["!cols"] = [{wch:22},{wch:13},{wch:18},{wch:18},{wch:14},{wch:13},{wch:16},{wch:15}];
+  XLSX.utils.book_append_sheet(wb, ws4, "Ore Mensili");
 
   XLSX.writeFile(wb,`timbrature_${MESI[state.filtroMese]}_${state.filtroAnno}.xlsx`);
 }

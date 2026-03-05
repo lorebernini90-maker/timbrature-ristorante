@@ -222,6 +222,23 @@ let state = {
   schedaDipId: null,
 };
 
+function searchBarHTML(id, placeholder="Cerca dipendente...") {
+  return `<div style="position:relative;margin-bottom:12px">
+    <input type="text" id="${id}" placeholder="${placeholder}"
+      oninput="window._searchState=window._searchState||{};window._searchState['${id}']=this.value.toLowerCase();render()"
+      value="${(window._searchState&&window._searchState['${id}'])||''}"
+      style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;background:white">
+    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px">🔍</span>
+    ${(window._searchState&&window._searchState[id])?`<span onclick="window._searchState['${id}']=null;document.getElementById('${id}').value='';render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#9ca3af;font-size:16px">✕</span>`:''}
+  </div>`;
+}
+
+function searchFilter(id, dip) {
+  const q = (window._searchState&&window._searchState[id])||'';
+  if(!q) return true;
+  return dip.nome.toLowerCase().includes(q);
+}
+
 function generaPIN4() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
@@ -1333,7 +1350,8 @@ function getTimbMese() {
 
 // ── RIEPILOGO: aggrega turni spezzati per giorno ───────────────
 function getRiepilogo() {
-  return state.dipendenti.map(dip=>{
+  const sqReport = (window._searchState&&window._searchState["search-report"])||"";
+  return `${searchBarHTML("search-report")}` + state.dipendenti.filter(d=>!sqReport||d.nome.toLowerCase().includes(sqReport)).map(dip=>{
     const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
     const ass=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
 
@@ -1640,12 +1658,15 @@ function renderAdminInserisci() {
         ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
       </select>
     </div>
+    ${searchBarHTML("search-presenze")}
     <div id="lista-timbrature">${renderListaTimbratureHTML()}</div>`;
 }
 
 function renderListaTimbratureHTML(filtroDipId) {
   let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data)||a.entrata?.localeCompare(b.entrata||"")||0);
   if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
+  const sqP = (window._searchState&&window._searchState["search-presenze"])||"";
+  if(sqP) lista=lista.filter(t=>{const d=state.dipendenti.find(x=>x.id===t.dipendenteId);return d&&d.nome.toLowerCase().includes(sqP);});
   lista=lista.slice(0,50);
   if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
   const righe = lista.map(t=>{
@@ -1825,7 +1846,8 @@ function renderAdminMaggiorazioni() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📈 Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
     </div>
-    ${state.dipendenti.map(dip=>{
+    ${searchBarHTML("search-magg")}
+    ${state.dipendenti.filter(d=>{const sq=(window._searchState&&window._searchState["search-magg"])||"";return !sq||d.nome.toLowerCase().includes(sq);}).map(dip=>{
       const r=calcolaCostoMensile(dip.id);
       if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
       const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
@@ -2230,6 +2252,7 @@ function renderAdminBancaOre() {
       <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
       <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
     </div>
+    ${searchBarHTML("search-banca")}
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="font-size:12px;color:#6b7280">Visualizzazione:</span>
       <button onclick="window.setBancaOreModo(false)" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;font-weight:600;background:${window._bancaOreMultiMese?'white':'#f59e0b'};color:${window._bancaOreMultiMese?'#374151':'white'}">Solo mese</button>
@@ -2237,7 +2260,7 @@ function renderAdminBancaOre() {
       ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
     </div>
     <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
-      ${(window._bancaOreMultiMese ? dipAttivi.map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre).map(b => {
+      ${(window._bancaOreMultiMese ? dipAttivi.filter(d=>{const sq=(window._searchState&&window._searchState["search-banca"])||"";return !sq||d.nome.toLowerCase().includes(sq);}).map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre.filter(b=>{const sq=(window._searchState&&window._searchState["search-banca"])||"";return !sq||b.dip.nome.toLowerCase().includes(sq);})).map(b => {
         const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
         const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
         const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
@@ -2398,10 +2421,12 @@ function renderAdminDipendenti() {
           </div>
         </div>`;
       };
-      let html = attivi.map(renderDip).join("");
+      const sdip = (window._searchState&&window._searchState["search-dip"])||"";
+  const filtraDip = d => !sdip || d.nome.toLowerCase().includes(sdip);
+  let html = attivi.filter(filtraDip).map(renderDip).join("");
       if(inattivi.length) {
         html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Inattivi (${inattivi.length})</div>`;
-        html += inattivi.map(renderDip).join("");
+        html += inattivi.filter(filtraDip).map(renderDip).join("");
       }
       return html;
     })()}

@@ -748,7 +748,6 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const tariffa=parseFloat(document.getElementById("md-tariffa")?.value)||null;
     const pin=document.getElementById("md-pin")?.value?.trim()||null;
     const soglia=parseFloat(document.getElementById("md-soglia")?.value)||6.67;
-    const monteFerie=parseFloat(document.getElementById("md-ferie")?.value)||0;
     const feriePregresse=parseFloat(document.getElementById("md-ferie-pregresse")?.value)||0;
     const montePermessi=parseFloat(document.getElementById("md-permessi")?.value)||0;
     const oreSett=parseFloat(document.getElementById("md-ore-sett")?.value)||40;
@@ -758,7 +757,7 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const pinFinale = pin || generaPIN4();
     const email = document.getElementById("md-email")?.value?.trim()||null;
     const telefono = document.getElementById("md-telefono")?.value?.trim()||null;
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -2061,6 +2060,23 @@ window.aggiornaCostoGiorno=function(){
   if(el&&data) el.innerHTML=renderDettaglioGiorno(data);
 };
 
+
+// Calcola monte ferie annuo dinamicamente da oreSett e fineContratto
+function calcolaMonteFerie(dip) {
+  if(!dip || (dip.tipo||"").toLowerCase() === "intermittente") return 0;
+  const oreSett = dip.oreSett || 40;
+  const fineContratto = dip.fineContratto || null;
+  const annoCorr = state.filtroAnno || new Date().getFullYear();
+  let mesi = 12;
+  if(fineContratto) {
+    const [fy, fm] = fineContratto.split("-").map(Number);
+    if(fy < annoCorr) return 0;          // già cessato
+    if(fy === annoCorr) mesi = fm;        // scade durante l'anno
+    // se fy > annoCorr → 12 mesi (contratto va oltre l'anno)
+  }
+  return Math.round(172 * (oreSett / 40) * (mesi / 12));
+}
+
 function renderAdminFerie() {
   const anno=state.filtroAnno;
   return `
@@ -2075,7 +2091,7 @@ function renderAdminFerie() {
       const ferieGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Ferie"&&d.getFullYear()===anno;}).length;
       const permGiorni=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&t.assenza==="Permesso"&&d.getFullYear()===anno;}).length;
       const ferieOre=ferieGiorni*oreDip, permOre=permGiorni*oreDip;
-      const monteFerie=(dip.monteFerie||0)+(dip.feriePregresse||0), montePermessi=dip.montePermessi||0;
+      const monteFerie=calcolaMonteFerie(dip)+(dip.feriePregresse||0), montePermessi=dip.montePermessi||0;
       const ferieRimaste=Math.max(0,monteFerie-ferieOre), permRimasti=Math.max(0,montePermessi-permOre);
       const percF=monteFerie>0?Math.min(100,(ferieOre/monteFerie)*100):0;
       const percP=montePermessi>0?Math.min(100,(permOre/montePermessi)*100):0;
@@ -2446,7 +2462,6 @@ function renderModaleDip() {
           <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Ore settimanali contratto</label><input id="md-ore-sett" type="number" step="0.5" placeholder="Es. 40" value="${d.oreSett||40}"></div>
-          <div><label>Monte ferie annuo (ore)</label><input id="md-ferie" type="number" step="1" placeholder="Es. 160" value="${d.monteFerie||""}"></div>
           <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
           <div><label>PIN (4 cifre)</label><div style="display:flex;gap:6px"><input id="md-pin" type="text" maxlength="4" placeholder="Auto" value="${d.pin||(state.modaleDip.mode==='nuovo'?window._nuovoPinGenerato||'':'')}" style="font-size:18px;letter-spacing:4px;font-weight:700"><button type="button" onclick="document.getElementById('md-pin').value=generaPIN4()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;cursor:pointer;font-size:12px;white-space:nowrap">🔄 Genera</button></div></div>

@@ -222,21 +222,26 @@ let state = {
   schedaDipId: null,
 };
 
-function searchBarHTML(id, placeholder="Cerca dipendente...") {
-  return `<div style="position:relative;margin-bottom:12px">
-    <input type="text" id="${id}" placeholder="${placeholder}"
-      oninput="window._searchState=window._searchState||{};window._searchState['${id}']=this.value.toLowerCase();render()"
-      value="${(window._searchState&&window._searchState['${id}'])||''}"
-      style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;background:white">
-    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px">🔍</span>
-    ${(window._searchState&&window._searchState[id])?`<span onclick="window._searchState['${id}']=null;document.getElementById('${id}').value='';render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#9ca3af;font-size:16px">✕</span>`:''}
-  </div>`;
+
+
+// ── RICERCA GLOBALE ──
+window._sq = window._sq || {}; // stato ricerca persistente
+
+function searchBarHTML(id, ph) {
+  ph = ph || "Cerca dipendente...";
+  const v = window._sq[id] || "";
+  return '<div style="position:relative;margin-bottom:12px">' +
+    '<input type="text" id="' + id + '" placeholder="' + ph + '" value="' + v + '" ' +
+    'oninput="window._sq[\'' + id + '\']=this.value;render();document.getElementById(\'' + id + '\')?.focus()" ' +
+    'style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">' +
+    '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af">🔍</span>' +
+    (v ? '<span onclick="window._sq[\'' + id + '\']=\'\';render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#9ca3af;font-size:18px">×</span>' : '') +
+    '</div>';
 }
 
-function searchFilter(id, dip) {
-  const q = (window._searchState&&window._searchState[id])||'';
-  if(!q) return true;
-  return dip.nome.toLowerCase().includes(q);
+function sqFilter(id, nome) {
+  const q = (window._sq[id] || "").toLowerCase();
+  return !q || nome.toLowerCase().includes(q);
 }
 
 function generaPIN4() {
@@ -1350,8 +1355,8 @@ function getTimbMese() {
 
 // ── RIEPILOGO: aggrega turni spezzati per giorno ───────────────
 function getRiepilogo() {
-  const sqReport = (window._searchState&&window._searchState["search-report"])||"";
-  return `${searchBarHTML("search-report")}` + state.dipendenti.filter(d=>!sqReport||d.nome.toLowerCase().includes(sqReport)).map(dip=>{
+  return `${searchBarHTML("search-report")}<div>${renderReportListHTML()}</div>`;}
+function renderReportListHTML(){  return state.dipendenti.filter(d=>sqFilter("search-report",d.nome)).map(dip=>{
     const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
     const ass=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
 
@@ -1665,8 +1670,7 @@ function renderAdminInserisci() {
 function renderListaTimbratureHTML(filtroDipId) {
   let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data)||a.entrata?.localeCompare(b.entrata||"")||0);
   if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
-  const sqP = (window._searchState&&window._searchState["search-presenze"])||"";
-  if(sqP) lista=lista.filter(t=>{const d=state.dipendenti.find(x=>x.id===t.dipendenteId);return d&&d.nome.toLowerCase().includes(sqP);});
+  lista=lista.filter(t=>{const d=state.dipendenti.find(x=>x.id===t.dipendenteId);return sqFilter("search-presenze", d?.nome||"");});
   lista=lista.slice(0,50);
   if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
   const righe = lista.map(t=>{
@@ -1847,14 +1851,14 @@ function renderAdminMaggiorazioni() {
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📈 Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
     </div>
     ${searchBarHTML("search-magg")}
-    ${state.dipendenti.filter(d=>{const sq=(window._searchState&&window._searchState["search-magg"])||"";return !sq||d.nome.toLowerCase().includes(sq);}).map(dip=>{
+    ${state.dipendenti.filter(d=>sqFilter("search-magg",d.nome)).map(dip=>{
       const r=calcolaCostoMensile(dip.id);
       if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
       const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
       const festivi=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="festivo").map(t=>t.data))];
       const domeniche=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="domenica").map(t=>t.data))];
-      return `
-        <div class="cost-card">
+      const ra=calcolaCostoAssenzeMensili(dip.id);
+      return `<div class="cost-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-weight:700;font-size:14px">${dip.nome} <span style="font-weight:400;color:#6b7280;font-size:12px">${dip.tipo} • € ${dip.tariffaOraria}/h</span></div>
             <div style="font-size:18px;font-weight:700;color:#059669">${euro(r.totale)}</div>
@@ -1863,58 +1867,22 @@ function renderAdminMaggiorazioni() {
           <div class="cost-row"><span style="color:#4f46e5">Ore ordinarie notturne +${MAGGIORAZIONI.ordinarioNotturno*100}% (${r.totOrdNott.toFixed(2)}h)</span><span style="color:#4f46e5">${euro(r.costoOrdNott)}</span></div>
           <div class="cost-row"><span style="color:#ea580c">Straordinari diurni +${MAGGIORAZIONI.strDiurno*100}% (${r.totStrDiurni.toFixed(2)}h)</span><span style="color:#ea580c">${euro(r.costoStrDiurno)}</span></div>
           <div class="cost-row"><span style="color:#dc2626">Straordinari notturni +${MAGGIORAZIONI.strNotturno*100}% (${r.totStrNott.toFixed(2)}h)</span><span style="color:#dc2626">${euro(r.costoStrNott)}</span></div>
-          ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:#7c3aed">Maggiorazione domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica} giorn${r.giorniDomenica>1?"i":"o"})</span><span style="color:#7c3aed">${euro(r.costoMaggDom)}</span></div>`:""}
-          ${r.giorniFestivi>0?`<div class="cost-row"><span style="color:#b45309">Maggiorazione festivo +${MAGGIORAZIONI.festivo*100}% (${r.giorniFestivi} giorn${r.giorniFestivi>1?"i":"o"})</span><span style="color:#b45309">${euro(r.costoMaggFest)}</span></div>`:""}
-          ${festivi.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:6px">Festivi: ${festivi.join(", ")}</div>`:""}
-          ${domeniche.length>0?`<div style="font-size:11px;color:#9ca3af;margin-top:2px">Domeniche: ${domeniche.join(", ")}</div>`:""}
-          ${(()=>{
-            const ra=calcolaCostoAssenzeMensili(dip.id);
-            if(!ra||ra.totaleGiorni===0) return "";
-            return `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb">
-              <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Assenze pagate</div>
-              ${VOCI_ASSENZA.filter(v=>ra.dettaglio[v]&&ra.dettaglio[v].giorni>0).map(v=>{
-                const det=ra.dettaglio[v];
-                if(v==="Malattia"&&det.dettaglioINPS){
-                  const dm=det.dettaglioINPS;
-                  const parti=[];
-                  if(dm.carenza>0) parti.push(`${dm.carenza}g carenza 100%`);
-                  if(dm.parziale>0) parti.push(`${dm.parziale}g INPS 50%`);
-                  if(dm.ridotto>0) parti.push(`${dm.ridotto}g INPS 67%`);
-                  return `<div class="cost-row">
-                    <span style="color:#3b82f6">Malattia (${det.giorni}g — ${parti.join(", ")})</span>
-                    <span style="color:#3b82f6">${euro(det.costo)}</span>
-                  </div>`;
-                }
-                if(v==="Congedo Parentale"){
-                  return `<div class="cost-row">
-                    <span style="color:#8b5cf6">Congedo Parentale (${det.giorni}g — INPS 30%, costo azienda 0)</span>
-                    <span style="color:#8b5cf6">€ 0,00</span>
-                  </div>`;
-                }
-                if(v==="Riposo Compensativo"){
-                  return `<div class="cost-row">
-                    <span style="color:#6b7280">Riposo Compensativo (${det.giorni}g — già pagato nel giorno lavorato, costo 0)</span>
-                    <span style="color:#6b7280">€ 0,00</span>
-                  </div>`;
-                }
-                return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;
-              }).join("")}
-            </div>`;
-          })()}
+          ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:#7c3aed">Magg. domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica}g)</span><span style="color:#7c3aed">${euro(r.costoMaggDom)}</span></div>`:""}
+          ${r.giorniFestivi>0?`<div class="cost-row"><span style="color:#b45309">Magg. festivo +${MAGGIORAZIONI.festivo*100}% (${r.giorniFestivi}g)</span><span style="color:#b45309">${euro(r.costoMaggFest)}</span></div>`:""}
+          ${ra&&ra.totaleCosto>0?Object.entries(ra.dettaglio).filter(([v,det])=>det.giorni>0).map(([v,det])=>{
+            if(v==="Congedo Parentale") return `<div class="cost-row"><span style="color:#6b7280">Congedo Parentale (${det.giorni}g — costo INPS, azienda 0)</span><span style="color:#6b7280">€ 0,00</span></div>`;
+            if(v==="Riposo Compensativo") return `<div class="cost-row"><span style="color:#6b7280">Riposo Compensativo (${det.giorni}g — costo 0)</span><span style="color:#6b7280">€ 0,00</span></div>`;
+            return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;
+          }).join(""):""}
           <div class="cost-total">
             <span>Totale ${MESI[state.filtroMese]}</span>
-            <span style="color:#059669">${euro(r.totale+(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0))}</span>
+            <span style="color:#059669">${euro(r.totale+(ra?.totaleCosto||0))}</span>
           </div>
-        </div>`;}).join("")}
-    <div style="background:#1e293b;color:white;border-radius:10px;padding:16px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-weight:700;font-size:15px">Totale costo mensile</span>
-      <span style="font-weight:700;font-size:20px;color:#10b981">${euro(state.dipendenti.reduce((s,dip)=>{
-        const r=calcolaCostoMensile(dip.id);
-        const ra=calcolaCostoAssenzeMensili(dip.id);
-        return s+(r?.totale||0)+(ra?.totaleCosto||0);
-      },0))}</span>
-    </div>`;
+        </div>`;
+    }).join("")}
+  `;
 }
+
 
 function calcolaCostoTeoricoGiorno(ds) {
   // Costo teorico = tutti i dipendenti attivi con tariffa * ore soglia
@@ -2253,6 +2221,7 @@ function renderAdminBancaOre() {
       <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
     </div>
     ${searchBarHTML("search-banca")}
+    <div style="display:contents">
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="font-size:12px;color:#6b7280">Visualizzazione:</span>
       <button onclick="window.setBancaOreModo(false)" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;font-weight:600;background:${window._bancaOreMultiMese?'white':'#f59e0b'};color:${window._bancaOreMultiMese?'#374151':'white'}">Solo mese</button>
@@ -2260,7 +2229,7 @@ function renderAdminBancaOre() {
       ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
     </div>
     <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
-      ${(window._bancaOreMultiMese ? dipAttivi.filter(d=>{const sq=(window._searchState&&window._searchState["search-banca"])||"";return !sq||d.nome.toLowerCase().includes(sq);}).map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre.filter(b=>{const sq=(window._searchState&&window._searchState["search-banca"])||"";return !sq||b.dip.nome.toLowerCase().includes(sq);})).map(b => {
+      ${(window._bancaOreMultiMese ? dipAttivi.filter(d=>sqFilter("search-banca",d.nome)).map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre.filter(b=>sqFilter("search-banca",b.dip.nome))).map(b => {
         const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
         const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
         const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
@@ -2394,6 +2363,38 @@ function renderAdminImpostazioni() {
   `;
 }
 
+function renderDipListHTML() {
+  
+  const renderDip = d => {
+    const isAttivo = d.attivo !== false;
+    return `<div class="row" style="opacity:${isAttivo?1:0.6}">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-weight:600">${d.nome}</span>
+        ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">⏸ Inattivo</span>`:""}
+        <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
+        <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
+        ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
+        ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
+        ${d.email?`<span style="font-size:11px;color:#6b7280">✉️ ${d.email}</span>`:""}
+        ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
+      </div>
+      <div style="display:flex;gap:6px">
+        ${d.email?`<button class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8" onclick="window.inviaEmailPin('${d.id}')">✉️ Invia PIN</button>`:""}
+        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
+        <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
+      </div>
+    </div>`;
+  };
+  const attivi = state.dipendenti.filter(d=>d.attivo!==false&&sqFilter("search-dip",d.nome));
+  const inattivi = state.dipendenti.filter(d=>d.attivo===false&&sqFilter("search-dip",d.nome));
+  let html = attivi.map(renderDip).join("");
+  if(inattivi.length) {
+    html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Inattivi (${inattivi.length})</div>`;
+    html += inattivi.map(renderDip).join("");
+  }
+  return html || `<div class="empty">Nessun dipendente trovato.</div>`;
+}
+
 function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -2422,8 +2423,7 @@ function renderAdminDipendenti() {
           </div>
         </div>`;
       };
-      const sdip = (window._searchState&&window._searchState["search-dip"])||"";
-  const filtraDip = d => !sdip || d.nome.toLowerCase().includes(sdip);
+      
   let html = attivi.filter(filtraDip).map(renderDip).join("");
       if(inattivi.length) {
         html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Inattivi (${inattivi.length})</div>`;

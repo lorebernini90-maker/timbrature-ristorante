@@ -224,26 +224,6 @@ let state = {
 
 
 
-// ── RICERCA GLOBALE ──
-window._sq = window._sq || {}; // stato ricerca persistente
-
-function searchBarHTML(id, ph) {
-  ph = ph || "Cerca dipendente...";
-  const v = window._sq[id] || "";
-  return '<div style="position:relative;margin-bottom:12px">' +
-    '<input type="text" id="' + id + '" placeholder="' + ph + '" value="' + v + '" ' +
-    'oninput="window._sq[\'' + id + '\']=this.value;render();document.getElementById(\'' + id + '\')?.focus()" ' +
-    'style="width:100%;padding:9px 12px 9px 34px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">' +
-    '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af">🔍</span>' +
-    (v ? '<span onclick="window._sq[\'' + id + '\']=\'\';render()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#9ca3af;font-size:18px">×</span>' : '') +
-    '</div>';
-}
-
-function sqFilter(id, nome) {
-  const q = (window._sq[id] || "").toLowerCase();
-  return !q || nome.toLowerCase().includes(q);
-}
-
 function generaPIN4() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
@@ -1354,34 +1334,6 @@ function getTimbMese() {
 }
 
 // ── RIEPILOGO: aggrega turni spezzati per giorno ───────────────
-function getRiepilogo() {
-  return `${searchBarHTML("search-report")}<div>${renderReportListHTML()}</div>`;}
-function renderReportListHTML(){  return state.dipendenti.filter(d=>sqFilter("search-report",d.nome)).map(dip=>{
-    const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
-    const ass=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
-
-    // Raggruppa turni per giorno
-    const perGiorno = {};
-    turni.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
-
-    let tot=0, diur=0, nott=0, strD=0, strN=0;
-    let nTurni = Object.keys(perGiorno).length; // giorni lavorati, non sotto-turni
-
-    Object.entries(perGiorno).forEach(([data, ts]) => {
-      const agg = aggregaTurniGiorno(ts, dip);
-      if(!agg) return;
-      tot += agg.calcolo.totaleMin;
-      diur += agg.calcolo.diurneMin;
-      nott += agg.calcolo.notturneMin;
-      strD += agg.calcolo.strDiurniMin;
-      strN += agg.calcolo.strNotturniMin;
-    });
-
-    const assCnt={}; VOCI_ASSENZA.forEach(v=>{assCnt[v]=ass.filter(a=>a.assenza===v&&new Date(a.data).getDay()!==0).length;});
-    return {dip,tot,diur,nott,strD,strN,assCnt,nTurni};
-  });
-}
-
 function renderAdminReport() {
   const r=getRiepilogo();
   return `
@@ -1663,14 +1615,13 @@ function renderAdminInserisci() {
         ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
       </select>
     </div>
-    ${searchBarHTML("search-presenze")}
     <div id="lista-timbrature">${renderListaTimbratureHTML()}</div>`;
 }
 
 function renderListaTimbratureHTML(filtroDipId) {
   let lista=[...state.timbrature].sort((a,b)=>b.data.localeCompare(a.data)||a.entrata?.localeCompare(b.entrata||"")||0);
   if(filtroDipId) lista=lista.filter(t=>t.dipendenteId===filtroDipId);
-  lista=lista.filter(t=>{const d=state.dipendenti.find(x=>x.id===t.dipendenteId);return sqFilter("search-presenze", d?.nome||"");});
+
   lista=lista.slice(0,50);
   if(!lista.length) return `<div class="empty">Nessuna timbratura.</div>`;
   const righe = lista.map(t=>{
@@ -1850,8 +1801,7 @@ function renderAdminMaggiorazioni() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📈 Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
     </div>
-    ${searchBarHTML("search-magg")}
-    ${state.dipendenti.filter(d=>sqFilter("search-magg",d.nome)).map(dip=>{
+    ${state.dipendenti.map(dip=>{
       const r=calcolaCostoMensile(dip.id);
       if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
       const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
@@ -2220,7 +2170,6 @@ function renderAdminBancaOre() {
       <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
       <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
     </div>
-    ${searchBarHTML("search-banca")}
     <div style="display:contents">
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <span style="font-size:12px;color:#6b7280">Visualizzazione:</span>
@@ -2229,7 +2178,7 @@ function renderAdminBancaOre() {
       ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
     </div>
     <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
-      ${(window._bancaOreMultiMese ? dipAttivi.filter(d=>sqFilter("search-banca",d.nome)).map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre.filter(b=>sqFilter("search-banca",b.dip.nome))).map(b => {
+      ${(window._bancaOreMultiMese ? dipAttivi.map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre).map(b => {
         const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
         const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
         const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
@@ -2363,45 +2312,12 @@ function renderAdminImpostazioni() {
   `;
 }
 
-function renderDipListHTML() {
-  
-  const renderDip = d => {
-    const isAttivo = d.attivo !== false;
-    return `<div class="row" style="opacity:${isAttivo?1:0.6}">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-weight:600">${d.nome}</span>
-        ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">⏸ Inattivo</span>`:""}
-        <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
-        <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
-        ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
-        ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
-        ${d.email?`<span style="font-size:11px;color:#6b7280">✉️ ${d.email}</span>`:""}
-        ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
-      </div>
-      <div style="display:flex;gap:6px">
-        ${d.email?`<button class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8" onclick="window.inviaEmailPin('${d.id}')">✉️ Invia PIN</button>`:""}
-        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
-        <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
-      </div>
-    </div>`;
-  };
-  const attivi = state.dipendenti.filter(d=>d.attivo!==false&&sqFilter("search-dip",d.nome));
-  const inattivi = state.dipendenti.filter(d=>d.attivo===false&&sqFilter("search-dip",d.nome));
-  let html = attivi.map(renderDip).join("");
-  if(inattivi.length) {
-    html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Inattivi (${inattivi.length})</div>`;
-    html += inattivi.map(renderDip).join("");
-  }
-  return html || `<div class="empty">Nessun dipendente trovato.</div>`;
-}
-
 function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Dipendenti</h2>
       <button class="btn btn-primary btn-sm" data-apri-modale-nuovo>+ Aggiungi</button>
     </div>
-    ${searchBarHTML("search-dip")}
     ${(()=>{
       const attivi = state.dipendenti.filter(d=>d.attivo!==false);
       const inattivi = state.dipendenti.filter(d=>d.attivo===false);

@@ -1428,8 +1428,17 @@ function renderCalendarioRapidoHTML() {
     const dom = dow===0;
     const stato = window._irGiorni[dataStr] || {sel:false, entrata:enDef, uscita:usDef, pausa:paDef};
     const sel = stato.sel;
-    const bg = sel ? "#f0fdf4" : "#f9fafb";
-    const border = sel ? "1px solid #86efac" : "1px solid #e5e7eb";
+    // Controlla timbrature esistenti per questo giorno
+    const dipIdRapido = document.getElementById("ir-dip")?.value || null;
+    const timbrRapido = dipIdRapido
+      ? state.timbrature.filter(t => t.data===dataStr && t.dipendenteId===dipIdRapido)
+      : [];
+    const haLavoroR  = timbrRapido.some(t => t.tipo==="lavoro");
+    const haAssenzaR = timbrRapido.some(t => t.tipo==="assenza");
+    const bgExistR = haLavoroR ? "#dcfce7" : haAssenzaR ? "#ffedd5" : "#f9fafb";
+    const borderExistR = haLavoroR ? "1px solid #86efac" : haAssenzaR ? "1px solid #fdba74" : "1px solid #e5e7eb";
+    const bg = sel ? "#f0fdf4" : bgExistR;
+    const border = sel ? "1px solid #86efac" : borderExistR;
     const label = dom ? `<span style="color:#7c3aed;font-weight:700">${gg[dow]}</span>` :
                   fest ? `<span style="color:#dc2626;font-weight:700">${gg[dow]} 🎉</span>` :
                   `<span style="color:#374151;font-weight:600">${gg[dow]}</span>`;
@@ -3138,10 +3147,27 @@ function renderCalendarioMultiplo(prefisso) {
   for(let g=1;g<=giorniMese;g++){
     const ds=`${anno}-${String(mese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
     const sel=set.has(ds);
-    html+=`<div id="${prefisso}-giorno-${ds}" onclick="toggleGiorno('${prefisso}','${ds}')" style="cursor:pointer;padding:5px 2px;border-radius:6px;font-size:13px;border:1px solid ${sel?"#f59e0b":"#e5e7eb"};background:${sel?"#f59e0b":"white"};color:${sel?"white":"inherit"}" data-data="${ds}">${g}</div>`;
+    // Controlla timbrature esistenti per questo giorno
+    const dipIdMulti = prefisso==="admin"
+      ? document.getElementById("ir-dip")?.value || null
+      : state.dipendente?.id || null;
+    const timbrGiorno = dipIdMulti
+      ? state.timbrature.filter(t => t.data===ds && t.dipendenteId===dipIdMulti)
+      : [];
+    const haLavoro  = timbrGiorno.some(t => t.tipo==="lavoro");
+    const haAssenza = timbrGiorno.some(t => t.tipo==="assenza");
+    const bgExist = haLavoro ? "#dcfce7" : haAssenza ? "#ffedd5" : "white";
+    const borderExist = haLavoro ? "#86efac" : haAssenza ? "#fdba74" : "#e5e7eb";
+    const dotExist = haLavoro ? `<div style="font-size:7px;color:#16a34a;line-height:1">●</div>` : haAssenza ? `<div style="font-size:7px;color:#ea580c;line-height:1">●</div>` : "";
+    html+=`<div id="${prefisso}-giorno-${ds}" onclick="toggleGiorno('${prefisso}','${ds}')" style="cursor:pointer;padding:5px 2px;border-radius:6px;font-size:13px;border:1px solid ${sel?"#f59e0b":borderExist};background:${sel?"#f59e0b":bgExist};color:${sel?"white":"inherit"};text-align:center" data-data="${ds}">${g}${dotExist}</div>`;
   }
   const dateList=[...set].sort().filter(d=>d.startsWith(`${anno}-${String(mese+1).padStart(2,"0")}`));
-  html+=`</div><div id="${prefisso}-date-selezionate" style="margin-top:8px;font-size:12px;color:#6b7280">${set.size>0?`${set.size} date selezionate: ${[...set].sort().join(", ")}`:"Nessuna data selezionata"}</div>`;
+  html+=`</div><div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:#6b7280;flex-wrap:wrap">
+    <span><span style="display:inline-block;width:10px;height:10px;background:#dcfce7;border:1px solid #86efac;border-radius:2px;margin-right:3px"></span>Lavoro</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#ffedd5;border:1px solid #fdba74;border-radius:2px;margin-right:3px"></span>Assenza</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border:1px solid #f59e0b;border-radius:2px;margin-right:3px"></span>Selezionato</span>
+  </div>
+  <div id="${prefisso}-date-selezionate" style="margin-top:8px;font-size:12px;color:#6b7280">${set.size>0?`${set.size} date selezionate: ${[...set].sort().join(", ")}`:"Nessuna data selezionata"}</div>`;
   return html;
 }
 

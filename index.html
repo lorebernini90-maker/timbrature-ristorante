@@ -744,7 +744,9 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const fineContratto=document.getElementById("md-fine-contratto")?.value||null;
     if(!nome){alert("Inserisci il nome!");return;}
     const pinFinale = pin || generaPIN4();
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin:pinFinale,attivo,fineContratto:fineContratto||null};
+    const email = document.getElementById("md-email")?.value?.trim()||null;
+    const telefono = document.getElementById("md-telefono")?.value?.trim()||null;
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie,feriePregresse,montePermessi,pin:pinFinale,attivo,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -2430,6 +2432,8 @@ function renderModaleDip() {
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
           <div><label>PIN (4 cifre)</label><div style="display:flex;gap:6px"><input id="md-pin" type="text" maxlength="4" placeholder="Auto" value="${d.pin||(state.modaleDip.mode==='nuovo'?window._nuovoPinGenerato||'':'')}" style="font-size:18px;letter-spacing:4px;font-weight:700"><button type="button" onclick="document.getElementById('md-pin').value=generaPIN4()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;cursor:pointer;font-size:12px;white-space:nowrap">🔄 Genera</button></div></div>
           <div><label>Data fine contratto</label><input id="md-fine-contratto" type="date" value="${d.fineContratto||""}"></div>
+          <div><label>Email</label><input id="md-email" type="email" placeholder="mario.rossi@email.com" value="${d.email||""}"></div>
+          <div><label>Telefono</label><input id="md-telefono" type="tel" placeholder="+39 333 1234567" value="${d.telefono||""}"></div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f3f4f6;margin-top:4px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#374151;margin:0">
@@ -2810,6 +2814,37 @@ function esportaExcel() {
 }
 
 window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
+window.inviaEmailPin=function(dipId){
+  const dip = state.dipendenti.find(d=>d.id===dipId);
+  if(!dip || !dip.email) return;
+  const pin = dip.pin || "—";
+  const nome = dip.nome;
+  const url = "https://lorebernini90-maker.github.io/timbrature-ristorante/";
+  const subject = encodeURIComponent(`Accesso app Timbrature — ${nome}`);
+  const body = encodeURIComponent(
+`Ciao ${nome.split(" ")[0]},
+
+ecco le tue credenziali per accedere all'app timbrature del ristorante:
+
+🔗 Link: ${url}
+🔑 PIN: ${pin}
+
+Come accedere:
+1. Apri il link sopra (o usa l'icona sul telefono)
+2. Cerca il tuo nome nella lista
+3. Inserisci il PIN a 4 cifre
+
+Come timbrare:
+• Arrivo: premi il pulsante verde ENTRATA
+• Uscita: premi il pulsante rosso USCITA
+
+Per qualsiasi problema contatta il responsabile.
+
+Cordiali saluti`
+  );
+  window.open(`mailto:${dip.email}?subject=${subject}&body=${body}`);
+};
+
 window.assegnaPinMancanti=async function(){
   const senzaPin = state.dipendenti.filter(d=>!d.pin);
   if(senzaPin.length===0){alert("✅ Tutti i dipendenti hanno già un PIN!");return;}
@@ -2827,6 +2862,65 @@ window.assegnaPinMancanti=async function(){
   // Mostra riepilogo PIN assegnati
   const lista = nuoviPin.map(x=>`${x.nome}: ${x.pin}`).join("\n");
   alert("✅ PIN assegnati:\n\n"+lista+"\n\nAnnotati e distribuili ai dipendenti!");
+};
+
+
+// Migrazione email/telefono da file Excel
+window.migraEmailTelefono = async function() {
+  if(localStorage.getItem("emailMigrazione_v1")) return; // già eseguita
+  const dati = [
+  {nome: "IANNONE NOEMI ALESSANDRA", email: "noemiiannone70@gmail.com", telefono: "+39 3922537817"},
+  {nome: "MAURANTONIO NICCOLO'", email: "nmauro001@gmail.com", telefono: "+39 3273783103"},
+  {nome: "AVIGLIANO COSIMO", email: "cosimoavigliano2000@gmail.com", telefono: "+39 3279313007"},
+  {nome: "SHUMI BINIY AM AKLILU", email: "biniyamaklilu0@gmail.com", telefono: "+39 3513296175"},
+  {nome: "BARTOLOZZI NICOLETTA", email: "nicolettabartolozzi715@gmail.com", telefono: "+39 3337317795"},
+  {nome: "LAURETTI MAURICIO", email: "mauriciolauretti@gmail.com", telefono: "+39 3276703210"},
+  {nome: "BUNAY HUAMANI ALISSON NICOLE", email: "alibunay09@gmail.com", telefono: "+39 3334964868"},
+  {nome: "BROGELLI BEATRICE", email: "beatricebrogelli@gmail.com", telefono: "+39 3774470629"},
+  {nome: "AGOSTI MATTEO", email: "matteoagosti2306@gmail.com", telefono: "+39 3667428106"},
+  {nome: "FRANCIONI ALESSANDRO", email: "frankgeralf@yahoo.it", telefono: "+39 3382805619"},
+  {nome: "SCHIRRIPA LAVINIA DILETTA", email: "laviniadilettaschirripa@gmail.com", telefono: "+39 3896620208"},
+  {nome: "YAMBA DANIEL KAY", email: "mbayo953@gmail.com", telefono: "+39 3895193677"},
+  {nome: "NAVEED AMIR", email: "amir.michela287@gmail.com", telefono: "+39 3291122046"},
+  {nome: "ISLAM SHAIFUL", email: "shaiful.islam3031@gmail.com", telefono: "+39 3394038877"},
+  {nome: "BAROZZI GIOVANNI", email: "giovy10-7@live.it", telefono: "+39 3663022547"},
+  {nome: "DONYINA STEPHEN", email: "01234donyina9@gmail.com", telefono: "+39 3511281034"},
+  {nome: "PEPI MATTEO", email: "matteopepi98@gmail.com", telefono: "+39 3485705927"},
+  {nome: "OPOKU PETER", email: "opokupeter36459@gmail.com", telefono: "+39 3512585655"},
+  {nome: "DARUMURA HETTIGE THILAK SUNIMAL", email: "dhtsunimal@gmail.com", telefono: "+39 3348499607"},
+  {nome: "GLUSHAKOVA VIRA", email: "glushakova.vira@gmail.com", telefono: "+39 3282874906"},
+  {nome: "MOREM BERTINI PEDRO", email: "pedrobertinimorem@gmail.com", telefono: "+39 3884312800"},
+  {nome: "PIRRO GIUSEPPE", email: "gi.use.90@hotmail.com", telefono: "+39 3335974693"},
+  {nome: "TENORE GIUSEPPE", email: "tenoregiuseppe7@gmail.com", telefono: "+39 3290777545"},
+  {nome: "MAZZOCCHI FRANCESCO", email: "francesco.mazzocchi1985@gmail.com", telefono: "+39 3334016609"},
+  {nome: "ATIGODA ACHARIGE ROSHAN NISHANTHA", email: "roshanfirenze1970@gmail.com", telefono: "+39 3277739250"},
+  {nome: "DONNINI MARCO", email: null, telefono: "+39 3385370810"},
+  {nome: "SALVI MATTEO", email: null, telefono: "+39 3291766653"},
+  {nome: "CEKREZI REI", email: "reicekrezi6@gmail.com", telefono: null},
+  {nome: "KILIC SEYMA", email: null, telefono: "+39 3514403378"},
+  {nome: "ACHIMENCO ALEXANDRIN", email: "alex.achimenco@rionerestaurant.com", telefono: "+39 3200512798"},
+  {nome: "AMENDOLA ANDREA", email: "andreaamendola35@gmail.com", telefono: "+39 3246385013"},
+  {nome: "ATIGODA ACHARIGE HIMANSA NETHMINA", email: "himansa6697@gmail.com", telefono: "+39 3716416501"},
+  {nome: "PLAKA AMANDA", email: "plakaamanda@gmail.com", telefono: "+39 3516253069"},
+  {nome: "HAIDER SHAMRAIZ", email: "saithshamraiz7@gmail.com", telefono: null},
+  {nome: "ZINCHENKO YEVHEN", email: "evgeniyzinchenko0602@gmail.com", telefono: "+39 3889081600"},
+];
+  let aggiornati = 0;
+  for(const d of dati) {
+    const dip = state.dipendenti.find(x => x.nome.toUpperCase() === d.nome.toUpperCase());
+    if(dip && (!dip.email || !dip.telefono)) {
+      const update = {};
+      if(d.email && !dip.email) update.email = d.email;
+      if(d.telefono && !dip.telefono) update.telefono = d.telefono;
+      if(Object.keys(update).length > 0) {
+        await updateDoc(doc(db,"dipendenti",dip.id), update);
+        Object.assign(dip, update);
+        aggiornati++;
+      }
+    }
+  }
+  localStorage.setItem("emailMigrazione_v1","done");
+  if(aggiornati > 0) { render(); console.log("Migrazione email/tel: " + aggiornati + " dipendenti aggiornati"); }
 };
 
 window.setBancaOreModo=function(multi){window._bancaOreMultiMese=multi;render();};

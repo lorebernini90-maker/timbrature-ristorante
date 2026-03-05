@@ -2400,6 +2400,7 @@ function renderAdminDipendenti() {
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Dipendenti</h2>
       <button class="btn btn-primary btn-sm" data-apri-modale-nuovo>+ Aggiungi</button>
     </div>
+    ${searchBarHTML("search-dip")}
     ${(()=>{
       const attivi = state.dipendenti.filter(d=>d.attivo!==false);
       const inattivi = state.dipendenti.filter(d=>d.attivo===false);

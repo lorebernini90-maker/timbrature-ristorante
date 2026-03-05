@@ -1430,8 +1430,9 @@ function renderCalendarioRapidoHTML() {
     const sel = stato.sel;
     // Controlla timbrature esistenti per questo giorno
     const dipIdRapido = document.getElementById("ir-dip")?.value || null;
+    const meseStrR = mese.substring(0,7); // "2026-03"
     const timbrRapido = dipIdRapido
-      ? state.timbrature.filter(t => t.data===dataStr && t.dipendenteId===dipIdRapido)
+      ? getTimbrMeseCalendario(meseStrR, dipIdRapido).filter(t => t.data===dataStr)
       : [];
     const haLavoroR  = timbrRapido.some(t => t.tipo==="lavoro");
     const haAssenzaR = timbrRapido.some(t => t.tipo==="assenza");
@@ -1467,8 +1468,11 @@ function renderCalendarioRapidoHTML() {
   return html;
 }
 
-function renderCalendarioRapido() {
+async function renderCalendarioRapido() {
   window._irGiorni = {};
+  const meseEl = document.getElementById("ir-mese");
+  const meseVal = meseEl?.value || (new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0"));
+  await caricaTimbratureMese(meseVal.substring(0,7));
   const el = document.getElementById("calendario-rapido");
   if(el) el.innerHTML = renderCalendarioRapidoHTML();
 }
@@ -3130,6 +3134,36 @@ function attachModificaEliminaTimb(){
   });
 }
 
+
+// Cache timbrature per calendari multipli (possono mostrare mesi diversi dal filtro)
+window._cacheTimbrMese = {};
+
+async function caricaTimbratureMese(meseStr) {
+  // meseStr = "2026-02"
+  if(window._cacheTimbrMese[meseStr]) return window._cacheTimbrMese[meseStr];
+  const [anno, mese] = meseStr.split("-");
+  const dal = `${anno}-${mese}-01`;
+  const al  = `${anno}-${mese}-31`; // Firebase tronca automaticamente
+  try {
+    const q = query(collection(db,"timbrature"), where("data",">=",dal), where("data","<=",al));
+    const snap = await getDocs(q);
+    const risultati = snap.docs.map(d=>({id:d.id,...d.data()}));
+    window._cacheTimbrMese[meseStr] = risultati;
+    return risultati;
+  } catch(e) { return []; }
+}
+
+function getTimbrMeseCalendario(meseStr, dipId) {
+  // Se il mese coincide con il filtro corrente, usa state.timbrature già caricato
+  const meseCorrente = `${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}`;
+  if(meseStr === meseCorrente) {
+    return dipId ? state.timbrature.filter(t=>t.dipendenteId===dipId) : state.timbrature;
+  }
+  // Altrimenti usa la cache
+  const cached = window._cacheTimbrMese[meseStr] || [];
+  return dipId ? cached.filter(t=>t.dipendenteId===dipId) : cached;
+}
+
 function renderCalendarioMultiplo(prefisso) {
   const meseEl = document.getElementById(`${prefisso}-mese-multiplo`);
   const meseVal = meseEl?.value || (new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0"));
@@ -3152,7 +3186,7 @@ function renderCalendarioMultiplo(prefisso) {
       ? document.getElementById("ir-dip")?.value || null
       : state.dipendente?.id || null;
     const timbrGiorno = dipIdMulti
-      ? state.timbrature.filter(t => t.data===ds && t.dipendenteId===dipIdMulti)
+      ? getTimbrMeseCalendario(meseVal, dipIdMulti).filter(t => t.data===ds)
       : [];
     const haLavoro  = timbrGiorno.some(t => t.tipo==="lavoro");
     const haAssenza = timbrGiorno.some(t => t.tipo==="assenza");
@@ -3173,8 +3207,11 @@ function renderCalendarioMultiplo(prefisso) {
 
 window._dateSelezionate={dip:new Set(),admin:new Set()};
 
-window.aggiornaMeseMultiplo=function(prefisso){
-  window._dateSelezionate[prefisso]=new Set(); // reset selezione al cambio mese
+window.aggiornaMeseMultiplo=async function(prefisso){
+  window._dateSelezionate[prefisso]=new Set();
+  const meseEl = document.getElementById(`${prefisso}-mese-multiplo`);
+  const meseVal = meseEl?.value || (new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0"));
+  await caricaTimbratureMese(meseVal); // precarica cache
   const el=document.getElementById(`${prefisso}-calendario-multiplo`);
   if(el) el.innerHTML=renderCalendarioMultiplo(prefisso);
 };

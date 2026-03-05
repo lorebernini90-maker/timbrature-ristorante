@@ -772,7 +772,7 @@ document.addEventListener("change", function(e) {
 
 function renderLogin() {
   const dipAttivi = getDipendentiAttivi();
-  const cerca = state._loginCerca||"";
+  const cerca = window._loginCerca||"";
   const filtrati = cerca.trim()
     ? dipAttivi.filter(d=>d.nome.toLowerCase().includes(cerca.toLowerCase()))
     : dipAttivi;
@@ -786,7 +786,7 @@ function renderLogin() {
       <div style="position:relative;margin-bottom:16px">
         <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:16px">🔍</span>
         <input type="text" placeholder="Cerca il tuo nome..." value="${cerca}"
-          oninput="window._loginCerca=this.value;state._loginCerca=this.value;renderLoginList()"
+          oninput="window._loginCerca=this.value;renderLoginList()"
           style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none"
           autofocus>
       </div>
@@ -2318,12 +2318,17 @@ function renderAdminDipendenti() {
       <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Dipendenti</h2>
       <button class="btn btn-primary btn-sm" data-apri-modale-nuovo>+ Aggiungi</button>
     </div>
+    <div style="position:relative;margin-bottom:12px">
+      <input type="text" id="dip-search" placeholder="🔍 Cerca dipendente..."
+        oninput="document.querySelectorAll('[data-dip-row]').forEach(el=>{el.style.display=el.dataset.dipRow.toLowerCase().includes(this.value.toLowerCase())?'':'none'})"
+        style="width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+    </div>
     ${(()=>{
       const attivi = state.dipendenti.filter(d=>d.attivo!==false);
       const inattivi = state.dipendenti.filter(d=>d.attivo===false);
       const renderDip = d => {
         const isAttivo = d.attivo !== false;
-        return `<div class="row" style="opacity:${isAttivo?1:0.6}">
+        return `<div class="row" data-dip-row="${d.nome}" style="opacity:${isAttivo?1:0.6}">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span style="font-weight:600">${d.nome}</span>
             ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">⏸ Inattivo</span>`:""}
@@ -2331,19 +2336,20 @@ function renderAdminDipendenti() {
             <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
             ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
             ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
+            ${d.email?`<span style="font-size:11px;color:#6b7280">✉️ ${d.email}</span>`:""}
             ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
           </div>
           <div style="display:flex;gap:6px">
+            ${d.email?`<button class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8" onclick="window.inviaEmailPin('${d.id}')">✉️ Invia PIN</button>`:""}
             <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
             <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>
           </div>
         </div>`;
       };
-      
-  let html = attivi.filter(filtraDip).map(renderDip).join("");
+      let html = attivi.map(renderDip).join("");
       if(inattivi.length) {
         html += `<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px">Inattivi (${inattivi.length})</div>`;
-        html += inattivi.filter(filtraDip).map(renderDip).join("");
+        html += inattivi.map(renderDip).join("");
       }
       return html;
     })()}
@@ -2924,7 +2930,6 @@ window.importaBackup=async function(input){
     alert("❌ Errore: " + e.message);
   }
 };
-window._loginCerca="";
 window.renderLoginList=function(){
   const cerca=window._loginCerca||"";
   const dipAttivi=getDipendentiAttivi();

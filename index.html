@@ -215,7 +215,7 @@ const db = getFirestore(fbApp);
 let state = {
   vista: "loading", utenteCorrente: null,
   dipendenti: [], timbrature: [],
-  dipTab: "timbra", adminTab: "oggi", adminSubTab: "dashboard", supDipSelezionato: null,
+  dipTab: "timbra", adminTab: "oggi", adminSubTab: "dashboard", supDipSelezionato: null, supTab: "colleghi",
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
   filtroSede: "",
   modaleDip: null, modaleTimbratura: null,
@@ -555,7 +555,7 @@ function render() {
   const app=document.getElementById("app"); if(!app) return;
   if(state.vista==="login") app.innerHTML=renderLogin();
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
-  else if(state.vista==="supervisore") app.innerHTML=renderSupervisore();
+
   else if(state.vista==="admin") app.innerHTML=renderAdmin();
   document.querySelectorAll(".modal-bg").forEach(el=>el.remove());
   if(state.modaleDip) document.body.insertAdjacentHTML("beforeend",renderModaleDip());
@@ -574,7 +574,7 @@ document.addEventListener("click", async function(e) {
       if(pin!==dip.pin){ alert("PIN errato!"); return; }
     }
     state.utenteCorrente=dip;
-    state.vista=dip.supervisore?"supervisore":"dipendente"; render();
+    state.vista="dipendente"; render();
   }
   else if(t.dataset.loginAdmin!==undefined) {
     const pin=prompt("Inserisci il PIN admin:");
@@ -829,15 +829,14 @@ function renderLogin() {
 }
 
 
-function renderSupervisore() {
-  const sup = state.utenteCorrente;
+function renderSupervisoreTab(dip) {
   const dipSel = state.supDipSelezionato;
   const oggi2 = new Date().toISOString().split("T")[0];
   const meseCorrente = oggi2.slice(0,7);
 
   // Vista lista dipendenti
   if(!dipSel) {
-    const dips = getDipendentiAttivi().filter(d=>d.id!==sup.id);
+    const dips = getDipendentiAttivi().filter(d=>d.id!==dip.id);
     const html = dips.map(d=>{
       const timbrOggi = state.timbrature.filter(t=>t.dipendenteId===d.id&&t.data===oggi2);
       const haLavoro = timbrOggi.some(t=>t.tipo==="lavoro");
@@ -866,8 +865,7 @@ function renderSupervisore() {
     return `
       <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <h1 style="font-size:18px;font-weight:700">👁 Supervisore</h1>
-          <p style="font-size:12px;opacity:0.85">${sup.nome.split(" ")[0]} • <span id="clock">${oraNow()}</span></p>
+          <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">👁 Vista Supervisore</div>
         </div>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
@@ -880,8 +878,8 @@ function renderSupervisore() {
   }
 
   // Vista timbrature dipendente selezionato
-  const dip = state.dipendenti.find(d=>d.id===dipSel);
-  if(!dip) { state.supDipSelezionato=null; render(); return ""; }
+  const dipColleg = state.dipendenti.find(d=>d.id===dipSel);
+  if(!dipColleg) { state.supDipSelezionato=null; render(); return ""; }
 
   const filtroMese = document.getElementById("sup-filtro-mese")?.value || meseCorrente;
   const filtroData = document.getElementById("sup-filtro-data")?.value || "";
@@ -933,7 +931,7 @@ function renderSupervisore() {
       </div>`;
     }
 
-    const agg = aggregaTurniGiorno(turni, dip);
+    const agg = aggregaTurniGiorno(turni, dipColleg);
     return `<div style="border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-bottom:6px;background:#fff7ed">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;gap:6px;align-items:center">
@@ -970,17 +968,11 @@ function renderSupervisore() {
     </div>`;
 
   return `
-    <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <h1 style="font-size:16px;font-weight:700">👁 ${dip.nome}</h1>
-        <p style="font-size:12px;opacity:0.85">${dip.tipo}</p>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="state.supDipSelezionato=null;render()" class="btn btn-white btn-sm">← Indietro</button>
-        <button class="btn btn-white btn-sm" data-logout>Esci</button>
-      </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700;color:#374151">👁 ${dip.nome} <span style="font-weight:400;font-size:12px;color:#9ca3af">${dip.tipo}</span></div>
+      <button onclick="state.supDipSelezionato=null;render()" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer">← Indietro</button>
     </div>
-    <div style="max-width:600px;margin:0 auto;padding:16px">
+    <div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <div style="flex:1;min-width:130px">
           <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Mese</label>
@@ -998,8 +990,7 @@ function renderSupervisore() {
       ${formAggiungi}
       <div style="display:flex;flex-direction:column;gap:6px">
         ${righe || '<div style="text-align:center;color:#9ca3af;padding:20px">Nessuna timbratura trovata</div>'}
-      </div>
-    </div>`;
+      </div>`;
 }
 
 window.supervisoreAggiungiTurno = async function(dipId) {
@@ -1026,10 +1017,13 @@ function renderDipendente() {
   const strM=turniMese.reduce((s,t)=>s+(t.calcolo?.straordinariMin||0),0);
   const nottM=turniMese.reduce((s,t)=>s+(t.calcolo?.notturneMin||0),0);
   const assM=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&d.getMonth()===mese&&d.getFullYear()===anno;}).length;
-  const tabs=[["timbra","⏱️ Timbra"],["riepilogo","📊 Riepilogo"],["storico","📋 Storico"]];
+  const tabs=dip.supervisore
+    ?[["timbra","⏱️ Timbra"],["riepilogo","📊 Riepilogo"],["storico","📋 Storico"],["supervisore","👁 Supervisore"]]
+    :[["timbra","⏱️ Timbra"],["riepilogo","📊 Riepilogo"],["storico","📋 Storico"]];
   let content="";
   if(state.dipTab==="timbra") content=renderDipTimbra(dip);
   else if(state.dipTab==="riepilogo") content=renderDipRiepilogo(turniMese,totM,strM,nottM,assM);
+  else if(state.dipTab==="supervisore") content=renderSupervisoreTab(dip);
   else content=renderDipStorico(dip);
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
@@ -1205,7 +1199,7 @@ function renderDipStorico(dip) {
     }
 
     // Turni spezzati
-    const agg = aggregaTurniGiorno(turni, dip);
+    const agg = aggregaTurniGiorno(turni, dipColleg);
     return `<div style="border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-bottom:6px;background:#fff7ed">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;gap:6px;align-items:center">

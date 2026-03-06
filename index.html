@@ -849,7 +849,7 @@ function renderSupervisoreTab(dip) {
           : haAssenza
             ? `<span style="font-size:11px;background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:10px">🔶 Assente</span>`
             : `<span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px">— Non timb.</span>`;
-      return `<div onclick="state.supDipSelezionato='${d.id}';render()"
+      return `<div onclick="state.supDipSelezionato='${d.id}';caricaTimbratureMese(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')).then(()=>render())"
         style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;
                display:flex;justify-content:space-between;align-items:center;cursor:pointer;
                transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
@@ -884,10 +884,12 @@ function renderSupervisoreTab(dip) {
   const filtroMese = document.getElementById("sup-filtro-mese")?.value || meseCorrente;
   const filtroData = document.getElementById("sup-filtro-data")?.value || "";
 
-  const storico = [...state.timbrature].filter(t=>{
-    if(t.dipendenteId!==dipSel) return false;
+  // Usa getTimbrMeseCalendario che legge dalla cache Firebase (supporta qualsiasi mese/anno)
+  const mesePerCache = filtroData ? filtroData.slice(0,7) : filtroMese;
+  const timbrMese = getTimbrMeseCalendario(mesePerCache, dipSel);
+  const storico = timbrMese.filter(t=>{
     if(filtroData) return t.data===filtroData;
-    return t.data.startsWith(filtroMese);
+    return true;
   }).sort((a,b)=>b.data.localeCompare(a.data));
 
   const perData = {};
@@ -978,7 +980,7 @@ function renderSupervisoreTab(dip) {
           <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Mese</label>
           <input type="month" id="sup-filtro-mese" value="${filtroMese}"
             style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"
-            onchange="document.getElementById('sup-filtro-data').value='';render()">
+            onchange="document.getElementById('sup-filtro-data').value='';caricaTimbratureMese(this.value).then(()=>render())">
         </div>
         <div style="flex:1;min-width:130px">
           <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Giorno</label>
@@ -1023,7 +1025,12 @@ function renderDipendente() {
   let content="";
   if(state.dipTab==="timbra") content=renderDipTimbra(dip);
   else if(state.dipTab==="riepilogo") content=renderDipRiepilogo(turniMese,totM,strM,nottM,assM);
-  else if(state.dipTab==="supervisore") content=renderSupervisoreTab(dip);
+  else if(state.dipTab==="supervisore") {
+    // Precarica il mese corrente se non già in cache
+    const meseCorr2 = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+    caricaTimbratureMese(meseCorr2);
+    content=renderSupervisoreTab(dip);
+  }
   else content=renderDipStorico(dip);
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
@@ -3350,12 +3357,18 @@ async function caricaTimbratureMese(meseStr) {
   if(window._cacheTimbrMese[meseStr]) return window._cacheTimbrMese[meseStr];
   const [anno, mese] = meseStr.split("-");
   const dal = `${anno}-${mese}-01`;
-  const al  = `${anno}-${mese}-31`; // Firebase tronca automaticamente
+  const al  = `${anno}-${mese}-31`;
   try {
     const q = query(collection(db,"timbrature"), where("data",">=",dal), where("data","<=",al));
     const snap = await getDocs(q);
     const risultati = snap.docs.map(d=>({id:d.id,...d.data()}));
     window._cacheTimbrMese[meseStr] = risultati;
+    // Aggiorna anche state.timbrature se è lo stesso anno del filtro corrente
+    if(parseInt(anno) === state.filtroAnno) {
+      // Integra i nuovi dati in state.timbrature (evita duplicati)
+      const idsEsistenti = new Set(state.timbrature.map(t=>t.id));
+      risultati.forEach(t=>{ if(!idsEsistenti.has(t.id)) state.timbrature.push(t); });
+    }
     return risultati;
   } catch(e) { return []; }
 }

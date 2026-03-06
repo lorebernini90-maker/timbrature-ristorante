@@ -215,7 +215,7 @@ const db = getFirestore(fbApp);
 let state = {
   vista: "loading", utenteCorrente: null,
   dipendenti: [], timbrature: [],
-  dipTab: "timbra", adminTab: "oggi", adminSubTab: "dashboard",
+  dipTab: "timbra", adminTab: "oggi", adminSubTab: "dashboard", supDipSelezionato: null,
   filtroMese: new Date().getMonth(), filtroAnno: new Date().getFullYear(),
   filtroSede: "",
   modaleDip: null, modaleTimbratura: null,
@@ -555,6 +555,7 @@ function render() {
   const app=document.getElementById("app"); if(!app) return;
   if(state.vista==="login") app.innerHTML=renderLogin();
   else if(state.vista==="dipendente") app.innerHTML=renderDipendente();
+  else if(state.vista==="supervisore") app.innerHTML=renderSupervisore();
   else if(state.vista==="admin") app.innerHTML=renderAdmin();
   document.querySelectorAll(".modal-bg").forEach(el=>el.remove());
   if(state.modaleDip) document.body.insertAdjacentHTML("beforeend",renderModaleDip());
@@ -573,14 +574,14 @@ document.addEventListener("click", async function(e) {
       if(pin!==dip.pin){ alert("PIN errato!"); return; }
     }
     state.utenteCorrente=dip;
-    state.vista="dipendente"; render();
+    state.vista=dip.supervisore?"supervisore":"dipendente"; render();
   }
   else if(t.dataset.loginAdmin!==undefined) {
     const pin=prompt("Inserisci il PIN admin:");
     if(pin===ADMIN_PIN){state.vista="admin";render();} else if(pin!==null) alert("PIN errato!");
   }
   else if(t.dataset.logout!==undefined) {
-    state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; state.adminTab="oggi"; state.adminSubTab="dashboard"; render();
+    state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; state.adminTab="oggi"; state.adminSubTab="dashboard"; state.supDipSelezionato=null; render();
   }
   else if(t.dataset.dipTab) { state.dipTab=t.dataset.dipTab; render(); }
   else if(t.dataset.adminMacro) {
@@ -769,7 +770,8 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const pinFinale = pin || generaPIN4();
     const email = document.getElementById("md-email")?.value?.trim()||null;
     const telefono = document.getElementById("md-telefono")?.value?.trim()||null;
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie:monteFerieManuale||null,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
+    const supervisore=document.getElementById("md-supervisore")?.checked||false;
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie:monteFerieManuale||null,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,supervisore,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -825,6 +827,196 @@ function renderLogin() {
       </div>
     </div></div>`;
 }
+
+
+function renderSupervisore() {
+  const sup = state.utenteCorrente;
+  const dipSel = state.supDipSelezionato;
+  const oggi2 = new Date().toISOString().split("T")[0];
+  const meseCorrente = oggi2.slice(0,7);
+
+  // Vista lista dipendenti
+  if(!dipSel) {
+    const dips = getDipendentiAttivi().filter(d=>d.id!==sup.id);
+    const html = dips.map(d=>{
+      const timbrOggi = state.timbrature.filter(t=>t.dipendenteId===d.id&&t.data===oggi2);
+      const haLavoro = timbrOggi.some(t=>t.tipo==="lavoro");
+      const haAssenza = timbrOggi.some(t=>t.tipo==="assenza");
+      const aperto = timbrOggi.some(t=>t.tipo==="lavoro"&&(t.aperto||(!t.uscita&&t.entrata)));
+      const badge = aperto
+        ? `<span style="font-size:11px;background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:10px">⏱ In turno</span>`
+        : haLavoro
+          ? `<span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px">✅ Presente</span>`
+          : haAssenza
+            ? `<span style="font-size:11px;background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:10px">🔶 Assente</span>`
+            : `<span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px">— Non timb.</span>`;
+      return `<div onclick="state.supDipSelezionato='${d.id}';render()"
+        style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;
+               display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+               transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
+               onmouseout="this.style.boxShadow='none'">
+        <div>
+          <div style="font-weight:700;font-size:14px">${d.nome}</div>
+          <div style="font-size:12px;color:#9ca3af">${d.tipo}</div>
+        </div>
+        ${badge}
+      </div>`;
+    }).join("");
+
+    return `
+      <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h1 style="font-size:18px;font-weight:700">👁 Supervisore</h1>
+          <p style="font-size:12px;opacity:0.85">${sup.nome.split(" ")[0]} • <span id="clock">${oraNow()}</span></p>
+        </div>
+        <button class="btn btn-white btn-sm" data-logout>Esci</button>
+      </div>
+      <div style="max-width:600px;margin:0 auto;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">
+          Seleziona un dipendente per vedere le timbrature
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">${html}</div>
+      </div>`;
+  }
+
+  // Vista timbrature dipendente selezionato
+  const dip = state.dipendenti.find(d=>d.id===dipSel);
+  if(!dip) { state.supDipSelezionato=null; render(); return ""; }
+
+  const filtroMese = document.getElementById("sup-filtro-mese")?.value || meseCorrente;
+  const filtroData = document.getElementById("sup-filtro-data")?.value || "";
+
+  const storico = [...state.timbrature].filter(t=>{
+    if(t.dipendenteId!==dipSel) return false;
+    if(filtroData) return t.data===filtroData;
+    return t.data.startsWith(filtroMese);
+  }).sort((a,b)=>b.data.localeCompare(a.data));
+
+  const perData = {};
+  storico.forEach(t=>{ if(!perData[t.data]) perData[t.data]=[]; perData[t.data].push(t); });
+
+  const righe = Object.keys(perData).sort((a,b)=>b.localeCompare(a)).map(data=>{
+    const items = perData[data];
+    const turni = items.filter(t=>t.tipo==="lavoro");
+    const assenze = items.filter(t=>t.tipo==="assenza");
+
+    const btnModifica = (t) => `
+      <button data-modifica-timb="${t.id}" style="font-size:11px;padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;color:#374151">✏️</button>
+      <button data-elimina-timb="${t.id}" style="font-size:11px;padding:3px 8px;border:1px solid #fca5a5;border-radius:6px;background:white;cursor:pointer;color:#dc2626">🗑</button>`;
+
+    if(turni.length===0 && assenze.length>0) {
+      return assenze.map(t=>`
+        <div class="row" style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-weight:600">${t.data}</span>
+            <span class="badge badge-blue">${t.assenza}</span>
+          </div>
+          <div style="display:flex;gap:4px">${btnModifica(t)}</div>
+        </div>`).join("");
+    }
+
+    if(turni.length===1) {
+      const t=turni[0];
+      const aperto=t.aperto||(!t.uscita&&t.entrata);
+      return `<div class="row" style="${aperto?"background:#fef9f0;border-color:#fde68a":""}">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-weight:600">${t.data}</span>
+            ${aperto
+              ?`<span style="color:#d97706">⚠️ ${t.entrata} → in corso</span>`
+              :`<span style="color:#6b7280">${t.entrata} → ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min)</span></span>`
+            }
+            ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+          </div>
+          <div style="display:flex;gap:4px">${btnModifica(t)}</div>
+        </div>
+      </div>`;
+    }
+
+    const agg = aggregaTurniGiorno(turni, dip);
+    return `<div style="border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-bottom:6px;background:#fff7ed">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-weight:700">${data}</span>
+          <span class="badge badge-orange">✂️ Spezzato</span>
+        </div>
+        <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo.totaleMin)}h tot.</span>
+      </div>
+      ${turni.map((t,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#6b7280;margin-left:8px;margin-bottom:4px">
+        <span><span style="color:#92400e;font-weight:600">Turno ${i+1}:</span> ${t.entrata} → ${t.uscita} (${t.pausa}min) ${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
+        <div style="display:flex;gap:4px">${btnModifica(t)}</div>
+      </div>`).join("")}
+    </div>`;
+  }).join("");
+
+  // Aggiungi turno manuale
+  const formAggiungi = `
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:10px">➕ Aggiungi timbratura</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Data</label>
+          <input type="date" id="sup-add-data" value="${oggi2}" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
+        <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Entrata</label>
+          <input type="time" id="sup-add-entrata" value="09:00" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
+        <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Uscita</label>
+          <input type="time" id="sup-add-uscita" value="17:00" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
+        <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Pausa (min)</label>
+          <input type="number" id="sup-add-pausa" value="30" min="0" max="120" style="width:70px;padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
+        <button onclick="supervisoreAggiungiTurno('${dipSel}')"
+          style="padding:8px 14px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          Salva
+        </button>
+      </div>
+    </div>`;
+
+  return `
+    <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h1 style="font-size:16px;font-weight:700">👁 ${dip.nome}</h1>
+        <p style="font-size:12px;opacity:0.85">${dip.tipo}</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="state.supDipSelezionato=null;render()" class="btn btn-white btn-sm">← Indietro</button>
+        <button class="btn btn-white btn-sm" data-logout>Esci</button>
+      </div>
+    </div>
+    <div style="max-width:600px;margin:0 auto;padding:16px">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:130px">
+          <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Mese</label>
+          <input type="month" id="sup-filtro-mese" value="${filtroMese}"
+            style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"
+            onchange="document.getElementById('sup-filtro-data').value='';render()">
+        </div>
+        <div style="flex:1;min-width:130px">
+          <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Giorno</label>
+          <input type="date" id="sup-filtro-data" value="${filtroData}"
+            style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"
+            onchange="document.getElementById('sup-filtro-mese').value='';render()">
+        </div>
+      </div>
+      ${formAggiungi}
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${righe || '<div style="text-align:center;color:#9ca3af;padding:20px">Nessuna timbratura trovata</div>'}
+      </div>
+    </div>`;
+}
+
+window.supervisoreAggiungiTurno = async function(dipId) {
+  const data = document.getElementById("sup-add-data")?.value;
+  const entrata = document.getElementById("sup-add-entrata")?.value;
+  const uscita = document.getElementById("sup-add-uscita")?.value;
+  const pausa = parseInt(document.getElementById("sup-add-pausa")?.value)||0;
+  if(!data||!entrata||!uscita) { alert("Compila tutti i campi"); return; }
+  const dip = state.dipendenti.find(d=>d.id===dipId);
+  if(!dip) return;
+  const calcolo = calcolaTurno(entrata, uscita, pausa, sogliaMinutiDip(dip));
+  await addDoc(collection(db,"timbrature"),{
+    dipendenteId:dipId, data, tipo:"lavoro",
+    entrata, uscita, pausa, calcolo, sede: dip.sede||SEDI[0]
+  });
+};
+
 
 function renderDipendente() {
   const dip=state.utenteCorrente;
@@ -2492,6 +2684,7 @@ function renderModaleDip() {
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Ore settimanali contratto</label><input id="md-ore-sett" type="number" step="0.5" placeholder="Es. 40" value="${d.oreSett||40}"></div>
           <div><label>Monte ferie annuo (ore) <span style="font-weight:400;color:#9ca3af;font-size:11px">— lascia vuoto per calcolo automatico</span></label><input id="md-ferie" type="number" step="1" placeholder="Auto (da ore sett.)" value="${d.monteFerie||''}"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><label style="margin:0">Ruolo supervisore</label><input type="checkbox" id="md-supervisore" ${d.supervisore?"checked":""}></div>
           <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="1" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
           <div><label>PIN (4 cifre)</label><div style="display:flex;gap:6px"><input id="md-pin" type="text" maxlength="4" placeholder="Auto" value="${d.pin||(state.modaleDip.mode==='nuovo'?window._nuovoPinGenerato||'':'')}" style="font-size:18px;letter-spacing:4px;font-weight:700"><button type="button" onclick="document.getElementById('md-pin').value=generaPIN4()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;cursor:pointer;font-size:12px;white-space:nowrap">🔄 Genera</button></div></div>

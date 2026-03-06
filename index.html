@@ -550,6 +550,7 @@ async function avvia() {
   }
 }
 
+window.render = render;
 function render() {
   if(state._saving) return;
   const app=document.getElementById("app"); if(!app) return;
@@ -972,7 +973,7 @@ function renderSupervisoreTab(dip) {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-weight:700;color:#374151">👁 ${dip.nome} <span style="font-weight:400;font-size:12px;color:#9ca3af">${dip.tipo}</span></div>
-      <button onclick="state.supDipSelezionato=null;render()" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer">← Indietro</button>
+      <button onclick="window.supTornaLista()" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer">← Indietro</button>
     </div>
     <div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
@@ -980,7 +981,7 @@ function renderSupervisoreTab(dip) {
           <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Mese</label>
           <input type="month" id="sup-filtro-mese" value="${filtroMese}"
             style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"
-            onchange="document.getElementById('sup-filtro-data').value='';caricaTimbratureMese(this.value).then(()=>render())">
+            onchange="window.supCambiaMese(this.value)">
         </div>
         <div style="flex:1;min-width:130px">
           <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Giorno</label>
@@ -994,6 +995,31 @@ function renderSupervisoreTab(dip) {
         ${righe || '<div style="text-align:center;color:#9ca3af;padding:20px">Nessuna timbratura trovata</div>'}
       </div>`;
 }
+
+window.supSelezionaDip = async function(dipId) {
+  state.supDipSelezionato = dipId;
+  const meseStr = new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+  await caricaTimbratureMese(meseStr);
+  render();
+};
+
+window.supTornaLista = function() {
+  state.supDipSelezionato = null;
+  render();
+};
+
+window.supSetTab = function(tab) {
+  state.supTab = tab;
+  if(tab === 'colleghi') state.supDipSelezionato = null;
+  render();
+};
+
+window.supCambiaMese = async function(meseStr) {
+  const el = document.getElementById('sup-filtro-data');
+  if(el) el.value = '';
+  await window.caricaTimbratureMese(meseStr);
+  render();
+};
 
 window.supervisoreAggiungiTurno = async function(dipId) {
   const data = document.getElementById("sup-add-data")?.value;
@@ -3352,6 +3378,7 @@ function attachModificaEliminaTimb(){
 // Cache timbrature per calendari multipli (possono mostrare mesi diversi dal filtro)
 window._cacheTimbrMese = {};
 
+window.caricaTimbratureMese = caricaTimbratureMese;
 async function caricaTimbratureMese(meseStr) {
   // meseStr = "2026-02"
   if(window._cacheTimbrMese[meseStr]) return window._cacheTimbrMese[meseStr];

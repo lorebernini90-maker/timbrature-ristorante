@@ -1189,10 +1189,8 @@ function renderDipTimbra(dip) {
       `:`
       <!-- NESSUN TURNO APERTO: mostra entrata -->
       ${!hasAssenzaOggi?`
-      <div style="margin-bottom:12px">
-        <label>Sede</label>
-        <select id="inp-sede-entrata">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
-      </div>
+      ${dip.sede?`<div style="font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:12px">📍 ${dip.sede}</div>`:""}
+      <input type="hidden" id="inp-sede-entrata" value="${dip.sede||SEDI[0]}">
       <div style="margin-bottom:14px">
         <label>Ora entrata <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">(modifica se hai dimenticato di timbrare)</span></label>
         <input type="time" id="inp-ora-entrata" value="${ora}">
@@ -1210,9 +1208,7 @@ function renderDipTimbra(dip) {
         <div><label>Tipo assenza</label>
           <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
         </div>
-        <div><label>Sede</label>
-          <select id="inp-sede-assenza">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
-        </div>
+        <input type="hidden" id="inp-sede-assenza" value="${dip.sede||SEDI[0]}">
         <div><label>Modalità selezione</label>
           <select id="inp-modo-assenza" onchange="toggleModoAssenza('dip')">
             <option value="singola">Giorno singolo</option>

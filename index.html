@@ -2854,7 +2854,7 @@ function renderAdminDipendenti() {
             ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
           </div>
           <div style="display:flex;gap:6px;align-items:center">
-            <select onchange="(async()=>{const s=this.value;const dObj=state.dipendenti.find(x=>x.id==='${d.id}');if(dObj){dObj.sede=s||null;await updateDoc(doc(db,'dipendenti','${d.id}'),{sede:s||null});render();}})()"
+            <select onchange="(async(el)=>{const s=el.value;const dObj=state.dipendenti.find(x=>x.id==='${d.id}');if(dObj){dObj.sede=s||null;await updateDoc(doc(db,'dipendenti','${d.id}'),{sede:s||null});render();}})(this)"
               style="padding:4px 8px;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">
               ${SEDI.map(s=>`<option value="${s}"${d.sede===s?' selected':''}>${s}</option>`).join('')}
               <option value="" ${!d.sede||!SEDI.includes(d.sede)?'selected':''}>— nessuna —</option>

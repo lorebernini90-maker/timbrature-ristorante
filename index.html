@@ -454,6 +454,68 @@ function calcolaCostoAssenzeMensili(dipId) {
            tariffa: dip.tariffaOraria, costoMalattia, dettaglioMalattia };
 }
 
+// ── HELPER ANNUALE: calcola costo da array di timbrature passato dall'esterno ──
+function calcolaCostoDaTurni(dipId, turniExt) {
+  const dip = state.dipendenti.find(d => d.id === dipId);
+  if(!dip?.tariffaOraria) return null;
+  const turni = turniExt.filter(t => t.dipendenteId === dipId && t.tipo === 'lavoro');
+  const perGiorno = {};
+  turni.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
+  let totOrdDiurne=0,totStrDiurni=0,totStrNott=0,totOrdNott=0;
+  let costoOrdDiurno=0,costoStrDiurno=0,costoStrNott=0,costoOrdNott=0;
+  let costoMaggDom=0,costoMaggFest=0,totale=0,giorniFestivi=0,giorniDomenica=0;
+  Object.entries(perGiorno).forEach(([data,ts]) => {
+    const agg=aggregaTurniGiorno(ts,dip); if(!agg) return;
+    const r=calcolaCostoAggregato(agg.calcolo,data,dip); if(!r) return;
+    totOrdDiurne+=r.oreOrdDiurne; totStrDiurni+=r.oreStrDiurni;
+    totStrNott+=r.oreStrNott; totOrdNott+=r.oreOrdNott;
+    costoOrdDiurno+=r.costoOrdDiurno; costoStrDiurno+=r.costoStrDiurno;
+    costoStrNott+=r.costoStrNott; costoOrdNott+=r.costoOrdNott;
+    if(r.tipo==='domenica'){costoMaggDom+=r.costoMaggiorazione;giorniDomenica++;}
+    if(r.tipo==='festivo'){costoMaggFest+=r.costoMaggiorazione;giorniFestivi++;}
+    totale+=r.totale;
+  });
+  return {dip,totOrdDiurne,totStrDiurni,totStrNott,totOrdNott,
+    costoOrdDiurno,costoStrDiurno,costoStrNott,costoOrdNott,
+    costoMaggDom,costoMaggFest,totale,giorniFestivi,giorniDomenica};
+}
+
+function calcolaCostoAssenzeDaTurni(dipId, turniExt) {
+  const dip = state.dipendenti.find(d => d.id === dipId);
+  if(!dip?.tariffaOraria) return null;
+  const oreDip = sogliaMinutiDip(dip)/60;
+  const costoGiorno = oreDip * dip.tariffaOraria;
+  const tutteAssenze = state.timbrature.filter(t=>t.dipendenteId===dipId&&t.tipo==='assenza'&&t.assenza==='Malattia');
+  const assEnze = turniExt.filter(t=>t.dipendenteId===dipId&&t.tipo==='assenza');
+  const assenzeValide = assEnze.filter(a=>new Date(a.data).getDay()!==0&&a.assenza!=='Giorno Libero');
+  const dateMalattiaTutte = tutteAssenze.filter(a=>new Date(a.data).getDay()!==0).map(a=>a.data);
+  const episodi = raggruppaEpisodiMalattia(dateMalattiaTutte);
+  const mapaGiornoProgressivo={};
+  episodi.forEach((ep,idx)=>ep.forEach((data,i)=>{mapaGiornoProgressivo[data]={episodio:idx,giornoProgressivo:i+1,totEpisodio:ep.length};}));
+  const dateMalattiaExt = assenzeValide.filter(a=>a.assenza==='Malattia').map(a=>a.data).filter(d=>new Date(d).getDay()!==0);
+  let costoMalattia=0,dettaglioMalattia={carenza:0,parziale:0,ridotto:0};
+  dateMalattiaExt.forEach(data=>{
+    const info=mapaGiornoProgressivo[data];
+    if(!info){costoMalattia+=costoGiorno;return;}
+    const g=info.giornoProgressivo;
+    if(g<=3){costoMalattia+=costoGiorno*1.00;dettaglioMalattia.carenza++;}
+    else if(g<=20){costoMalattia+=costoGiorno*0.50;dettaglioMalattia.parziale++;}
+    else{costoMalattia+=costoGiorno*0.3333;dettaglioMalattia.ridotto++;}
+  });
+  const dettaglio={};
+  VOCI_ASSENZA.forEach(v=>{
+    if(v==='Malattia'||v==='Giorno Libero') return;
+    const giorni=assenzeValide.filter(a=>a.assenza===v).length;
+    const costoZero=v==='Congedo Parentale'||v==='Riposo Compensativo';
+    dettaglio[v]={giorni,ore:giorni*oreDip,costo:costoZero?0:giorni*costoGiorno,costoZero};
+  });
+  const giorniMalattia=dateMalattiaExt.length;
+  dettaglio['Malattia']={giorni:giorniMalattia,ore:giorniMalattia*oreDip,costo:costoMalattia,dettaglioINPS:dettaglioMalattia};
+  const altreAssenzeCosto=Object.entries(dettaglio).filter(([v])=>v!=='Malattia').reduce((s,[,v])=>s+v.costo,0);
+  const totaleGiorni=assenzeValide.length,totaleOre=totaleGiorni*oreDip,totaleCosto=altreAssenzeCosto+costoMalattia;
+  return {dettaglio,totaleGiorni,totaleOre,totaleCosto,oreDip,tariffa:dip.tariffaOraria,costoMalattia,dettaglioMalattia};
+}
+
 function calcolaCostoMensile(dipId) {
   const dip = state.dipendenti.find(d => d.id === dipId);
   if(!dip?.tariffaOraria) return null;
@@ -2104,48 +2166,81 @@ function renderAdminSettimane() {
       </div>`;}).join("")}`;
 }
 
+function renderTabellaCostitHTML(dipendenti, fnCosto, fnAssenze) {
+  return `<div class="table-scroll"><table>
+    <thead><tr>
+      <th>Dipendente</th><th>Ore Ord.</th><th>Ore Nott.</th><th>Str.Diurni</th><th>Str.Nott.</th>
+      <th>Dom.</th><th>Festivi</th><th>Costo Ord.</th><th>Costo Nott.</th><th>Costo Str.D</th><th>Costo Str.N</th>
+      <th>Magg.Dom</th><th>Magg.Fest</th><th style="color:#3b82f6">Assenze</th><th style="color:#059669">TOTALE</th>
+    </tr></thead>
+    <tbody>
+    ${dipendenti.map(dip=>{
+      const r=fnCosto(dip.id);
+      const a=fnAssenze(dip.id);
+      if(!r) return `<tr><td style="font-weight:600">${dip.nome}</td><td colspan="13" style="color:#9ca3af;font-style:italic">Nessuna tariffa impostata</td></tr>`;
+      return `<tr>
+        <td style="font-weight:600">${dip.nome}</td>
+        <td>${r.totOrdDiurne.toFixed(2)}h</td>
+        <td style="color:#4f46e5">${r.totOrdNott.toFixed(2)}h</td>
+        <td style="color:#ea580c">${r.totStrDiurni.toFixed(2)}h</td>
+        <td style="color:#dc2626">${r.totStrNott.toFixed(2)}h</td>
+        <td>${r.giorniDomenica}</td><td>${r.giorniFestivi}</td>
+        <td>${euro(r.costoOrdDiurno)}</td>
+        <td style="color:#4f46e5">${euro(r.costoOrdNott)}</td>
+        <td style="color:#ea580c">${euro(r.costoStrDiurno)}</td>
+        <td style="color:#dc2626">${euro(r.costoStrNott)}</td>
+        <td style="color:#7c3aed">${euro(r.costoMaggDom)}</td>
+        <td style="color:#b45309">${euro(r.costoMaggFest)}</td>
+        <td style="color:#3b82f6">${euro(a?.totaleCosto||0)}</td>
+        <td style="font-weight:700;color:#059669">${euro(r.totale+(a?.totaleCosto||0))}</td>
+      </tr>`;}).join("")}
+    </tbody>
+    <tfoot><tr style="background:#f0fdf4;border-top:2px solid #e5e7eb">
+      <td style="font-weight:700">TOTALE</td><td colspan="13"></td>
+      <td style="font-weight:700;color:#059669;font-size:15px">
+        ${euro(dipendenti.reduce((s,dip)=>{const r=fnCosto(dip.id);const a=fnAssenze(dip.id);return s+(r?.totale||0)+(a?.totaleCosto||0);},0))}
+      </td>
+    </tr></tfoot>
+  </table></div>`;
+}
+
 function renderAdminCosti() {
+  const costiTab = state.costiTab || 'mensile';
+  const tabStyle = t => `padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:${costiTab===t?'#374151':'#f3f4f6'};color:${costiTab===t?'#fff':'#6b7280'}`;
+
+  let contenuto = '';
+  if(costiTab === 'mensile') {
+    contenuto = renderTabellaCostitHTML(
+      state.dipendenti,
+      id => calcolaCostoMensile(id),
+      id => calcolaCostoAssenzeMensili(id)
+    );
+  } else {
+    const anno = state.filtroAnno;
+    const tAnno = state.timbrature.filter(t => t.data.startsWith(anno+''));
+    if(!tAnno.length) {
+      contenuto = `<div class="empty">Nessuna timbratura in memoria per il ${anno}. Naviga i mesi dell'anno per caricarle.</div>`;
+    } else {
+      contenuto = renderTabellaCostitHTML(
+        state.dipendenti,
+        id => calcolaCostoDaTurni(id, tAnno),
+        id => calcolaCostoAssenzeDaTurni(id, tAnno)
+      );
+    }
+  }
+
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>${filtriHTML()}
+      <div style="display:flex;gap:6px;align-items:center">
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>
+        <div style="display:flex;gap:4px;background:#f3f4f6;border-radius:10px;padding:3px">
+          <button style="${tabStyle('mensile')}" onclick="window.state.costiTab='mensile';window.render()">Mensile</button>
+          <button style="${tabStyle('annuale')}" onclick="window.state.costiTab='annuale';window.render()">Annuale</button>
+        </div>
+      </div>
+      ${costiTab==='mensile' ? filtriHTML() : `<select onchange="window.state.filtroAnno=+this.value;window.render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">${[2024,2025,2026,2027,2028].map(y=>`<option${y===state.filtroAnno?' selected':''}>${y}</option>`).join('')}</select>`}
     </div>
-    <div class="table-scroll"><table>
-      <thead><tr>
-        <th>Dipendente</th><th>Ore Ord.</th><th>Ore Nott.</th><th>Str.Diurni</th><th>Str.Nott.</th>
-        <th>Dom.</th><th>Festivi</th><th>Costo Ord.</th><th>Costo Nott.</th><th>Costo Str.D</th><th>Costo Str.N</th>
-        <th>Magg.Dom</th><th>Magg.Fest</th><th style="color:#3b82f6">Assenze</th><th style="color:#059669">TOTALE</th>
-      </tr></thead>
-      <tbody>
-      ${state.dipendenti.map(dip=>{
-        const r=calcolaCostoMensile(dip.id);
-        if(!r) return `<tr><td style="font-weight:600">${dip.nome}</td><td colspan="13" style="color:#9ca3af;font-style:italic">Nessuna tariffa impostata</td></tr>`;
-        return `<tr>
-          <td style="font-weight:600">${dip.nome}</td>
-          <td>${r.totOrdDiurne.toFixed(2)}h</td>
-          <td style="color:#4f46e5">${r.totOrdNott.toFixed(2)}h</td>
-          <td style="color:#ea580c">${r.totStrDiurni.toFixed(2)}h</td>
-          <td style="color:#dc2626">${r.totStrNott.toFixed(2)}h</td>
-          <td>${r.giorniDomenica}</td>
-          <td>${r.giorniFestivi}</td>
-          <td>${euro(r.costoOrdDiurno)}</td>
-          <td style="color:#4f46e5">${euro(r.costoOrdNott)}</td>
-          <td style="color:#ea580c">${euro(r.costoStrDiurno)}</td>
-          <td style="color:#dc2626">${euro(r.costoStrNott)}</td>
-          <td style="color:#7c3aed">${euro(r.costoMaggDom)}</td>
-          <td style="color:#b45309">${euro(r.costoMaggFest)}</td>
-          <td style="color:#3b82f6">${euro(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0)}</td>
-          <td style="font-weight:700;color:#059669">${euro(r.totale+(calcolaCostoAssenzeMensili(dip.id)?.totaleCosto||0))}</td>
-        </tr>`;}).join("")}
-      </tbody>
-      <tfoot>
-        <tr style="background:#f0fdf4;border-top:2px solid #e5e7eb">
-          <td style="font-weight:700">TOTALE</td><td colspan="13"></td>
-          <td style="font-weight:700;color:#059669;font-size:15px">
-            ${euro(state.dipendenti.reduce((s,dip)=>{const r=calcolaCostoMensile(dip.id);const a=calcolaCostoAssenzeMensili(dip.id);return s+(r?.totale||0)+(a?.totaleCosto||0);},0))}
-          </td>
-        </tr>
-      </tfoot>
-    </table></div>
+    ${contenuto}
     <div class="info-box" style="margin-top:16px;background:#eff6ff;border-color:#bfdbfe">
       <p><strong>🏥 Malattia (CCNL Turismo + integrazione INPS):</strong></p>
       <p>• Giorni 1–3 (carenza): 100% a carico azienda</p>
@@ -2758,10 +2853,16 @@ function renderAdminDipendenti() {
             <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
             ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
             ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
+            ${d.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">📍 ${d.sede}</span>`:`<span class="badge" style="background:#fef9c3;color:#92400e">📍 sede n/d</span>`}
             ${d.email?`<span style="font-size:11px;color:#6b7280">✉️ ${d.email}</span>`:""}
             ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
           </div>
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;align-items:center">
+            <select onchange="(async()=>{const s=this.value;const dObj=state.dipendenti.find(x=>x.id==='${d.id}');if(dObj){dObj.sede=s||null;await updateDoc(doc(db,'dipendenti','${d.id}'),{sede:s||null});render();}})()"
+              style="padding:4px 8px;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">
+              ${SEDI.map(s=>`<option value="${s}"${d.sede===s?' selected':''}>${s}</option>`).join('')}
+              <option value="" ${!d.sede||!SEDI.includes(d.sede)?'selected':''}>— nessuna —</option>
+            </select>
             ${d.email?`<button class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8" onclick="window.inviaEmailPin('${d.id}')">✉️ Invia PIN</button>`:""}
             <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">✏️</button>
             <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">🗑️</button>

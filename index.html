@@ -863,14 +863,24 @@ function renderSupervisoreTab(dip) {
       </div>`;
     }).join("");
 
+    const supTab = state.supTab || 'colleghi';
+
+    if(supTab === 'bancaore') {
+      return renderSupBancaOre(dip);
+    }
+
     return `
       <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">👁 Vista Supervisore</div>
+          <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">👁 Vista Supervisore</div>
         </div>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
       <div style="max-width:600px;margin:0 auto;padding:16px">
+        <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:16px">
+          <button onclick="window.supSetTab('colleghi')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${supTab==='colleghi'?'white':'transparent'};color:${supTab==='colleghi'?'#7c3aed':'#6b7280'};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${supTab==='colleghi'?'2px solid #7c3aed':'none'};margin-bottom:${supTab==='colleghi'?'-2px':'0'}">👥 Colleghi</button>
+          <button onclick="window.supSetTab('bancaore')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${supTab==='bancaore'?'white':'transparent'};color:${supTab==='bancaore'?'#7c3aed':'#6b7280'};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${supTab==='bancaore'?'2px solid #7c3aed':'none'};margin-bottom:${supTab==='bancaore'?'-2px':'0'}">🏦 Banca Ore</button>
+        </div>
         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">
           Seleziona un dipendente per vedere le timbrature
         </div>
@@ -3512,10 +3522,126 @@ function getDateAssenza(prefisso){
   return [];
 }
 
+function renderSupBancaOre(dip) {
+  const giorniSettimana = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  const dipAttivi = getDipendentiAttivi().filter(d => d.tipo !== "Intermittente" && d.id !== dip.id);
+  const bancheOre = dipAttivi.map(d => calcolaBancaOre(d.id)).filter(Boolean);
+
+  return `
+    <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">👁 Vista Supervisore</div>
+      <button class="btn btn-white btn-sm" data-logout>Esci</button>
+    </div>
+    <div style="max-width:600px;margin:0 auto;padding:16px">
+      <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:16px">
+        <button onclick="window.supSetTab('colleghi')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:transparent;color:#6b7280;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:none">👥 Colleghi</button>
+        <button onclick="window.supSetTab('bancaore')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:white;color:#7c3aed;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:2px solid #7c3aed;margin-bottom:-2px">🏦 Banca Ore</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">🏦 Banca Ore</h2>
+        ${filtriHTML()}
+      </div>
+      <div class="info-box" style="margin-bottom:16px">
+        <p>&#8226; <strong>Surplus</strong>: ore lavorate oltre la soglia giornaliera</p>
+        <p>&#8226; <strong>Deficit</strong>: ore mancanti rispetto alla soglia</p>
+        <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
+        <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:12px;color:#6b7280">Visualizzazione:</span>
+        <button onclick="window.setBancaOreModo(false)" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;font-weight:600;background:${window._bancaOreMultiMese?'white':'#7c3aed'};color:${window._bancaOreMultiMese?'#374151':'white'}">Solo mese</button>
+        <button onclick="window.setBancaOreModo(true)" style="padding:4px 12px;border-radius:6px;border:1px solid #e5e7eb;font-size:12px;cursor:pointer;font-weight:600;background:${window._bancaOreMultiMese?'#7c3aed':'white'};color:${window._bancaOreMultiMese?'white':'#374151'}">Cumulativo anno</button>
+        ${window._bancaOreMultiMese?`<span style="font-size:11px;color:#6b7280">Saldo da Gennaio a ${MESI[state.filtroMese]} ${state.filtroAnno}</span>`:""}
+      </div>
+      <div class="bancaore-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
+        ${(window._bancaOreMultiMese ? dipAttivi.map(d=>calcolaBancaOreMultiMese(d.id)).filter(Boolean) : bancheOre).map(b => {
+          const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
+          const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
+          const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
+          const icon = b.saldo > 0 ? "📈" : b.saldo < 0 ? "📉" : "⚖️";
+          return `<div style="background:${sbg};border:1px solid ${sbr};border-radius:12px;padding:14px">
+            <div style="font-weight:700;font-size:13px;margin-bottom:8px">${b.dip.nome}
+              <span style="font-weight:400;color:#6b7280;font-size:11px"> — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+              <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
+                <div style="font-size:13px;font-weight:700;color:#dc2626">+${minToHHMM(b.totaleSurplus)}</div>
+                <div style="font-size:10px;color:#6b7280">Surplus</div>
+              </div>
+              <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
+                <div style="font-size:13px;font-weight:700;color:#059669">-${minToHHMM(b.totaleDeficit)}</div>
+                <div style="font-size:10px;color:#6b7280">Deficit</div>
+              </div>
+              <div style="background:white;border-radius:8px;padding:8px;border:1px solid ${sbr}">
+                <div style="font-size:13px;font-weight:700;color:${sc}">${icon} ${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}</div>
+                <div style="font-size:10px;color:#6b7280">Saldo</div>
+              </div>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+      ${bancheOre.map(b => {
+        if(!b.dettaglioGiorni.length) return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">${b.dip.nome}</div><div class="empty" style="padding:16px">Nessun dato per ${MESI[state.filtroMese]} ${state.filtroAnno}</div></div>`;
+        const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
+        return `
+        <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:14px">
+          <div style="background:#f9fafb;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px">
+            <div style="font-weight:700;font-size:13px">${b.dip.nome}
+              <span style="font-weight:400;color:#6b7280;font-size:11px"> — ${b.dip.tipo} — soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+            </div>
+            <div style="display:flex;gap:12px;font-size:12px;font-weight:700;flex-wrap:wrap">
+              <span style="color:#dc2626">+${minToHHMM(b.totaleSurplus)}h surplus</span>
+              <span style="color:#059669">-${minToHHMM(b.totaleDeficit)}h deficit</span>
+              <span style="color:${sc};font-size:14px">Saldo: ${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}h</span>
+            </div>
+          </div>
+          <div class="table-scroll" style="overflow-x:auto;padding:10px 14px">
+            <table class="scheda-table">
+              <thead><tr>
+                <th style="text-align:left">Data</th><th>Giorno</th><th>Tipo</th>
+                <th>Ore fatte</th><th>Soglia</th><th>Differenza</th>
+              </tr></thead>
+              <tbody>
+              ${b.dettaglioGiorni.map(g => {
+                const dow = new Date(g.data).getDay();
+                const isFest = isFestivo(g.data);
+                const rowbg = isFest ? "#fef2f2" : dow===0 ? "#f5f3ff" : g.diff < 0 ? "#fef9f0" : "";
+                const dc = g.diff > 0 ? "#dc2626" : g.diff < 0 ? "#059669" : "#9ca3af";
+                const dl = g.diff === 0 ? "—" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
+                return `<tr style="background:${rowbg}">
+                  <td style="font-weight:600;font-size:12px">${g.data}</td>
+                  <td style="font-size:11px">${giorniSettimana[dow]}${isFest?" 🎉":""}</td>
+                  <td>${g.tipo==="assenza"
+                    ? `<span class="badge badge-blue">${g.assenza}</span>`
+                    : g.isSpezzato
+                      ? `<span class="badge badge-orange">✂️ Spezzato</span>`
+                      : `<span class="badge badge-green">Lavoro</span>`}
+                  </td>
+                  <td style="font-weight:600">${minToHHMM(g.oreMin)}h</td>
+                  <td style="color:#6b7280">${minToHHMM(g.soglia)}h</td>
+                  <td style="font-weight:700;color:${dc}">${dl}</td>
+                </tr>`;
+              }).join("")}
+              </tbody>
+              <tfoot>
+                <tr style="background:#f9fafb;border-top:2px solid #e5e7eb">
+                  <td colspan="5" style="font-weight:700;text-align:right;padding-right:12px">Saldo ${MESI[state.filtroMese]}:</td>
+                  <td style="font-weight:700;font-size:14px;color:${sc}">${b.saldo>=0?"+":""}${minToHHMM(Math.abs(b.saldo))}h</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+}
+
 // Expose to global scope for inline onclick handlers (module scope fix)
 window.state = state;
 window.render = render;
 window.caricaTimbratureMese = caricaTimbratureMese;
+window.setBancaOreModo = setBancaOreModo;
+window.calcolaBancaOreMultiMese = calcolaBancaOreMultiMese;
 
 avvia();
 </script>

@@ -951,7 +951,7 @@ function renderSupervisoreTab(dip) {
           <span style="font-weight:700">${data}</span>
           <span class="badge badge-orange">✂️ Spezzato</span>
         </div>
-        <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo.totaleMin)}h tot.</span>
+        <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo?.totaleMin)}h tot.</span>
       </div>
       ${turni.map((t,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#6b7280;margin-left:8px;margin-bottom:4px">
         <span><span style="color:#92400e;font-weight:600">Turno ${i+1}:</span> ${t.entrata} → ${t.uscita} (${t.pausa}min) ${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
@@ -1249,7 +1249,7 @@ function renderDipStorico(dip) {
           <span style="font-weight:700">${data}</span>
           <span class="badge badge-orange">✂️ Spezzato</span>
         </div>
-        <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo.totaleMin)}h tot.</span>
+        <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo?.totaleMin)}h tot.</span>
       </div>
       ${turni.map((t,i)=>`<div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#6b7280;margin-left:8px;margin-bottom:3px">
         <span style="color:#92400e;font-weight:600">Turno ${i+1}:</span>
@@ -1550,7 +1550,7 @@ function renderAdminPresenze() {
                 <span class="badge badge-orange">✂️ Spezzato (${turniOggi.length} turni)</span>
                 ${turniOggi.map(t=>`<span style="font-size:11px;color:#6b7280">${t.entrata}→${t.uscita||"…"}</span>`).join(" | ")}
               </div>
-              <span style="font-weight:700">${minToHHMM(agg.calcolo.totaleMin)}h</span>
+              <span style="font-weight:700">${minToHHMM(agg.calcolo?.totaleMin)}h</span>
             </div>`;
           }
           const t=timbs[0];
@@ -1998,7 +1998,7 @@ function renderAdminSettimane() {
   Object.values(perDipData).forEach(({dipendenteId, data, turni}) => {
     const dip = state.dipendenti.find(d=>d.id===dipendenteId);
     const agg = dip ? aggregaTurniGiorno(turni, dip) : null;
-    const min = agg ? agg.calcolo.totaleMin : turni.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
+    const min = agg ? agg.calcolo?.totaleMin : turni.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
     const d=new Date(data), sw=new Date(d); sw.setDate(d.getDate()-d.getDay()+1);
     const k=sw.toISOString().split("T")[0];
     if(!sett[k]) sett[k]={};
@@ -2257,10 +2257,10 @@ function renderDettaglioGiorno(dataStr) {
         const r=calcolaCostoAggregato(agg.calcolo,dataStr,dip);
         if(r){ costo=r.totale; }
         if(lavoro.length>1){
-          dettaglio=`✂️ Spezzato: ${lavoro.map(t=>`${t.entrata}→${t.uscita}`).join(" + ")} (${minToHHMM(agg.calcolo.totaleMin)}h tot.)`;
+          dettaglio=`✂️ Spezzato: ${lavoro.map(t=>`${t.entrata}→${t.uscita}`).join(" + ")} (${minToHHMM(agg.calcolo?.totaleMin)}h tot.)`;
         } else {
           const t=lavoro[0];
-          dettaglio=`${t.entrata}→${t.uscita} (${minToHHMM(agg.calcolo.totaleMin)}h)`;
+          dettaglio=`${t.entrata}→${t.uscita} (${minToHHMM(agg.calcolo?.totaleMin)}h)`;
         }
       }
     }
@@ -2404,8 +2404,8 @@ function calcolaBancaOreMultiMese(dipId) {
   Object.entries(perGiorno).forEach(([data, ts]) => {
     const mese = new Date(data).getMonth();
     const agg = aggregaTurniGiorno(ts, dip);
-    if(!agg) return;
-    const oreMin = agg.calcolo.totaleMin;
+    if(!agg?.calcolo) return;
+    const oreMin = agg.calcolo?.totaleMin;
     const sogliaGiorno = sogliaPerTurno(ts[0], dip);
     const diff = oreMin - sogliaGiorno;
     if(diff >= 0) totaleSurplus += diff;
@@ -2436,8 +2436,8 @@ function calcolaBancaOre(dipId) {
 
   Object.entries(perGiorno).forEach(([data, ts]) => {
     const agg = aggregaTurniGiorno(ts, dip);
-    if(!agg) return;
-    const oreMin = agg.calcolo.totaleMin;
+    if(!agg?.calcolo) return;
+    const oreMin = agg.calcolo?.totaleMin;
     // Usa soglia custom del primo turno del giorno se presente
     const sogliaGiorno = sogliaPerTurno(ts[0], dip);
     const diff = oreMin - sogliaGiorno;
@@ -2477,7 +2477,7 @@ function calcolaBancaOre(dipId) {
     if(!orePerSett[lunStr]) orePerSett[lunStr] = 0;
     if(turniPerData[dataStr]){
       const agg = aggregaTurniGiorno(turniPerData[dataStr], dip);
-      if(agg?.calcolo) orePerSett[lunStr] += agg.calcolo.totaleMin || 0;
+      if(agg?.calcolo) orePerSett[lunStr] += agg.calcolo?.totaleMin || 0;
     }
   }
   Object.entries(orePerSett).forEach(([lunStr, minLav]) => {
@@ -2762,7 +2762,7 @@ function renderAdminScheda() {
     nGiorni++;
     const agg=dip?aggregaTurniGiorno(ts,dip):null;
     if(!agg) return;
-    tot+=agg.calcolo.totaleMin;
+    tot+=agg.calcolo?.totaleMin;
     diur+=agg.calcolo.diurneMin;
     nott+=agg.calcolo.notturneMin;
     strD+=agg.calcolo.strDiurniMin;
@@ -3066,7 +3066,7 @@ function esportaExcel() {
     Object.values(perGiorno).forEach(turni => {
       const agg = aggregaTurniGiorno(turni, dip);
       if(agg?.calcolo) {
-        totLav  += agg.calcolo.totaleMin || 0;
+        totLav  += agg.calcolo?.totaleMin || 0;
         totStr  += (agg.calcolo.strDiurniMin||0) + (agg.calcolo.strNotturniMin||0);
         totNott += agg.calcolo.notturneMin || 0;
       }
@@ -3127,7 +3127,7 @@ function esportaExcel() {
     Object.values(perGiorno).forEach(turni => {
       const agg = aggregaTurniGiorno(turni, dip);
       if(agg?.calcolo){
-        minLavorati += agg.calcolo.totaleMin || 0;
+        minLavorati += agg.calcolo?.totaleMin || 0;
         minStr += (agg.calcolo.strDiurniMin||0) + (agg.calcolo.strNotturniMin||0);
       }
     });

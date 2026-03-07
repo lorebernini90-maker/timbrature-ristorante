@@ -1594,7 +1594,7 @@ function filtriHTML() {
 function getTimbMese() {
   return state.timbrature.filter(t=>{
     const d=new Date(t.data);
-    const okMese=d.getMonth()===state.filtroMese-1&&d.getFullYear()===state.filtroAnno;
+    const okMese=d.getMonth()===state.filtroMese&&d.getFullYear()===state.filtroAnno;
     const okSede=!state.filtroSede||t.sede===state.filtroSede;
     return okMese&&okSede;
   });

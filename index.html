@@ -2763,10 +2763,10 @@ function renderAdminScheda() {
     const agg=dip?aggregaTurniGiorno(ts,dip):null;
     if(!agg) return;
     tot+=agg.calcolo?.totaleMin;
-    diur+=agg.calcolo.diurneMin;
-    nott+=agg.calcolo.notturneMin;
-    strD+=agg.calcolo.strDiurniMin;
-    strN+=agg.calcolo.strNotturniMin;
+    diur+=agg.calcolo?.diurneMin;
+    nott+=agg.calcolo?.notturneMin;
+    strD+=agg.calcolo?.strDiurniMin;
+    strN+=agg.calcolo?.strNotturniMin;
   });
 
   const assCnt={}; VOCI_ASSENZA.forEach(v=>{assCnt[v]=ass.filter(a=>a.assenza===v&&new Date(a.data).getDay()!==0).length;});

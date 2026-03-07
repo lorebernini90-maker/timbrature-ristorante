@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f59e0b">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable"content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Timbrature">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -3511,6 +3511,11 @@ function getDateAssenza(prefisso){
   if(modo==="multipla"){const dates=[...window._dateSelezionate[prefisso]].sort();if(!dates.length){alert("Seleziona almeno una data!");return [];}return dates;}
   return [];
 }
+
+// Expose to global scope for inline onclick handlers (module scope fix)
+window.state = state;
+window.render = render;
+window.caricaTimbratureMese = caricaTimbratureMese;
 
 avvia();
 </script>

@@ -1522,10 +1522,44 @@ function renderAdminDashboard() {
 function renderAdminPresenze() {
   const dataOggi=oggi();
   const dipPresenze = getDipendentiAttivi();
-  // Un dipendente è "presente" se ha ALMENO una timbratura oggi
   const timbratiOggi=new Set(state.timbrature.filter(t=>t.data===dataOggi).map(t=>t.dipendenteId));
   const nonTimbrati=dipPresenze.filter(d=>!timbratiOggi.has(d.id) && d.tipo!=="Intermittente");
   const timbrati=dipPresenze.filter(d=>timbratiOggi.has(d.id));
+
+  // Raggruppa i presenti per sede
+  const renderRigaDip = d => {
+    const timbs=state.timbrature.filter(t=>t.data===dataOggi&&t.dipendenteId===d.id);
+    const turniOggi=timbs.filter(t=>t.tipo==="lavoro");
+    if(turniOggi.length > 1) {
+      const agg = aggregaTurniGiorno(turniOggi, d);
+      return `<div class="row">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span style="color:#10b981;font-size:16px">✅</span>
+          <span style="font-weight:600">${d.nome}</span>
+          <span class="badge badge-orange">✂️ Spezzato (${turniOggi.length} turni)</span>
+          ${turniOggi.map(t=>`<span style="font-size:11px;color:#6b7280">${t.entrata}→${t.uscita||"…"}</span>`).join(" | ")}
+        </div>
+        <span style="font-weight:700">${minToHHMM(agg.calcolo?.totaleMin)}h</span>
+      </div>`;
+    }
+    const t=timbs[0];
+    return `<div class="row">
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="color:#10b981;font-size:16px">✅</span>
+        <span style="font-weight:600">${d.nome}</span>
+        ${t?.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita||"in corso"}</span>`:`<span class="badge badge-blue">${t?.assenza}</span>`}
+      </div>
+      ${t?.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+    </div>`;
+  };
+
+  // Raggruppa timbrati per sede (usa la sede della prima timbratura di lavoro del giorno)
+  const sedeDip = d => {
+    const t = state.timbrature.find(t=>t.data===dataOggi&&t.dipendenteId===d.id&&t.tipo==="lavoro");
+    return t?.sede || "—";
+  };
+  const sediPresenti = [...new Set(timbrati.map(sedeDip))].sort();
+
   return `
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">👁️ Presenze oggi — ${dataOggi}</h2>
     ${nonTimbrati.length>0?`
@@ -1535,35 +1569,15 @@ function renderAdminPresenze() {
       </div>`:""}
     ${timbrati.length>0?`
       <div>
-        <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">✅ Presenti oggi (${timbrati.length})</div>
-        ${timbrati.map(d=>{
-          const timbs=state.timbrature.filter(t=>t.data===dataOggi&&t.dipendenteId===d.id);
-          const turniOggi=timbs.filter(t=>t.tipo==="lavoro");
-          const assOggi=timbs.find(t=>t.tipo==="assenza");
-          const dip=d;
-          if(turniOggi.length > 1) {
-            const agg = aggregaTurniGiorno(turniOggi, dip);
-            return `<div class="row">
-              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <span style="color:#10b981;font-size:16px">✅</span>
-                <span style="font-weight:600">${d.nome}</span>
-                <span class="badge badge-orange">✂️ Spezzato (${turniOggi.length} turni)</span>
-                ${turniOggi.map(t=>`<span style="font-size:11px;color:#6b7280">${t.entrata}→${t.uscita||"…"}</span>`).join(" | ")}
-              </div>
-              <span style="font-weight:700">${minToHHMM(agg.calcolo?.totaleMin)}h</span>
-            </div>`;
-          }
-          const t=timbs[0];
-          return `<div class="row">
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="color:#10b981;font-size:16px">✅</span>
-              <span style="font-weight:600">${d.nome}</span>
-              ${t?.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} → ${t.uscita||"in corso"}</span>`:`<span class="badge badge-blue">${t?.assenza}</span>`}
-            </div>
-            ${t?.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
+        ${sediPresenti.map(sede=>{
+          const dipSede = timbrati.filter(d=>sedeDip(d)===sede);
+          return `<div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🏠 ${sede} — Presenti (${dipSede.length})</div>
+            ${dipSede.map(renderRigaDip).join("")}
           </div>`;
         }).join("")}
-      </div>`:""}`;
+      </div>`:""}
+  `;
 }
 
 function filtriHTML() {

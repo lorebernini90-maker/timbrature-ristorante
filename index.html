@@ -3844,342 +3844,345 @@ avvia();
   waitAndInit();
 
   function initCalendario() {
-    // --- CSS ---
     if(document.getElementById('cal-inserisci-style')) return;
     const style = document.createElement('style');
     style.id = 'cal-inserisci-style';
     style.textContent = `
-      .ci-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
-      .ci-view-btn { padding:6px 14px; border:1px solid #e5a91a; border-radius:6px; background:#fff; color:#e5a91a; font-size:13px; cursor:pointer; font-weight:600; }
-      .ci-view-btn.active { background:#e5a91a; color:#fff; }
-      .ci-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:8px; }
-      .ci-cal-header { text-align:center; font-size:11px; font-weight:700; color:#888; padding:4px 0; }
-      .ci-cal-day { border:1.5px solid #e5e7eb; border-radius:8px; min-height:64px; padding:4px 5px; cursor:pointer; background:#fff; transition:box-shadow .15s; }
-      .ci-cal-day:hover { box-shadow:0 2px 8px rgba(0,0,0,.12); border-color:#e5a91a; }
-      .ci-cal-day.ci-empty { background:transparent; border:none; cursor:default; }
-      .ci-cal-day.ci-today { border-color:#f59e0b !important; background:#fffbeb; }
-      .ci-cal-day.ci-domenica, .ci-cal-day.ci-festivo { background:#f9fafb; }
-      .ci-cal-day.ci-domenica .ci-cal-day-num, .ci-cal-day.ci-festivo .ci-cal-day-num { color:#9ca3af; }
-      .ci-cal-day-num { font-size:12px; font-weight:700; color:#374151; margin-bottom:2px; }
-      .ci-day-badges { display:flex; flex-direction:column; gap:2px; }
-      .ci-day-badge { font-size:10px; border-radius:4px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-      .ci-badge-lavoro { background:#d1fae5; color:#065f46; }
-      .ci-badge-assenza { background:#fee2e2; color:#991b1b; }
-      .ci-badge-uscita-mancante { background:#fef3c7; color:#92400e; }
-      .ci-badge-add { background:#e0e7ff; color:#3730a3; font-style:italic; }
-      .ci-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000; display:flex; align-items:center; justify-content:center; }
-      .ci-modal { background:#fff; border-radius:12px; padding:20px 24px; min-width:340px; max-width:540px; width:95%; max-height:90vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,.2); }
-      .ci-modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-      .ci-modal-title { font-size:16px; font-weight:700; color:#1f2937; }
-      .ci-modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#6b7280; line-height:1; }
-      .ci-timb-list { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
-      .ci-timb-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; }
-      .ci-timb-info { flex:1; font-size:13px; }
-      .ci-timb-tipo { font-weight:700; font-size:12px; }
-      .ci-timb-tipo.lavoro { color:#065f46; }
-      .ci-timb-tipo.assenza { color:#991b1b; }
-      .ci-timb-orari { color:#6b7280; font-size:12px; }
-      .ci-timb-btn { padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; border:1px solid; font-weight:600; }
-      .ci-timb-btn-edit { border-color:#3b82f6; color:#3b82f6; background:#fff; }
-      .ci-timb-btn-del { border-color:#ef4444; color:#ef4444; background:#fff; }
-      .ci-chiudi-giorno { background:#fef3c7; border:1px solid #f59e0b; color:#92400e; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; cursor:pointer; margin-bottom:10px; font-weight:600; }
-      .ci-add-timb { background:#e5a91a; color:#fff; border:none; border-radius:8px; padding:9px 14px; font-size:13px; width:100%; cursor:pointer; font-weight:600; }
-      .ci-add-form { border:1px solid #e5e7eb; border-radius:8px; padding:14px; margin-top:10px; background:#f9fafb; }
-      .ci-add-form label { font-size:12px; font-weight:600; color:#374151; display:block; margin-bottom:4px; }
-      .ci-add-form input, .ci-add-form select { width:100%; padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; margin-bottom:10px; box-sizing:border-box; }
-      .ci-form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-      .ci-save-btn { background:#16a34a; color:#fff; border:none; border-radius:8px; padding:9px 14px; font-size:13px; cursor:pointer; font-weight:600; width:100%; }
-      .ci-cancel-btn { background:#e5e7eb; color:#374151; border:none; border-radius:8px; padding:9px 14px; font-size:13px; cursor:pointer; font-weight:600; width:100%; margin-top:6px; }
+      .ci-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+      .ci-view-btn{padding:6px 14px;border:1px solid #e5a91a;border-radius:6px;background:#fff;color:#e5a91a;font-size:13px;cursor:pointer;font-weight:600;}
+      .ci-view-btn.active{background:#e5a91a;color:#fff;}
+      .ci-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;}
+      .ci-cal-header{text-align:center;font-size:11px;font-weight:700;color:#888;padding:4px 0;}
+      .ci-cal-day{border:1.5px solid #e5e7eb;border-radius:8px;min-height:64px;padding:4px 5px;cursor:pointer;background:#fff;transition:box-shadow .15s;}
+      .ci-cal-day:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:#e5a91a;}
+      .ci-cal-day.ci-empty{background:transparent;border:none;cursor:default;}
+      .ci-cal-day.ci-today{border-color:#f59e0b !important;background:#fffbeb;}
+      .ci-cal-day.ci-domenica,.ci-cal-day.ci-festivo{background:#f9fafb;}
+      .ci-cal-day.ci-domenica .ci-cal-day-num,.ci-cal-day.ci-festivo .ci-cal-day-num{color:#9ca3af;}
+      .ci-cal-day-num{font-size:12px;font-weight:700;color:#374151;margin-bottom:2px;}
+      .ci-day-badges{display:flex;flex-direction:column;gap:2px;}
+      .ci-day-badge{font-size:10px;border-radius:4px;padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+      .ci-badge-lavoro{background:#d1fae5;color:#065f46;}
+      .ci-badge-assenza{background:#fee2e2;color:#991b1b;}
+      .ci-badge-uscita-mancante{background:#fef3c7;color:#92400e;}
+      .ci-badge-add{background:#e0e7ff;color:#3730a3;font-style:italic;}
+      .ci-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;}
+      .ci-modal{background:#fff;border-radius:12px;padding:20px 24px;min-width:340px;max-width:540px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);}
+      .ci-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+      .ci-modal-title{font-size:16px;font-weight:700;color:#1f2937;}
+      .ci-modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280;line-height:1;}
+      .ci-timb-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+      .ci-timb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;}
+      .ci-timb-info{flex:1;font-size:13px;}
+      .ci-timb-tipo{font-weight:700;font-size:12px;}
+      .ci-timb-tipo.lavoro{color:#065f46;}
+      .ci-timb-tipo.assenza{color:#991b1b;}
+      .ci-timb-orari{color:#6b7280;font-size:12px;}
+      .ci-timb-btn{padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid;font-weight:600;}
+      .ci-timb-btn-edit{border-color:#3b82f6;color:#3b82f6;background:#fff;}
+      .ci-timb-btn-del{border-color:#ef4444;color:#ef4444;background:#fff;}
+      .ci-chiudi-giorno{background:#fef3c7;border:1px solid #f59e0b;color:#92400e;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;cursor:pointer;margin-bottom:10px;font-weight:600;}
+      .ci-add-timb{background:#e5a91a;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;width:100%;cursor:pointer;font-weight:600;}
+      .ci-add-form{border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-top:10px;background:#f9fafb;}
+      .ci-add-form label{font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;}
+      .ci-add-form input,.ci-add-form select{width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-bottom:10px;box-sizing:border-box;}
+      .ci-form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+      .ci-save-btn{background:#16a34a;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-weight:600;width:100%;}
+      .ci-cancel-btn{background:#e5e7eb;color:#374151;border:none;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-weight:600;width:100%;margin-top:6px;}
       @media(max-width:600px){.ci-cal-day{min-height:44px;padding:2px 3px;}.ci-day-badges{display:none;}}
     `;
     document.head.appendChild(style);
 
-    // --- Estendi lo stato ---
     state.inserisciVista = 'form';
     state.calInserisciDipId = state.dipendenti[0]?.id || '';
     state.calInserisciMese = state.filtroMese;
     state.calInserisciAnno = state.filtroAnno;
     state.calInserisciGiornoAperto = null;
+    state._calInserisciLoading = false;
 
-    // --- Helpers ---
-    window._ciIsFestivo = function(dateStr) {
-      const d = new Date(dateStr + 'T12:00:00');
-      const mm = d.getMonth()+1, dd = d.getDate();
-      return [[1,1],[1,6],[4,25],[5,1],[6,2],[8,15],[11,1],[12,8],[12,25],[12,26]].some(([m,g]) => mm===m && dd===g);
+    window._ciIsFestivo = function(d){
+      const dt=new Date(d+'T12:00:00'),mm=dt.getMonth()+1,dd=dt.getDate();
+      return[[1,1],[1,6],[4,25],[5,1],[6,2],[8,15],[11,1],[12,8],[12,25],[12,26]].some(([m,g])=>mm===m&&dd===g);
     };
-    window._ciIsDomenica = d => new Date(d + 'T12:00:00').getDay() === 0;
-    window._ciGetTipoGiorno = function(d) {
+    window._ciIsDomenica = d => new Date(d+'T12:00:00').getDay()===0;
+    window._ciGetTipoGiorno = function(d){
       if(window._ciIsDomenica(d)) return 'domenica';
       if(window._ciIsFestivo(d)) return 'festivo';
       return 'normale';
     };
 
-    // --- Render calendario ---
+    // Carica da Firestore se il mese non e' gia' disponibile
+    window._ciCaricaMeseSeNecessario = async function(anno, mese) {
+      const meseStr = anno+'-'+String(mese+1).padStart(2,'0');
+      const meseCorrente = state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+      if(meseStr === meseCorrente) return;
+      if(window._cacheTimbrMese && window._cacheTimbrMese[meseStr] !== undefined) return;
+      state._calInserisciLoading = true;
+      render();
+      try { await window.caricaTimbratureMese(meseStr); } catch(e){ console.error('CI load error',e); }
+      state._calInserisciLoading = false;
+    };
+
     window.renderCalendarioInserisci = function() {
       const dipId = state.calInserisciDipId;
-      const mese = state.calInserisciMese;
-      const anno = state.calInserisciAnno;
-      const dip = state.dipendenti.find(d => d.id === dipId);
-      const meseStr = anno + '-' + String(mese+1).padStart(2,'0');
-      const timbMese = state.timbrature.filter(t => t.dipendenteId === dipId && t.data && t.data.startsWith(meseStr));
-      const firstDay = new Date(anno, mese, 1);
-      const daysInMonth = new Date(anno, mese+1, 0).getDate();
-      let startDow = firstDay.getDay();
-      if(startDow === 0) startDow = 7;
-      startDow--;
-      const dipOptions = state.dipendenti.filter(d => d.attivo).map(d => '<option value="' + d.id + '"' + (d.id===dipId?' selected':'') + '>' + d.nome + '</option>').join('');
+      const mese  = state.calInserisciMese;
+      const anno  = state.calInserisciAnno;
+      const meseStr = anno+'-'+String(mese+1).padStart(2,'0');
+      const meseCorrente = state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+      // Usa state.timbrature per il mese corrente, cache per gli altri
+      let timbMese;
+      if(meseStr === meseCorrente) {
+        timbMese = state.timbrature.filter(t => t.dipendenteId === dipId);
+      } else {
+        const cached = (window._cacheTimbrMese && window._cacheTimbrMese[meseStr]) || [];
+        timbMese = cached.filter(t => t.dipendenteId === dipId);
+      }
+      const daysInMonth = new Date(anno,mese+1,0).getDate();
+      let startDow = new Date(anno,mese,1).getDay();
+      if(startDow===0) startDow=7; startDow--;
       const todayStr = new Date().toISOString().substring(0,10);
-      const mesiNomi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-      const dayHeaders = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d => '<div class="ci-cal-header">'+d+'</div>').join('');
-      let cells = '';
-      for(let i = 0; i < startDow; i++) cells += '<div class="ci-cal-day ci-empty"></div>';
-      for(let d = 1; d <= daysInMonth; d++) {
-        const dateStr = anno + '-' + String(mese+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-        const tipoG = window._ciGetTipoGiorno(dateStr);
-        const isToday = dateStr === todayStr;
-        const timbG = timbMese.filter(t => t.data === dateStr);
-        let cls = 'ci-cal-day';
-        if(isToday) cls += ' ci-today';
-        if(tipoG === 'domenica') cls += ' ci-domenica';
-        else if(tipoG === 'festivo') cls += ' ci-festivo';
-        let badges = '';
-        if(timbG.length === 0) {
-          if(tipoG === 'normale') badges = '<span class="ci-day-badge ci-badge-add">+ aggiungi</span>';
+      const mesiNomi=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+      const dipOptions = state.dipendenti.filter(d=>d.attivo).map(d=>'<option value="'+d.id+'"'+(d.id===dipId?' selected':'')+'>'+d.nome+'</option>').join('');
+      const dayHeaders = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d=>'<div class="ci-cal-header">'+d+'</div>').join('');
+      let cells='';
+      for(let i=0;i<startDow;i++) cells+='<div class="ci-cal-day ci-empty"></div>';
+      for(let d=1;d<=daysInMonth;d++){
+        const dateStr=anno+'-'+String(mese+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+        const tipoG=window._ciGetTipoGiorno(dateStr);
+        const isToday=dateStr===todayStr;
+        const timbG=timbMese.filter(t=>t.data===dateStr);
+        let cls='ci-cal-day';
+        if(isToday) cls+=' ci-today';
+        if(tipoG==='domenica') cls+=' ci-domenica';
+        else if(tipoG==='festivo') cls+=' ci-festivo';
+        let badges='';
+        if(timbG.length===0){
+          if(tipoG==='normale'&&!state._calInserisciLoading) badges='<span class="ci-day-badge ci-badge-add">+ aggiungi</span>';
         } else {
-          timbG.forEach(t => {
-            if(t.tipo === 'lavoro') {
-              const noUscita = !t.uscita || t.uscita === '' || t.uscita === '--:--';
-              if(noUscita && dateStr < todayStr) badges += '<span class="ci-day-badge ci-badge-uscita-mancante">\u26a0 ' + (t.entrata||'?') + '</span>';
-              else badges += '<span class="ci-day-badge ci-badge-lavoro">' + (t.entrata||'?') + '-' + (t.uscita||'?') + '</span>';
-            } else if(t.tipo === 'assenza') {
-              badges += '<span class="ci-day-badge ci-badge-assenza">' + ((t.assenza||'Ass.').substring(0,9)) + '</span>';
+          timbG.forEach(t=>{
+            if(t.tipo==='lavoro'){
+              const noU=!t.uscita||t.uscita===''||t.uscita==='--:--';
+              if(noU&&dateStr<todayStr) badges+='<span class="ci-day-badge ci-badge-uscita-mancante">\u26a0 '+(t.entrata||'?')+'</span>';
+              else badges+='<span class="ci-day-badge ci-badge-lavoro">'+(t.entrata||'?')+'-'+(t.uscita||'?')+'</span>';
+            } else if(t.tipo==='assenza'){
+              badges+='<span class="ci-day-badge ci-badge-assenza">'+((t.assenza||'Ass.').substring(0,9))+'</span>';
             }
           });
         }
-        cells += '<div class="' + cls + '" onclick="window.apriGiornoCI(\'' + dipId + '\',\'' + dateStr + '\')" title="' + dateStr + '"><div class="ci-cal-day-num">' + d + '</div><div class="ci-day-badges">' + badges + '</div></div>';
+        cells+='<div class="'+cls+'" onclick="window.apriGiornoCI(\''+(dipId)+'\',\''+dateStr+'\')" title="'+dateStr+'"><div class="ci-cal-day-num">'+d+'</div><div class="ci-day-badges">'+badges+'</div></div>';
       }
-      return '<div class="ci-toolbar"><div style="display:flex;align-items:center;gap:6px;"><button class="ci-view-btn" onclick="state.inserisciVista=\'form\';render()">\u270f\ufe0f Modulo</button><button class="ci-view-btn active">\ud83d\udcc5 Calendario</button></div><select onchange="state.calInserisciDipId=this.value;render()">' + dipOptions + '</select><div style="display:flex;align-items:center;gap:6px;"><button class="btn btn-sm btn-white" onclick="window.ciMesePrecedente()">\u25c4</button><strong>' + mesiNomi[mese] + ' ' + anno + '</strong><button class="btn btn-sm btn-white" onclick="window.ciMeseSuccessivo()">\u25ba</button></div></div><div class="ci-cal-grid">' + dayHeaders + cells + '</div>';
+      const loadingBanner = state._calInserisciLoading ? '<div style="text-align:center;padding:8px;color:#6b7280;font-size:13px;">\u23f3 Caricamento dati...</div>' : '';
+      return '<div class="ci-toolbar"><div style="display:flex;align-items:center;gap:6px;"><button class="ci-view-btn" onclick="state.inserisciVista=\'form\';render()">\u270f\ufe0f Modulo</button><button class="ci-view-btn active">\ud83d\udcc5 Calendario</button></div><select onchange="state.calInserisciDipId=this.value;render()">'+dipOptions+'</select><div style="display:flex;align-items:center;gap:6px;"><button class="btn btn-sm btn-white" onclick="window.ciMesePrecedente()">\u25c4</button><strong>'+mesiNomi[mese]+' '+anno+'</strong><button class="btn btn-sm btn-white" onclick="window.ciMeseSuccessivo()">\u25ba</button></div></div>'+loadingBanner+'<div class="ci-cal-grid">'+dayHeaders+cells+'</div>';
     };
 
-    // --- Navigazione mese ---
-    window.ciMesePrecedente = function() {
-      let m = state.calInserisciMese - 1, a = state.calInserisciAnno;
-      if(m < 0) { m = 11; a--; }
-      state.calInserisciMese = m; state.calInserisciAnno = a; render();
+    window.ciMesePrecedente = async function(){
+      let m=state.calInserisciMese-1, a=state.calInserisciAnno;
+      if(m<0){m=11;a--;} state.calInserisciMese=m; state.calInserisciAnno=a;
+      await window._ciCaricaMeseSeNecessario(a,m); render();
     };
-    window.ciMeseSuccessivo = function() {
-      let m = state.calInserisciMese + 1, a = state.calInserisciAnno;
-      if(m > 11) { m = 0; a++; }
-      state.calInserisciMese = m; state.calInserisciAnno = a; render();
+    window.ciMeseSuccessivo = async function(){
+      let m=state.calInserisciMese+1, a=state.calInserisciAnno;
+      if(m>11){m=0;a++;} state.calInserisciMese=m; state.calInserisciAnno=a;
+      await window._ciCaricaMeseSeNecessario(a,m); render();
     };
 
-    // --- Apertura giorno ---
-    window.apriGiornoCI = function(dipId, dateStr) {
-      state.calInserisciGiornoAperto = { dipId, data: dateStr, showForm: false, editTimb: null };
+    window.apriGiornoCI = function(dipId, dateStr){
+      state.calInserisciGiornoAperto={dipId,data:dateStr,showForm:false,editTimb:null};
       window.renderModalGiornoCI();
     };
-    window.chiudiModalGiornoCI = function() {
-      const m = document.getElementById('ci-modal-giorno');
-      if(m) m.remove();
-      state.calInserisciGiornoAperto = null;
+    window.chiudiModalGiornoCI = function(){
+      const m=document.getElementById('ci-modal-giorno'); if(m) m.remove();
+      state.calInserisciGiornoAperto=null;
     };
-    window.mostraFormCI = function() {
-      if(state.calInserisciGiornoAperto) { state.calInserisciGiornoAperto.showForm = true; state.calInserisciGiornoAperto.editTimb = null; window.renderModalGiornoCI(); }
+    window.mostraFormCI = function(){
+      if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.showForm=true;state.calInserisciGiornoAperto.editTimb=null;window.renderModalGiornoCI();}
     };
-    window.nascondiFormCI = function() {
-      if(state.calInserisciGiornoAperto) { state.calInserisciGiornoAperto.showForm = false; window.renderModalGiornoCI(); }
+    window.nascondiFormCI = function(){
+      if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.showForm=false;window.renderModalGiornoCI();}
     };
-    window.ciToggleTipoForm = function() {
-      const tipo = document.getElementById('ci-af-tipo')?.value;
-      const lf = document.getElementById('ci-af-lavoro-fields');
-      const af = document.getElementById('ci-af-assenza-fields');
-      if(lf) lf.style.display = tipo==='lavoro' ? '' : 'none';
-      if(af) af.style.display = tipo==='assenza' ? '' : 'none';
+    window.ciToggleTipoForm = function(){
+      const tipo=document.getElementById('ci-af-tipo')?.value;
+      const lf=document.getElementById('ci-af-lavoro-fields');
+      const af=document.getElementById('ci-af-assenza-fields');
+      if(lf) lf.style.display=tipo==='lavoro'?'':'none';
+      if(af) af.style.display=tipo==='assenza'?'':'none';
     };
-    window.apriModificaTimbCI = function(timbId) {
-      if(state.calInserisciGiornoAperto) { state.calInserisciGiornoAperto.editTimb = timbId; state.calInserisciGiornoAperto.showForm = false; window.renderModalGiornoCI(); }
+    window.apriModificaTimbCI = function(timbId){
+      if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.editTimb=timbId;state.calInserisciGiornoAperto.showForm=false;window.renderModalGiornoCI();}
     };
-    window.annullaModificaCI = function() {
-      if(state.calInserisciGiornoAperto) { state.calInserisciGiornoAperto.editTimb = null; window.renderModalGiornoCI(); }
+    window.annullaModificaCI = function(){
+      if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.editTimb=null;window.renderModalGiornoCI();}
     };
 
-    // --- Render modale giorno ---
-    window.renderModalGiornoCI = function() {
-      const ex = document.getElementById('ci-modal-giorno');
-      if(ex) ex.remove();
-      const g = state.calInserisciGiornoAperto;
-      if(!g) return;
-      const { dipId, data: dateStr, showForm, editTimb } = g;
-      const dip = state.dipendenti.find(d => d.id === dipId);
-      const dipNome = dip ? dip.nome : dipId;
-      const dipSede = dip ? dip.sede : 'Vivandaio';
-      const timbG = state.timbrature.filter(t => t.dipendenteId === dipId && t.data === dateStr);
-      const d = new Date(dateStr + 'T12:00:00');
-      const giorni = ['Domenica','Luned\xec','Marted\xec','Mercoled\xec','Gioved\xec','Venerd\xec','Sabato'];
-      const mesiN = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-      const dateLabel = giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesiN[d.getMonth()] + ' ' + d.getFullYear();
-      const todayStr = new Date().toISOString().substring(0,10);
-      const noUscita = timbG.filter(t => t.tipo==='lavoro' && (!t.uscita || t.uscita==='' || t.uscita==='--:--'));
-      const sediOpts = s => ['Vivandaio','Rione Certosa'].map(x => '<option value="'+x+'"'+(x===s?' selected':'')+'>'+x+'</option>').join('');
-      
-      // Elenco timbrature
-      let timbHtml = '';
-      if(timbG.length === 0) {
-        timbHtml = '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0;">Nessuna timbratura per questo giorno</p>';
+    window.renderModalGiornoCI = function(){
+      const ex=document.getElementById('ci-modal-giorno'); if(ex) ex.remove();
+      const g=state.calInserisciGiornoAperto; if(!g) return;
+      const{dipId,data:dateStr,showForm,editTimb}=g;
+      const dip=state.dipendenti.find(d=>d.id===dipId);
+      const dipNome=dip?dip.nome:dipId, dipSede=dip?dip.sede:'Vivandaio';
+      // Timbrature del giorno: usa la stessa logica di renderCalendarioInserisci
+      const meseStr=dateStr.substring(0,7);
+      const meseCorrente=state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+      let pool;
+      if(meseStr===meseCorrente){ pool=state.timbrature; }
+      else { pool=(window._cacheTimbrMese&&window._cacheTimbrMese[meseStr])||[]; }
+      const timbG=pool.filter(t=>t.dipendenteId===dipId&&t.data===dateStr);
+      const d=new Date(dateStr+'T12:00:00');
+      const giorni=['Domenica','Luned\xec','Marted\xec','Mercoled\xec','Gioved\xec','Venerd\xec','Sabato'];
+      const mesiN=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+      const dateLabel=giorni[d.getDay()]+' '+d.getDate()+' '+mesiN[d.getMonth()]+' '+d.getFullYear();
+      const todayStr=new Date().toISOString().substring(0,10);
+      const noUscita=timbG.filter(t=>t.tipo==='lavoro'&&(!t.uscita||t.uscita===''||t.uscita==='--:--'));
+      const sediOpts=s=>['Vivandaio','Rione Certosa'].map(x=>'<option value="'+x+'"'+(x===s?' selected':'')+'>'+x+'</option>').join('');
+      let timbHtml='';
+      if(timbG.length===0){
+        timbHtml='<p style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0;">Nessuna timbratura per questo giorno</p>';
       } else {
-        timbG.forEach(t => {
-          if(t.tipo === 'lavoro') {
-            const noU = !t.uscita || t.uscita==='' || t.uscita==='--:--';
-            const orari = noU ? '<span style="color:#d97706;">\u26a0\ufe0f Entrata: '+(t.entrata||'?')+' - Uscita mancante</span>' : (t.entrata||'--:--')+' \u2192 '+(t.uscita||'--:--')+' (pausa: '+(t.pausa||0)+'min)';
-            timbHtml += '<div class="ci-timb-item"><div class="ci-timb-info"><div class="ci-timb-tipo lavoro">Turno di lavoro</div><div class="ci-timb-orari">'+orari+'</div>'+(t.sede?'<div style="font-size:11px;color:#9ca3af;">'+t.sede+'</div>':'')+'</div><button class="ci-timb-btn ci-timb-btn-edit" onclick="window.apriModificaTimbCI(\'' + t.id + '\')">\u270f\ufe0f</button><button class="ci-timb-btn ci-timb-btn-del" onclick="window.eliminaTimbCI(\'' + t.id + '\',\'' + dipId + '\',\'' + dateStr + '\')">\ud83d\uddd1</button></div>';
-          } else if(t.tipo === 'assenza') {
-            timbHtml += '<div class="ci-timb-item"><div class="ci-timb-info"><div class="ci-timb-tipo assenza">\ud83d\udeab '+(t.assenza||'Assenza')+'</div>'+(t.sede?'<div style="font-size:11px;color:#9ca3af;">'+t.sede+'</div>':'')+'</div><button class="ci-timb-btn ci-timb-btn-del" onclick="window.eliminaTimbCI(\'' + t.id + '\',\'' + dipId + '\',\'' + dateStr + '\')">\ud83d\uddd1</button></div>';
+        timbG.forEach(t=>{
+          if(t.tipo==='lavoro'){
+            const noU=!t.uscita||t.uscita===''||t.uscita==='--:--';
+            const orari=noU?'<span style="color:#d97706;">\u26a0\ufe0f Entrata: '+(t.entrata||'?')+' - Uscita mancante</span>':(t.entrata||'--:--')+' \u2192 '+(t.uscita||'--:--')+' (pausa: '+(t.pausa||0)+'min)';
+            timbHtml+='<div class="ci-timb-item"><div class="ci-timb-info"><div class="ci-timb-tipo lavoro">Turno di lavoro</div><div class="ci-timb-orari">'+orari+'</div>'+(t.sede?'<div style="font-size:11px;color:#9ca3af;">'+t.sede+'</div>':'')+'</div><button class="ci-timb-btn ci-timb-btn-edit" onclick="window.apriModificaTimbCI(\''+t.id+'\')">\u270f\ufe0f</button><button class="ci-timb-btn ci-timb-btn-del" onclick="window.eliminaTimbCI(\''+t.id+'\',\''+dipId+'\',\''+dateStr+'\')">\ud83d\uddd1</button></div>';
+          } else if(t.tipo==='assenza'){
+            timbHtml+='<div class="ci-timb-item"><div class="ci-timb-info"><div class="ci-timb-tipo assenza">\ud83d\udeab '+(t.assenza||'Assenza')+'</div>'+(t.sede?'<div style="font-size:11px;color:#9ca3af;">'+t.sede+'</div>':'')+'</div><button class="ci-timb-btn ci-timb-btn-del" onclick="window.eliminaTimbCI(\''+t.id+'\',\''+dipId+'\',\''+dateStr+'\')">\ud83d\uddd1</button></div>';
           }
         });
       }
-      
-      // Chiudi giornata
-      let chiudiHtml = '';
-      if(noUscita.length > 0) {
-        const tu = noUscita[0];
-        chiudiHtml = '<div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:10px;"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e;">\u26a0\ufe0f Uscita mancante - Chiudi giornata</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Uscita</label><input type="time" id="ci-chiudi-uscita-'+tu.id+'" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;"></div><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Pausa (min)</label><input type="number" id="ci-chiudi-pausa-'+tu.id+'" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;" value="'+(tu.pausa||30)+'"></div></div><button class="ci-chiudi-giorno" onclick="window.chiudiGiornataCi(\'' + tu.id + '\',\'' + dipId + '\',\'' + dateStr + '\')">\ud83d\udcbe Chiudi giornata</button></div>';
+      let chiudiHtml='';
+      if(noUscita.length>0){
+        const tu=noUscita[0];
+        chiudiHtml='<div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:10px;"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e;">\u26a0\ufe0f Uscita mancante - Chiudi giornata</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Uscita</label><input type="time" id="ci-chiudi-uscita-'+tu.id+'" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;"></div><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Pausa (min)</label><input type="number" id="ci-chiudi-pausa-'+tu.id+'" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;" value="'+(tu.pausa||30)+'"></div></div><button class="ci-chiudi-giorno" onclick="window.chiudiGiornataCi(\''+tu.id+'\',\''+dipId+'\',\''+dateStr+'\')">\ud83d\udcbe Chiudi giornata</button></div>';
       }
-      
-      // Form modifica
-      let editHtml = '';
-      if(editTimb) {
-        const t = state.timbrature.find(tt => tt.id === editTimb);
-        if(t && t.tipo === 'lavoro') {
-          editHtml = '<div class="ci-add-form" style="border-color:#3b82f6;background:#eff6ff;"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8;">\u270f\ufe0f Modifica timbratura</p><div class="ci-form-row"><div><label>Entrata</label><input type="time" id="ci-ef-entrata" value="'+(t.entrata||'')+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-uscita" value="'+(t.uscita||'')+'"></div></div><div class="ci-form-row"><div><label>Pausa (min)</label><input type="number" id="ci-ef-pausa" value="'+(t.pausa||30)+'"></div><div><label>Sede</label><select id="ci-ef-sede">'+sediOpts(t.sede)+'</select></div></div><button class="ci-save-btn" style="background:#3b82f6;" onclick="window.salvaModificaCI(\'' + t.id + '\',\'' + dipId + '\',\'' + dateStr + '\')">\ud83d\udcbe Salva modifiche</button><button class="ci-cancel-btn" onclick="window.annullaModificaCI()">Annulla</button></div>';
+      let editHtml='';
+      if(editTimb){
+        const t=state.timbrature.find(tt=>tt.id===editTimb)||(pool.find(tt=>tt.id===editTimb));
+        if(t&&t.tipo==='lavoro'){
+          editHtml='<div class="ci-add-form" style="border-color:#3b82f6;background:#eff6ff;"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8;">\u270f\ufe0f Modifica timbratura</p><div class="ci-form-row"><div><label>Entrata</label><input type="time" id="ci-ef-entrata" value="'+(t.entrata||'')+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-uscita" value="'+(t.uscita||'')+'"></div></div><div class="ci-form-row"><div><label>Pausa (min)</label><input type="number" id="ci-ef-pausa" value="'+(t.pausa||30)+'"></div><div><label>Sede</label><select id="ci-ef-sede">'+sediOpts(t.sede)+'</select></div></div><button class="ci-save-btn" style="background:#3b82f6;" onclick="window.salvaModificaCI(\''+t.id+'\',\''+dipId+'\',\''+dateStr+'\')">\ud83d\udcbe Salva modifiche</button><button class="ci-cancel-btn" onclick="window.annullaModificaCI()">Annulla</button></div>';
         }
       }
-      
-      // Form aggiunta
-      let addHtml = '';
-      if(showForm) {
-        addHtml = '<div class="ci-add-form"><div style="margin-bottom:10px;"><label>Tipo</label><select id="ci-af-tipo" onchange="window.ciToggleTipoForm()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lavoro-fields"><div class="ci-form-row"><div><label>Entrata</label><input type="time" id="ci-af-entrata"></div><div><label>Uscita</label><input type="time" id="ci-af-uscita"></div></div><div class="ci-form-row"><div><label>Pausa (min)</label><input type="number" id="ci-af-pausa" value="30"></div><div><label>Sede</label><select id="ci-af-sede">'+sediOpts(dipSede)+'</select></div></div></div><div id="ci-af-assenza-fields" style="display:none;"><div style="margin-bottom:10px;"><label>Tipo assenza</label><select id="ci-af-assenza"><option>Ferie</option><option>Malattia</option><option>Giorno Libero</option><option>Riposo Compensativo</option></select></div><div style="margin-bottom:10px;"><label>Sede</label><select id="ci-af-sede-ass">'+sediOpts(dipSede)+'</select></div></div><button class="ci-save-btn" onclick="window.salvaTimbCI(\'' + dipId + '\',\'' + dateStr + '\')">\ud83d\udcbe Salva timbratura</button><button class="ci-cancel-btn" onclick="window.nascondiFormCI()">Annulla</button></div>';
+      let addHtml='';
+      if(showForm){
+        addHtml='<div class="ci-add-form"><div style="margin-bottom:10px;"><label>Tipo</label><select id="ci-af-tipo" onchange="window.ciToggleTipoForm()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lavoro-fields"><div class="ci-form-row"><div><label>Entrata</label><input type="time" id="ci-af-entrata"></div><div><label>Uscita</label><input type="time" id="ci-af-uscita"></div></div><div class="ci-form-row"><div><label>Pausa (min)</label><input type="number" id="ci-af-pausa" value="30"></div><div><label>Sede</label><select id="ci-af-sede">'+sediOpts(dipSede)+'</select></div></div></div><div id="ci-af-assenza-fields" style="display:none;"><div style="margin-bottom:10px;"><label>Tipo assenza</label><select id="ci-af-assenza"><option>Ferie</option><option>Malattia</option><option>Giorno Libero</option><option>Riposo Compensativo</option></select></div><div style="margin-bottom:10px;"><label>Sede</label><select id="ci-af-sede-ass">'+sediOpts(dipSede)+'</select></div></div><button class="ci-save-btn" onclick="window.salvaTimbCI(\''+dipId+'\',\''+dateStr+'\')">\ud83d\udcbe Salva timbratura</button><button class="ci-cancel-btn" onclick="window.nascondiFormCI()">Annulla</button></div>';
       }
-      
-      document.body.insertAdjacentHTML('beforeend',
-        '<div class="ci-modal-bg" id="ci-modal-giorno" onclick="if(event.target===this)window.chiudiModalGiornoCI()"><div class="ci-modal"><div class="ci-modal-header"><div><div class="ci-modal-title">\ud83d\udcc5 '+dateLabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">'+dipNome+'</div></div><button class="ci-modal-close" onclick="window.chiudiModalGiornoCI()">&times;</button></div>'+chiudiHtml+'<div class="ci-timb-list">'+timbHtml+'</div>'+editHtml+(!showForm&&!editTimb?'<button class="ci-add-timb" onclick="window.mostraFormCI()">+ Aggiungi timbratura</button>':'')+addHtml+'</div></div>'
-      );
+      document.body.insertAdjacentHTML('beforeend','<div class="ci-modal-bg" id="ci-modal-giorno" onclick="if(event.target===this)window.chiudiModalGiornoCI()"><div class="ci-modal"><div class="ci-modal-header"><div><div class="ci-modal-title">\ud83d\udcc5 '+dateLabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">'+dipNome+'</div></div><button class="ci-modal-close" onclick="window.chiudiModalGiornoCI()">&times;</button></div>'+chiudiHtml+'<div class="ci-timb-list">'+timbHtml+'</div>'+editHtml+(!showForm&&!editTimb?'<button class="ci-add-timb" onclick="window.mostraFormCI()">+ Aggiungi timbratura</button>':'')+addHtml+'</div></div>');
     };
 
-    // --- Salva nuova timbratura ---
-    window.salvaTimbCI = async function(dipId, dateStr) {
-      const tipo = document.getElementById('ci-af-tipo')?.value || 'lavoro';
-      const dip = state.dipendenti.find(d => d.id === dipId);
+    window.salvaTimbCI = async function(dipId, dateStr){
+      const tipo=document.getElementById('ci-af-tipo')?.value||'lavoro';
+      const dip=state.dipendenti.find(d=>d.id===dipId);
       try {
-        const { getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-        const { getFirestore, addDoc, collection } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const db = getFirestore(getApps()[0]);
+        const {getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const {getFirestore,addDoc,collection}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        const db=getFirestore(getApps()[0]);
         let docData;
-        if(tipo === 'lavoro') {
-          const entrata = document.getElementById('ci-af-entrata')?.value || '';
-          const uscita = document.getElementById('ci-af-uscita')?.value || '';
-          const pausa = parseInt(document.getElementById('ci-af-pausa')?.value) || 30;
-          const sede = document.getElementById('ci-af-sede')?.value || dip?.sede || '';
-          if(!entrata) { alert('Inserisci l\'orario di entrata'); return; }
-          docData = { dipendenteId: dipId, data: dateStr, tipo: 'lavoro', entrata, uscita, pausa, sede };
+        if(tipo==='lavoro'){
+          const entrata=document.getElementById('ci-af-entrata')?.value||'';
+          const uscita=document.getElementById('ci-af-uscita')?.value||'';
+          const pausa=parseInt(document.getElementById('ci-af-pausa')?.value)||30;
+          const sede=document.getElementById('ci-af-sede')?.value||dip?.sede||'';
+          if(!entrata){alert('Inserisci l\'orario di entrata');return;}
+          docData={dipendenteId:dipId,data:dateStr,tipo:'lavoro',entrata,uscita,pausa,sede};
         } else {
-          const assenza = document.getElementById('ci-af-assenza')?.value || 'Ferie';
-          const sede = document.getElementById('ci-af-sede-ass')?.value || dip?.sede || '';
-          docData = { dipendenteId: dipId, data: dateStr, tipo: 'assenza', assenza, sede, sbloccata: false };
+          const assenza=document.getElementById('ci-af-assenza')?.value||'Ferie';
+          const sede=document.getElementById('ci-af-sede-ass')?.value||dip?.sede||'';
+          docData={dipendenteId:dipId,data:dateStr,tipo:'assenza',assenza,sede,sbloccata:false};
         }
-        const ref = await addDoc(collection(db, 'timbrature'), docData);
-        docData.id = ref.id;
-        state.timbrature.push(docData);
-        if(window._cacheTimbrMese) delete window._cacheTimbrMese[dateStr.substring(0,7)];
-        state.calInserisciGiornoAperto.showForm = false;
-        window.renderModalGiornoCI();
-        render();
-      } catch(err) { alert('Errore nel salvataggio: ' + err.message); }
+        const ref=await addDoc(collection(db,'timbrature'),docData);
+        docData.id=ref.id;
+        // Aggiorna state o cache a seconda del mese
+        const meseStr=dateStr.substring(0,7);
+        const meseCorrente=state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+        if(meseStr===meseCorrente){ state.timbrature.push(docData); }
+        else {
+          if(!window._cacheTimbrMese[meseStr]) window._cacheTimbrMese[meseStr]=[];
+          window._cacheTimbrMese[meseStr].push(docData);
+        }
+        state.calInserisciGiornoAperto.showForm=false;
+        window.renderModalGiornoCI(); render();
+      } catch(err){alert('Errore nel salvataggio: '+err.message);}
     };
 
-    // --- Salva modifica ---
-    window.salvaModificaCI = async function(timbId, dipId, dateStr) {
-      const entrata = document.getElementById('ci-ef-entrata')?.value || '';
-      const uscita = document.getElementById('ci-ef-uscita')?.value || '';
-      const pausa = parseInt(document.getElementById('ci-ef-pausa')?.value) || 30;
-      const sede = document.getElementById('ci-ef-sede')?.value || '';
-      if(!entrata) { alert('Inserisci l\'orario di entrata'); return; }
+    window.salvaModificaCI = async function(timbId, dipId, dateStr){
+      const entrata=document.getElementById('ci-ef-entrata')?.value||'';
+      const uscita=document.getElementById('ci-ef-uscita')?.value||'';
+      const pausa=parseInt(document.getElementById('ci-ef-pausa')?.value)||30;
+      const sede=document.getElementById('ci-ef-sede')?.value||'';
+      if(!entrata){alert('Inserisci l\'orario di entrata');return;}
       try {
-        const { getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-        const { getFirestore, updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const db = getFirestore(getApps()[0]);
-        const dati = { entrata, uscita, pausa, sede };
-        await updateDoc(doc(db, 'timbrature', timbId), dati);
-        const idx = state.timbrature.findIndex(t => t.id === timbId);
-        if(idx >= 0) Object.assign(state.timbrature[idx], dati);
-        if(window._cacheTimbrMese) delete window._cacheTimbrMese[dateStr.substring(0,7)];
-        state.calInserisciGiornoAperto.editTimb = null;
-        window.renderModalGiornoCI();
-        render();
-      } catch(err) { alert('Errore nella modifica: ' + err.message); }
+        const {getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const {getFirestore,updateDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        const db=getFirestore(getApps()[0]);
+        const dati={entrata,uscita,pausa,sede};
+        await updateDoc(doc(db,'timbrature',timbId),dati);
+        const meseStr=dateStr.substring(0,7);
+        const meseCorrente=state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+        const pool=meseStr===meseCorrente?state.timbrature:(window._cacheTimbrMese[meseStr]||[]);
+        const idx=pool.findIndex(t=>t.id===timbId);
+        if(idx>=0) Object.assign(pool[idx],dati);
+        state.calInserisciGiornoAperto.editTimb=null;
+        window.renderModalGiornoCI(); render();
+      } catch(err){alert('Errore nella modifica: '+err.message);}
     };
 
-    // --- Elimina timbratura ---
-    window.eliminaTimbCI = async function(timbId, dipId, dateStr) {
+    window.eliminaTimbCI = async function(timbId, dipId, dateStr){
       if(!confirm('Eliminare questa timbratura?')) return;
       try {
-        const { getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-        const { getFirestore, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const db = getFirestore(getApps()[0]);
-        await deleteDoc(doc(db, 'timbrature', timbId));
-        state.timbrature = state.timbrature.filter(t => t.id !== timbId);
-        if(window._cacheTimbrMese) delete window._cacheTimbrMese[dateStr.substring(0,7)];
-        window.renderModalGiornoCI();
-        render();
-      } catch(err) { alert('Errore nell\'eliminazione: ' + err.message); }
+        const {getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const {getFirestore,deleteDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        const db=getFirestore(getApps()[0]);
+        await deleteDoc(doc(db,'timbrature',timbId));
+        const meseStr=dateStr.substring(0,7);
+        const meseCorrente=state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+        if(meseStr===meseCorrente){ state.timbrature=state.timbrature.filter(t=>t.id!==timbId); }
+        else if(window._cacheTimbrMese[meseStr]){ window._cacheTimbrMese[meseStr]=window._cacheTimbrMese[meseStr].filter(t=>t.id!==timbId); }
+        window.renderModalGiornoCI(); render();
+      } catch(err){alert('Errore nell\'eliminazione: '+err.message);}
     };
 
-    // --- Chiudi giornata (uscita mancante) ---
-    window.chiudiGiornataCi = async function(timbId, dipId, dateStr) {
-      const uscita = document.getElementById('ci-chiudi-uscita-' + timbId)?.value || '';
-      const pausa = parseInt(document.getElementById('ci-chiudi-pausa-' + timbId)?.value) || 30;
-      if(!uscita) { alert('Inserisci l\'orario di uscita'); return; }
+    window.chiudiGiornataCi = async function(timbId, dipId, dateStr){
+      const uscita=document.getElementById('ci-chiudi-uscita-'+timbId)?.value||'';
+      const pausa=parseInt(document.getElementById('ci-chiudi-pausa-'+timbId)?.value)||30;
+      if(!uscita){alert('Inserisci l\'orario di uscita');return;}
       try {
-        const { getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-        const { getFirestore, updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const db = getFirestore(getApps()[0]);
-        const dati = { uscita, pausa };
-        await updateDoc(doc(db, 'timbrature', timbId), dati);
-        const idx = state.timbrature.findIndex(t => t.id === timbId);
-        if(idx >= 0) Object.assign(state.timbrature[idx], dati);
-        if(window._cacheTimbrMese) delete window._cacheTimbrMese[dateStr.substring(0,7)];
-        window.renderModalGiornoCI();
-        render();
-      } catch(err) { alert('Errore nella chiusura: ' + err.message); }
+        const {getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const {getFirestore,updateDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        const db=getFirestore(getApps()[0]);
+        const dati={uscita,pausa};
+        await updateDoc(doc(db,'timbrature',timbId),dati);
+        const meseStr=dateStr.substring(0,7);
+        const meseCorrente=state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
+        const pool=meseStr===meseCorrente?state.timbrature:(window._cacheTimbrMese[meseStr]||[]);
+        const idx=pool.findIndex(t=>t.id===timbId);
+        if(idx>=0) Object.assign(pool[idx],dati);
+        window.renderModalGiornoCI(); render();
+      } catch(err){alert('Errore nella chiusura: '+err.message);}
     };
 
-    // --- Patch di render() ---
-    const _origRender = window.render;
-    window.render = function() {
+    const _origRender=window.render;
+    window.render=function(){
       _origRender();
-      if(state.adminTab === 'oggi' && state.adminSubTab === 'inserisci') {
-        const ac = document.querySelector('.admin-content');
+      if(state.adminTab==='oggi'&&state.adminSubTab==='inserisci'){
+        const ac=document.querySelector('.admin-content');
         if(!ac) return;
-        if(state.inserisciVista === 'calendario') {
-          ac.innerHTML = window.renderCalendarioInserisci();
+        if(state.inserisciVista==='calendario'){
+          ac.innerHTML=window.renderCalendarioInserisci();
         } else {
-          if(!document.getElementById('ci-view-toggle-btn')) {
-            const h2 = ac.querySelector('h2');
-            if(h2) {
-              const div = document.createElement('div');
-              div.id = 'ci-view-toggle-btn';
-              div.style.cssText = 'margin-bottom:12px;display:flex;gap:8px;';
-              div.innerHTML = '<button class="ci-view-btn active">\u270f\ufe0f Modulo</button><button class="ci-view-btn" onclick="state.inserisciVista=\'calendario\';state.calInserisciMese=state.filtroMese;state.calInserisciAnno=state.filtroAnno;state.calInserisciDipId=document.getElementById(\'ai-dip\')?.value||state.dipendenti[0]?.id||\'\';window.render()">\ud83d\udcc5 Vista Calendario</button>';
-              ac.insertBefore(div, h2);
+          if(!document.getElementById('ci-view-toggle-btn')){
+            const h2=ac.querySelector('h2');
+            if(h2){
+              const div=document.createElement('div');
+              div.id='ci-view-toggle-btn';
+              div.style.cssText='margin-bottom:12px;display:flex;gap:8px;';
+              div.innerHTML='<button class="ci-view-btn active">\u270f\ufe0f Modulo</button><button class="ci-view-btn" onclick="state.inserisciVista=\'calendario\';state.calInserisciMese=state.filtroMese;state.calInserisciAnno=state.filtroAnno;state.calInserisciDipId=document.getElementById(\'ai-dip\')?.value||state.dipendenti[0]?.id||\'\';window.render()">\ud83d\udcc5 Vista Calendario</button>';
+              ac.insertBefore(div,h2);
             }
           }
         }
       }
     };
-    
-    // Attiva subito se siamo già nella tab inserisci
-    if(state.adminTab === 'oggi' && state.adminSubTab === 'inserisci') render();
+
+    if(state.adminTab==='oggi'&&state.adminSubTab==='inserisci') render();
   }
-})();
-</script>
+})();</script>
 </body>
 </html>

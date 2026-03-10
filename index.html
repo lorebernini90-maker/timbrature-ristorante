@@ -1711,7 +1711,7 @@ function getRiepilogo() {
     turni.forEach(t => { if(!perGiorno[t.data]) perGiorno[t.data]=[]; perGiorno[t.data].push(t); });
     Object.values(perGiorno).forEach(ts => {
       const agg = aggregaTurniGiorno(ts, dip);
-      if(!agg) return;
+      if(!agg || !agg.calcolo) return;
       nTurni++;
       const c = agg.calcolo;
       tot  += c.totaleMin      || 0;

@@ -3876,142 +3876,141 @@ avvia();
 
 <script>
 (function() {
-  // Parte subito il MutationObserver - non aspetta nulla
-  function startObserver() {
-    if(window._ciObserver) return;
-    window._ciObserver = new MutationObserver(function() {
-      if(window._ciPatchView && window.state && state.adminTab==='oggi' && state.adminSubTab==='inserisci') {
+  if (!window._ciObserver) {
+    window._ciObserver = new MutationObserver(function () {
+      if (window._ciReady && window.state && state.adminTab === "oggi" && state.adminSubTab === "inserisci") {
         window._ciPatchView();
       }
     });
-    window._ciObserver.observe(document.body,{childList:true,subtree:true});
+    window._ciObserver.observe(document.body, { childList: true, subtree: true });
   }
-  startObserver();
-
-  function waitAndInit() {
-    if(window.state && window.render && state.dipendenti && state.dipendenti.length > 0) {
+  function tryInit() {
+    if (window.state && window.render && state.dipendenti && state.dipendenti.length > 0) {
       initCI();
-    } else { setTimeout(waitAndInit, 300); }
+    } else { setTimeout(tryInit, 300); }
   }
-  waitAndInit();
-
+  tryInit();
   function initCI() {
-    if(state.inserisciVista === undefined) state.inserisciVista = 'form';
-    if(!state.calInserisciDipId) state.calInserisciDipId = state.dipendenti[0]?.id || '';
-    if(state.calInserisciMese === undefined) state.calInserisciMese = state.filtroMese;
-    if(state.calInserisciAnno === undefined) state.calInserisciAnno = state.filtroAnno;
+    if (state.inserisciVista === undefined) state.inserisciVista = "form";
+    if (!state.calDipId) state.calDipId = state.dipendenti[0] ? state.dipendenti[0].id : "";
+    if (state.calMese === undefined) state.calMese = state.filtroMese;
+    if (state.calAnno === undefined) state.calAnno = state.filtroAnno;
+    var MESI=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+    var MESI_MIN=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+    var GIORNI=["Domenica","Lunedi","Martedi","Mercoledi","Giovedi","Venerdi","Sabato"];
+    var SEDI=["Vivandaio","Rione Certosa"];
+    var VOCI=["Ferie","Permesso","Malattia","Riposo Compensativo","Congedo Parentale","Giorno Libero"];
+    function pad(n){ return n<10?"0"+n:""+n; }
+    function isFest(d){ var dt=new Date(d+"T12:00:00"),m=dt.getMonth()+1,g=dt.getDate(); return[[1,1],[1,6],[4,25],[5,1],[6,2],[8,15],[11,1],[12,8],[12,25],[12,26]].some(function(p){return m===p[0]&&g===p[1];}); }
+    function isDom(d){ return new Date(d+"T12:00:00").getDay()===0; }
+    function getPool(ds){ var ms=ds.substring(0,7),mc=state.filtroAnno+"-"+pad(state.filtroMese+1); if(ms===mc)return state.timbrature; return(window._cacheTimbrMese&&window._cacheTimbrMese[ms])?window._cacheTimbrMese[ms]:[]; }
+    function sOpts(sel){ return SEDI.map(function(s){return"<option"+(s===sel?" selected":"")+">"+s+"</option>";}).join(""); }
 
-    const _isFest = d => { const dt=new Date(d+'T12:00:00'),mm=dt.getMonth()+1,dd=dt.getDate(); return[[1,1],[1,6],[4,25],[5,1],[6,2],[8,15],[11,1],[12,8],[12,25],[12,26]].some(([m,g])=>mm===m&&dd===g); };
-    const _isDom = d => new Date(d+'T12:00:00').getDay()===0;
-    const MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-    const GIORNI=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-    const MESI_MIN=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-    const SEDI=['Vivandaio','Rione Certosa'];
-    const VOCI=['Ferie','Permesso','Malattia','Riposo Compensativo','Congedo Parentale','Giorno Libero'];
-
-    function getPool(ds) {
-      const ms=ds.substring(0,7);
-      const mc=state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0');
-      return ms===mc ? state.timbrature : ((window._cacheTimbrMese&&window._cacheTimbrMese[ms])||[]);
-    }
+    window.ciVaiCalendario = function() {
+      var selDip = document.getElementById("ai-dip");
+      state.calDipId = selDip ? selDip.value : (state.dipendenti[0] ? state.dipendenti[0].id : "");
+      state.calMese = state.filtroMese;
+      state.calAnno = state.filtroAnno;
+      state.inserisciVista = "calendario";
+      render();
+    };
+    window.ciVaiModulo = function() { state.inserisciVista = "form"; render(); };
 
     window.ciRenderCalBody = function() {
-      const dipId=state.calInserisciDipId, mese=state.calInserisciMese, anno=state.calInserisciAnno;
-      const msStr=anno+'-'+String(mese+1).padStart(2,'0');
-      const pool=getPool(msStr+'-01');
-      const timbs=pool.filter(t=>t.dipendenteId===dipId);
-      const dim=new Date(anno,mese+1,0).getDate();
-      let sd=new Date(anno,mese,1).getDay(); if(sd===0)sd=7; sd--;
-      const tod=new Date().toISOString().substring(0,10);
-      let h='<div class="ci-cal-grid">';
-      ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].forEach(d=>{ h+='<div class="ci-cal-hd">'+d+'</div>'; });
-      for(let i=0;i<sd;i++) h+='<div class="ci-cal-day ci-empty"></div>';
-      for(let d=1;d<=dim;d++) {
-        const ds=anno+'-'+String(mese+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-        const tg=timbs.filter(t=>t.data===ds);
-        let cls='ci-cal-day'+(ds===tod?' ci-today':'')+(_isDom(ds)?' ci-dom':_isFest(ds)?' ci-fest':'');
-        let badges='';
-        if(!tg.length){ if(!_isDom(ds)&&!_isFest(ds)) badges='<span class="ci-db ci-db-p">+ aggiungi</span>'; }
-        else tg.forEach(t=>{
-          if(t.tipo==='lavoro'){ const noU=!t.uscita||t.uscita===''||t.uscita==='--:--'; badges+=noU?'<span class="ci-db ci-db-u">⚠ '+(t.entrata||'?')+'</span>':'<span class="ci-db ci-db-l">'+(t.entrata||'?')+'→'+(t.uscita||'?')+'</span>'; }
-          else if(t.tipo==='assenza') badges+='<span class="ci-db ci-db-a">'+((t.assenza||'Ass').substring(0,9))+'</span>';
+      var dipId=state.calDipId,mese=state.calMese,anno=state.calAnno;
+      var pool=getPool(anno+"-"+pad(mese+1)+"-01");
+      var timbs=pool.filter(function(t){return t.dipendenteId===dipId;});
+      var dim=new Date(anno,mese+1,0).getDate();
+      var sd=new Date(anno,mese,1).getDay(); if(sd===0)sd=7; sd--;
+      var tod=new Date().toISOString().substring(0,10);
+      var h="<div class=\"ci-cal-grid\">";
+      ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].forEach(function(d){h+="<div class=\"ci-cal-hd\">"+d+"</div>";});
+      for(var i=0;i<sd;i++)h+="<div class=\"ci-cal-day ci-empty\"></div>";
+      for(var d=1;d<=dim;d++){
+        var ds=anno+"-"+pad(mese+1)+"-"+pad(d);
+        var tg=timbs.filter(function(t){return t.data===ds;});
+        var cls="ci-cal-day"+(ds===tod?" ci-today":"")+(isDom(ds)?" ci-dom":isFest(ds)?" ci-fest":"");
+        var badges="";
+        if(!tg.length){ if(!isDom(ds)&&!isFest(ds))badges="<span class=\"ci-db ci-db-p\">+ aggiungi</span>"; }
+        else tg.forEach(function(t){
+          if(t.tipo==="lavoro"){var noU=!t.uscita||t.uscita===""||t.uscita==="--:--";badges+=noU?"<span class=\"ci-db ci-db-u\">[!] "+(t.entrata||"?")+"</span>":"<span class=\"ci-db ci-db-l\">"+(t.entrata||"?")+"->"+(t.uscita||"?")+"</span>";}
+          else if(t.tipo==="assenza")badges+="<span class=\"ci-db ci-db-a\">"+((t.assenza||"Ass").substring(0,9))+"</span>";
         });
-        h+='<div class="'+cls+'" onclick="window.apriGiornoCI(''+dipId+'',''+ds+'')">'+'<div class="ci-dn">'+d+'</div><div class="ci-dbs">'+badges+'</div></div>';
+        h+="<div class=\""+cls+"\" data-did=\""+dipId+"\" data-ds=\""+ds+"\" onclick=\"window.apriGiornoCI(this.dataset.did,this.dataset.ds)\">"+"<div class=\"ci-dn\">"+d+"</div><div class=\"ci-dbs\">"+badges+"</div></div>";
       }
-      return h+'</div>';
+      return h+"</div>";
     };
 
-    window.ciMesePrecedente = async function() { let m=state.calInserisciMese-1,a=state.calInserisciAnno; if(m<0){m=11;a--;} state.calInserisciMese=m; state.calInserisciAnno=a; const ms=a+'-'+String(m+1).padStart(2,'0'); if(ms!==(state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0'))&&window.caricaTimbratureMese) await window.caricaTimbratureMese(ms); render(); };
-    window.ciMeseSuccessivo = async function() { let m=state.calInserisciMese+1,a=state.calInserisciAnno; if(m>11){m=0;a++;} state.calInserisciMese=m; state.calInserisciAnno=a; const ms=a+'-'+String(m+1).padStart(2,'0'); if(ms!==(state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0'))&&window.caricaTimbratureMese) await window.caricaTimbratureMese(ms); render(); };
-    window.apriGiornoCI = function(dipId,ds) { state.calInserisciGiornoAperto={dipId,data:ds,showForm:false,editTimb:null}; window.ciRenderModal(); };
-    window.chiudiModalCI = function() { const m=document.getElementById('ci-modal-bg'); if(m) m.remove(); state.calInserisciGiornoAperto=null; };
-    window.ciToggleForm = function() { const tipo=document.getElementById('ci-af-tipo')?.value; const lf=document.getElementById('ci-af-lav'),af=document.getElementById('ci-af-ass'); if(lf) lf.style.display=tipo==='lavoro'?'':'none'; if(af) af.style.display=tipo==='assenza'?'':'none'; };
-    window.ciMostraForm = function() { if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.showForm=true;state.calInserisciGiornoAperto.editTimb=null;window.ciRenderModal();} };
-    window.ciNascondiForm = function() { if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.showForm=false;window.ciRenderModal();} };
-    window.ciApriModifica = function(tid) { if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.editTimb=tid;state.calInserisciGiornoAperto.showForm=false;window.ciRenderModal();} };
-    window.ciAnnullaModifica = function() { if(state.calInserisciGiornoAperto){state.calInserisciGiornoAperto.editTimb=null;window.ciRenderModal();} };
+    window.ciMesePrecedente=async function(){var m=state.calMese-1,a=state.calAnno;if(m<0){m=11;a--;}state.calMese=m;state.calAnno=a;var ms=a+"-"+pad(m+1);if(ms!==(state.filtroAnno+"-"+pad(state.filtroMese+1))&&window.caricaTimbratureMese)await window.caricaTimbratureMese(ms);render();};
+    window.ciMeseSuccessivo=async function(){var m=state.calMese+1,a=state.calAnno;if(m>11){m=0;a++;}state.calMese=m;state.calAnno=a;var ms=a+"-"+pad(m+1);if(ms!==(state.filtroAnno+"-"+pad(state.filtroMese+1))&&window.caricaTimbratureMese)await window.caricaTimbratureMese(ms);render();};
+    window.apriGiornoCI=function(dipId,ds){state.calGiorno={dipId:dipId,data:ds,showForm:false,editTimb:null};window.ciRenderModal();};
+    window.chiudiModalCI=function(){var m=document.getElementById("ci-modal-bg");if(m)m.remove();state.calGiorno=null;};
+    window.ciToggleForm=function(){var tipo=document.getElementById("ci-af-tipo")?document.getElementById("ci-af-tipo").value:"";var lf=document.getElementById("ci-af-lav"),af=document.getElementById("ci-af-ass");if(lf)lf.style.display=tipo==="lavoro"?"":"none";if(af)af.style.display=tipo==="assenza"?"":"none";};
+    window.ciMostraForm=function(){if(state.calGiorno){state.calGiorno.showForm=true;state.calGiorno.editTimb=null;window.ciRenderModal();}};
+    window.ciNascondiForm=function(){if(state.calGiorno){state.calGiorno.showForm=false;window.ciRenderModal();}};
+    window.ciApriModifica=function(tid){if(state.calGiorno){state.calGiorno.editTimb=tid;state.calGiorno.showForm=false;window.ciRenderModal();}};
+    window.ciAnnullaModifica=function(){if(state.calGiorno){state.calGiorno.editTimb=null;window.ciRenderModal();}};
 
-    window.ciRenderModal = function() {
-      const ex=document.getElementById('ci-modal-bg'); if(ex) ex.remove();
-      const g=state.calInserisciGiornoAperto; if(!g) return;
-      const {dipId,data:ds,showForm,editTimb}=g;
-      const dip=state.dipendenti.find(d=>d.id===dipId);
-      const dipNome=dip?dip.nome:dipId, dipSede=dip?(dip.sede||'Vivandaio'):'Vivandaio';
-      const pool=getPool(ds);
-      const timbG=pool.filter(t=>t.dipendenteId===dipId&&t.data===ds);
-      const dt=new Date(ds+'T12:00:00');
-      const dlabel=GIORNI[dt.getDay()]+' '+dt.getDate()+' '+MESI_MIN[dt.getMonth()]+' '+dt.getFullYear();
-      const sOpts=sel=>SEDI.map(s=>'<option'+(s===sel?' selected':'')+'>'+s+'</option>').join('');
-      let tHtml='';
-      if(!timbG.length) tHtml='<p style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0">Nessuna timbratura</p>';
-      else timbG.forEach(t=>{
-        if(t.tipo==='lavoro'){ const noU=!t.uscita||t.uscita===''||t.uscita==='--:--'; const orari=noU?'<span style="color:#d97706">⚠ Entrata: '+(t.entrata||'?')+' - uscita mancante</span>':(t.entrata||'--:--')+' → '+(t.uscita||'--:--')+' (pausa: '+(t.pausa||0)+'min)'; tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo lav">Turno lavoro</div><div class="ci-ti-orari">'+orari+'</div></div><button class="ci-tb2 ci-tb2-e" onclick="window.ciApriModifica(''+t.id+'')">✏</button><button class="ci-tb2 ci-tb2-d" onclick="window.ciElimina(''+t.id+'',''+dipId+'',''+ds+'')">🗑</button></div>'; }
-        else if(t.tipo==='assenza') tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo ass">🚫 '+(t.assenza||'Assenza')+'</div></div><button class="ci-tb2 ci-tb2-d" onclick="window.ciElimina(''+t.id+'',''+dipId+'',''+ds+'')">🗑</button></div>';
+    window.ciRenderModal=function(){
+      var ex=document.getElementById("ci-modal-bg");if(ex)ex.remove();
+      var g=state.calGiorno;if(!g)return;
+      var dipId=g.dipId,ds=g.data,showForm=g.showForm,editTimb=g.editTimb;
+      var dip=state.dipendenti.filter(function(d){return d.id===dipId;})[0];
+      var dipNome=dip?dip.nome:dipId;
+      var dipSede=dip?(dip.sede||"Vivandaio"):"Vivandaio";
+      var pool=getPool(ds);
+      var timbG=pool.filter(function(t){return t.dipendenteId===dipId&&t.data===ds;});
+      var dt=new Date(ds+"T12:00:00");
+      var dlabel=GIORNI[dt.getDay()]+" "+dt.getDate()+" "+MESI_MIN[dt.getMonth()]+" "+dt.getFullYear();
+      var tHtml="";
+      if(!timbG.length){tHtml="<p style=\"color:#9ca3af;font-size:13px;text-align:center;padding:10px 0\">Nessuna timbratura</p>";}
+      else timbG.forEach(function(t){
+        if(t.tipo==="lavoro"){var noU=!t.uscita||t.uscita===""||t.uscita==="--:--";var orari=noU?"<span style=\"color:#d97706\">[!] Entrata: "+(t.entrata||"?")+" - uscita mancante</span>":(t.entrata||"--:--")+" -> "+(t.uscita||"--:--")+" (pausa: "+(t.pausa||0)+"min)";tHtml+="<div class=\"ci-ti\"><div class=\"ci-ti-info\"><div class=\"ci-ti-tipo lav\">Turno lavoro</div><div class=\"ci-ti-orari\">"+orari+"</div></div><button class=\"ci-tb2 ci-tb2-e\" data-tid=\""+t.id+"\" onclick=\"window.ciApriModifica(this.dataset.tid)\">Modif.</button><button class=\"ci-tb2 ci-tb2-d\" data-tid=\""+t.id+"\" data-did=\""+dipId+"\" data-ds=\""+ds+"\" onclick=\"window.ciElimina(this.dataset.tid,this.dataset.did,this.dataset.ds)\">Elim.</button></div>";}
+        else if(t.tipo==="assenza")tHtml+="<div class=\"ci-ti\"><div class=\"ci-ti-info\"><div class=\"ci-ti-tipo ass\">"+(t.assenza||"Assenza")+"</div></div><button class=\"ci-tb2 ci-tb2-d\" data-tid=\""+t.id+"\" data-did=\""+dipId+"\" data-ds=\""+ds+"\" onclick=\"window.ciElimina(this.dataset.tid,this.dataset.did,this.dataset.ds)\">Elim.</button></div>";
       });
-      const noU=timbG.filter(t=>t.tipo==='lavoro'&&(!t.uscita||t.uscita===''||t.uscita==='--:--'));
-      let chiudiH='';
-      if(noU.length){ const tu=noU[0]; chiudiH='<div class="ci-warn"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e">⚠ Uscita mancante</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Uscita</label><input type="time" id="ci-ch-u-'+tu.id+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pausa (min)</label><input type="number" id="ci-ch-p-'+tu.id+'" value="'+(tu.pausa||30)+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div></div><button style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;width:100%;cursor:pointer;font-weight:600" onclick="window.ciChiudiGiornata(''+tu.id+'',''+dipId+'',''+ds+'')">💾 Chiudi giornata</button></div>'; }
-      let editH='';
-      if(editTimb){ const t=pool.find(x=>x.id===editTimb); if(t&&t.tipo==='lavoro'){ editH='<div class="ci-af" style="border-color:#3b82f6;background:#eff6ff"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8">✏ Modifica</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-ef-en" value="'+(t.entrata||'')+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-us" value="'+(t.uscita||'')+'"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa (min)</label><input type="number" id="ci-ef-pa" value="'+(t.pausa||30)+'"></div><div><label>Sede</label><select id="ci-ef-se">'+sOpts(t.sede)+'</select></div></div><button class="ci-sv" style="background:#3b82f6" onclick="window.ciSalvaModifica(''+t.id+'',''+dipId+'',''+ds+'')">💾 Salva</button><button class="ci-cv" onclick="window.ciAnnullaModifica()">Annulla</button></div>'; } }
-      let addH='';
-      if(showForm){ addH='<div class="ci-af"><div style="margin-bottom:10px"><label>Tipo</label><select id="ci-af-tipo" onchange="window.ciToggleForm()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lav"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-af-en"></div><div><label>Uscita</label><input type="time" id="ci-af-us"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa (min)</label><input type="number" id="ci-af-pa" value="30"></div><div><label>Sede</label><select id="ci-af-se">'+sOpts(dipSede)+'</select></div></div></div><div id="ci-af-ass" style="display:none"><div style="margin-bottom:10px"><label>Tipo assenza</label><select id="ci-af-voci">'+VOCI.map(v=>'<option>'+v+'</option>').join('')+'</select></div><div style="margin-bottom:10px"><label>Sede</label><select id="ci-af-se-ass">'+sOpts(dipSede)+'</select></div></div><button class="ci-sv" onclick="window.ciSalvaTimb(''+dipId+'',''+ds+'')">💾 Salva</button><button class="ci-cv" onclick="window.ciNascondiForm()">Annulla</button></div>'; }
-      document.body.insertAdjacentHTML('beforeend','<div class="ci-mbg" id="ci-modal-bg" onclick="if(event.target===this)window.chiudiModalCI()"><div class="ci-mc"><div class="ci-mh"><div><div class="ci-mt2">📅 '+dlabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px">'+dipNome+'</div></div><button class="ci-mx" onclick="window.chiudiModalCI()">&times;</button></div>'+chiudiH+tHtml+editH+(!showForm&&!editTimb?'<button class="ci-add" onclick="window.ciMostraForm()">+ Aggiungi timbratura</button>':'')+addH+'</div></div>');
+      var noU=timbG.filter(function(t){return t.tipo==="lavoro"&&(!t.uscita||t.uscita===""||t.uscita==="--:--");});
+      var chiudiH="";
+      if(noU.length){var tu=noU[0];chiudiH="<div class=\"ci-warn\"><p style=\"margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e\">Uscita mancante</p><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px\"><div><label style=\"font-size:12px;font-weight:600;display:block;margin-bottom:4px\">Uscita</label><input type=\"time\" id=\"ci-ch-u-"+tu.id+"\" style=\"width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box\"></div><div><label style=\"font-size:12px;font-weight:600;display:block;margin-bottom:4px\">Pausa (min)</label><input type=\"number\" id=\"ci-ch-p-"+tu.id+"\" value=\""+(tu.pausa||30)+"\" style=\"width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box\"></div></div><button style=\"background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;width:100%;cursor:pointer;font-weight:600\" data-tid=\""+tu.id+"\" data-did=\""+dipId+"\" data-ds=\""+ds+"\" onclick=\"window.ciChiudiGiornata(this.dataset.tid,this.dataset.did,this.dataset.ds)\">Chiudi giornata</button></div>";}
+      var editH="";
+      if(editTimb){var tEdit=pool.filter(function(x){return x.id===editTimb;})[0];if(tEdit&&tEdit.tipo==="lavoro"){editH="<div class=\"ci-af\" style=\"border-color:#3b82f6;background:#eff6ff\"><p style=\"margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8\">Modifica</p><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px\"><div><label>Entrata</label><input type=\"time\" id=\"ci-ef-en\" value=\""+(tEdit.entrata||"")+"\"></div><div><label>Uscita</label><input type=\"time\" id=\"ci-ef-us\" value=\""+(tEdit.uscita||"")+"\"></div></div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px\"><div><label>Pausa (min)</label><input type=\"number\" id=\"ci-ef-pa\" value=\""+(tEdit.pausa||30)+"\"></div><div><label>Sede</label><select id=\"ci-ef-se\">"+sOpts(tEdit.sede)+"</select></div></div><button class=\"ci-sv\" style=\"background:#3b82f6\" data-tid=\""+tEdit.id+"\" data-did=\""+dipId+"\" data-ds=\""+ds+"\" onclick=\"window.ciSalvaModifica(this.dataset.tid,this.dataset.did,this.dataset.ds)\">Salva</button><button class=\"ci-cv\" onclick=\"window.ciAnnullaModifica()\">Annulla</button></div>";}}
+      var addH="";
+      if(showForm){addH="<div class=\"ci-af\"><div style=\"margin-bottom:10px\"><label>Tipo</label><select id=\"ci-af-tipo\" onchange=\"window.ciToggleForm()\"><option value=\"lavoro\">Turno di lavoro</option><option value=\"assenza\">Assenza</option></select></div><div id=\"ci-af-lav\"><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px\"><div><label>Entrata</label><input type=\"time\" id=\"ci-af-en\"></div><div><label>Uscita</label><input type=\"time\" id=\"ci-af-us\"></div></div><div style=\"display:grid;grid-template-columns:1fr 1fr;gap:8px\"><div><label>Pausa (min)</label><input type=\"number\" id=\"ci-af-pa\" value=\"30\"></div><div><label>Sede</label><select id=\"ci-af-se\">"+sOpts(dipSede)+"</select></div></div></div><div id=\"ci-af-ass\" style=\"display:none\"><div style=\"margin-bottom:10px\"><label>Tipo assenza</label><select id=\"ci-af-voci\">"+VOCI.map(function(v){return"<option>"+v+"</option>";}).join("")+"</select></div><div style=\"margin-bottom:10px\"><label>Sede</label><select id=\"ci-af-se-ass\">"+sOpts(dipSede)+"</select></div></div><button class=\"ci-sv\" data-did=\""+dipId+"\" data-ds=\""+ds+"\" onclick=\"window.ciSalvaTimb(this.dataset.did,this.dataset.ds)\">Salva</button><button class=\"ci-cv\" onclick=\"window.ciNascondiForm()\">Annulla</button></div>";}
+      document.body.insertAdjacentHTML("beforeend","<div class=\"ci-mbg\" id=\"ci-modal-bg\" onclick=\"if(event.target===this)window.chiudiModalCI()\"><div class=\"ci-mc\"><div class=\"ci-mh\"><div><div class=\"ci-mt2\">"+dlabel+"</div><div style=\"font-size:12px;color:#6b7280;margin-top:2px\">"+dipNome+"</div></div><button class=\"ci-mx\" onclick=\"window.chiudiModalCI()\">&times;</button></div>"+chiudiH+tHtml+editH+(!showForm&&!editTimb?"<button class=\"ci-add\" onclick=\"window.ciMostraForm()\">+ Aggiungi timbratura</button>":"")+addH+"</div></div>");
     };
 
-    async function getDB(){ const{getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'); const{getFirestore}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); return getFirestore(getApps()[0]); }
+    async function getDB(){var app=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");var fs=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");return fs.getFirestore(app.getApps()[0]);}
 
-    window.ciSalvaTimb = async function(dipId,ds){ const tipo=document.getElementById('ci-af-tipo')?.value||'lavoro'; const dip=state.dipendenti.find(d=>d.id===dipId); try{ const db=await getDB(); const{addDoc,collection}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); let doc; if(tipo==='lavoro'){ const e=document.getElementById('ci-af-en')?.value||''; if(!e){alert("Inserisci l'orario di entrata");return;} doc={dipendenteId:dipId,data:ds,tipo:'lavoro',entrata:e,uscita:document.getElementById('ci-af-us')?.value||'',pausa:parseInt(document.getElementById('ci-af-pa')?.value)||30,sede:document.getElementById('ci-af-se')?.value||dip?.sede||''}; }else{ doc={dipendenteId:dipId,data:ds,tipo:'assenza',assenza:document.getElementById('ci-af-voci')?.value||'Ferie',sede:document.getElementById('ci-af-se-ass')?.value||dip?.sede||'',sbloccata:false}; } const ref=await addDoc(collection(db,'timbrature'),doc); doc.id=ref.id; getPool(ds).push(doc); state.calInserisciGiornoAperto.showForm=false; window.ciRenderModal(); render(); }catch(err){alert('Errore: '+err.message);} };
-    window.ciSalvaModifica = async function(tid,dipId,ds){ const e=document.getElementById('ci-ef-en')?.value||''; if(!e){alert("Inserisci l'orario di entrata");return;} const upd={entrata:e,uscita:document.getElementById('ci-ef-us')?.value||'',pausa:parseInt(document.getElementById('ci-ef-pa')?.value)||30,sede:document.getElementById('ci-ef-se')?.value||''}; try{ const db=await getDB(); const{updateDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); await updateDoc(doc(db,'timbrature',tid),upd); const p=getPool(ds),i=p.findIndex(t=>t.id===tid); if(i>=0) Object.assign(p[i],upd); state.calInserisciGiornoAperto.editTimb=null; window.ciRenderModal(); render(); }catch(err){alert('Errore: '+err.message);} };
-    window.ciElimina = async function(tid,dipId,ds){ if(!confirm('Eliminare questa timbratura?'))return; try{ const db=await getDB(); const{deleteDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); await deleteDoc(doc(db,'timbrature',tid)); const p=getPool(ds),i=p.findIndex(t=>t.id===tid); if(i>=0) p.splice(i,1); window.ciRenderModal(); render(); }catch(err){alert('Errore: '+err.message);} };
-    window.ciChiudiGiornata = async function(tid,dipId,ds){ const u=document.getElementById('ci-ch-u-'+tid)?.value||''; if(!u){alert("Inserisci l'orario di uscita");return;} const upd={uscita:u,pausa:parseInt(document.getElementById('ci-ch-p-'+tid)?.value)||30}; try{ const db=await getDB(); const{updateDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); await updateDoc(doc(db,'timbrature',tid),upd); const p=getPool(ds),i=p.findIndex(t=>t.id===tid); if(i>=0) Object.assign(p[i],upd); window.ciRenderModal(); render(); }catch(err){alert('Errore: '+err.message);} };
+    window.ciSalvaTimb=async function(dipId,ds){var tipo=document.getElementById("ci-af-tipo")?document.getElementById("ci-af-tipo").value:"lavoro";var dip=state.dipendenti.filter(function(d){return d.id===dipId;})[0];try{var db=await getDB();var fsm=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");var docData;if(tipo==="lavoro"){var e=document.getElementById("ci-af-en")?document.getElementById("ci-af-en").value:"";if(!e){alert("Inserisci orario entrata");return;}docData={dipendenteId:dipId,data:ds,tipo:"lavoro",entrata:e,uscita:document.getElementById("ci-af-us")?document.getElementById("ci-af-us").value:"",pausa:parseInt(document.getElementById("ci-af-pa")?document.getElementById("ci-af-pa").value:"30")||30,sede:document.getElementById("ci-af-se")?document.getElementById("ci-af-se").value:(dip?dip.sede:"")};}else{docData={dipendenteId:dipId,data:ds,tipo:"assenza",assenza:document.getElementById("ci-af-voci")?document.getElementById("ci-af-voci").value:"Ferie",sede:document.getElementById("ci-af-se-ass")?document.getElementById("ci-af-se-ass").value:(dip?dip.sede:""),sbloccata:false};}var ref=await fsm.addDoc(fsm.collection(db,"timbrature"),docData);docData.id=ref.id;getPool(ds).push(docData);state.calGiorno.showForm=false;window.ciRenderModal();render();}catch(err){alert("Errore: "+err.message);}};
+    window.ciSalvaModifica=async function(tid,dipId,ds){var e=document.getElementById("ci-ef-en")?document.getElementById("ci-ef-en").value:"";if(!e){alert("Inserisci orario entrata");return;}var upd={entrata:e,uscita:document.getElementById("ci-ef-us")?document.getElementById("ci-ef-us").value:"",pausa:parseInt(document.getElementById("ci-ef-pa")?document.getElementById("ci-ef-pa").value:"30")||30,sede:document.getElementById("ci-ef-se")?document.getElementById("ci-ef-se").value:""};try{var db=await getDB();var fsm=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");await fsm.updateDoc(fsm.doc(db,"timbrature",tid),upd);var p=getPool(ds),idx2=p.findIndex(function(t){return t.id===tid;});if(idx2>=0)Object.assign(p[idx2],upd);state.calGiorno.editTimb=null;window.ciRenderModal();render();}catch(err){alert("Errore: "+err.message);}};
+    window.ciElimina=async function(tid,dipId,ds){if(!confirm("Eliminare questa timbratura?"))return;try{var db=await getDB();var fsm=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");await fsm.deleteDoc(fsm.doc(db,"timbrature",tid));var p=getPool(ds),idx2=p.findIndex(function(t){return t.id===tid;});if(idx2>=0)p.splice(idx2,1);window.ciRenderModal();render();}catch(err){alert("Errore: "+err.message);}};
+    window.ciChiudiGiornata=async function(tid,dipId,ds){var u=document.getElementById("ci-ch-u-"+tid)?document.getElementById("ci-ch-u-"+tid).value:"";if(!u){alert("Inserisci orario uscita");return;}var upd={uscita:u,pausa:parseInt(document.getElementById("ci-ch-p-"+tid)?document.getElementById("ci-ch-p-"+tid).value:"30")||30};try{var db=await getDB();var fsm=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");await fsm.updateDoc(fsm.doc(db,"timbrature",tid),upd);var p=getPool(ds),idx2=p.findIndex(function(t){return t.id===tid;});if(idx2>=0)Object.assign(p[idx2],upd);window.ciRenderModal();render();}catch(err){alert("Errore: "+err.message);}};
 
-    window._ciPatchView = function() {
-      if(!window.state || state.adminTab!=='oggi' || state.adminSubTab!=='inserisci') return;
-      const ac=document.querySelector('.admin-content');
-      if(!ac) return;
-
-      // Vista CALENDARIO
-      if(state.inserisciVista==='calendario'){
-        const dipId=state.calInserisciDipId||state.dipendenti[0]?.id||'';
-        const dOpts=state.dipendenti.filter(d=>d.attivo!==false).map(d=>'<option value="'+d.id+'"'+(d.id===dipId?' selected':'')+'>'+d.nome+'</option>').join('');
-        ac.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="ci-vbtn" onclick="state.inserisciVista='form';render()">✏ Modulo</button><button class="ci-vbtn act">📅 Calendario</button><select onchange="state.calInserisciDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">'+dOpts+'</select><div style="display:flex;align-items:center;gap:6px"><button onclick="window.ciMesePrecedente()" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">◀</button><strong style="min-width:130px;text-align:center">'+MESI[state.calInserisciMese]+' '+state.calInserisciAnno+'</strong><button onclick="window.ciMeseSuccessivo()" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">▶</button></div></div>'+window.ciRenderCalBody();
+    window._ciPatchView=function(){
+      if(!window.state||state.adminTab!=="oggi"||state.adminSubTab!=="inserisci")return;
+      var ac=document.querySelector(".admin-content");if(!ac)return;
+      if(state.inserisciVista==="calendario"){
+        var dipId=state.calDipId||(state.dipendenti[0]?state.dipendenti[0].id:"");
+        var dOpts=state.dipendenti.filter(function(d){return d.attivo!==false;}).map(function(d){return"<option value=\""+d.id+"\">"+(d.id===dipId?" selected":"")+d.nome+"</option>";}).join("");
+        ac.innerHTML="<div style=\"display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap\"><button class=\"ci-vbtn\" onclick=\"window.ciVaiModulo()\">Modulo</button><button class=\"ci-vbtn act\">Calendario</button><select id=\"ci-dip-sel\" onchange=\"state.calDipId=this.value;render()\" style=\"border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px\">"+dOpts+"</select><div style=\"display:flex;align-items:center;gap:6px\"><button onclick=\"window.ciMesePrecedente()\" style=\"padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer\">&lt;</button><strong style=\"min-width:130px;text-align:center\">"+MESI[state.calMese]+" "+state.calAnno+"</strong><button onclick=\"window.ciMeseSuccessivo()\" style=\"padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer\">&gt;</button></div></div>"+window.ciRenderCalBody();
         return;
       }
-
-      // Vista FORM - aggiungo solo i pulsanti se non ci sono già
-      if(!document.getElementById('ci-view-toggle-btn')){
-        const h2=ac.querySelector('h2');
+      if(!document.getElementById("ci-view-toggle-btn")){
+        var h2=ac.querySelector("h2");
         if(h2){
-          const div=document.createElement('div');
-          div.id='ci-view-toggle-btn';
-          div.style.cssText='margin-bottom:12px;display:flex;gap:8px';
-          div.innerHTML='<button class="ci-vbtn act">✏ Modulo</button><button class="ci-vbtn" onclick="state.calInserisciDipId=document.getElementById('ai-dip')?.value||state.dipendenti[0]?.id||'';state.calInserisciMese=state.filtroMese;state.calInserisciAnno=state.filtroAnno;state.inserisciVista='calendario';render()">📅 Vista Calendario</button>';
+          var div=document.createElement("div");
+          div.id="ci-view-toggle-btn";
+          div.style.cssText="margin-bottom:12px;display:flex;gap:8px";
+          var b1=document.createElement("button");
+          b1.className="ci-vbtn act"; b1.textContent="Modulo";
+          var b2=document.createElement("button");
+          b2.className="ci-vbtn"; b2.textContent="Calendario";
+          b2.onclick=function(){ window.ciVaiCalendario(); };
+          div.appendChild(b1); div.appendChild(b2);
           ac.insertBefore(div,h2);
         }
       }
     };
-
-    // Chiama subito se siamo già su inserisci
+    window._ciReady=true;
     window._ciPatchView();
   }
 })();

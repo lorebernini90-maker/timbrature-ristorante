@@ -3873,8 +3873,21 @@ avvia();
 
 
 
+
 <script>
 (function() {
+  // Parte subito il MutationObserver - non aspetta nulla
+  function startObserver() {
+    if(window._ciObserver) return;
+    window._ciObserver = new MutationObserver(function() {
+      if(window._ciPatchView && window.state && state.adminTab==='oggi' && state.adminSubTab==='inserisci') {
+        window._ciPatchView();
+      }
+    });
+    window._ciObserver.observe(document.body,{childList:true,subtree:true});
+  }
+  startObserver();
+
   function waitAndInit() {
     if(window.state && window.render && state.dipendenti && state.dipendenti.length > 0) {
       initCI();
@@ -3883,7 +3896,7 @@ avvia();
   waitAndInit();
 
   function initCI() {
-    if(!state.inserisciVista) state.inserisciVista = 'form';
+    if(state.inserisciVista === undefined) state.inserisciVista = 'form';
     if(!state.calInserisciDipId) state.calInserisciDipId = state.dipendenti[0]?.id || '';
     if(state.calInserisciMese === undefined) state.calInserisciMese = state.filtroMese;
     if(state.calInserisciAnno === undefined) state.calInserisciAnno = state.filtroAnno;
@@ -3904,7 +3917,8 @@ avvia();
 
     window.ciRenderCalBody = function() {
       const dipId=state.calInserisciDipId, mese=state.calInserisciMese, anno=state.calInserisciAnno;
-      const pool=getPool(anno+'-'+String(mese+1).padStart(2,'0')+'-01');
+      const msStr=anno+'-'+String(mese+1).padStart(2,'0');
+      const pool=getPool(msStr+'-01');
       const timbs=pool.filter(t=>t.dipendenteId===dipId);
       const dim=new Date(anno,mese+1,0).getDate();
       let sd=new Date(anno,mese,1).getDay(); if(sd===0)sd=7; sd--;
@@ -3927,8 +3941,8 @@ avvia();
       return h+'</div>';
     };
 
-    window.ciMesePrecedente = async function() { let m=state.calInserisciMese-1,a=state.calInserisciAnno; if(m<0){m=11;a--;} state.calInserisciMese=m; state.calInserisciAnno=a; const ms=a+'-'+String(m+1).padStart(2,'0'); if(ms!==state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0')&&window.caricaTimbratureMese) await window.caricaTimbratureMese(ms); render(); };
-    window.ciMeseSuccessivo = async function() { let m=state.calInserisciMese+1,a=state.calInserisciAnno; if(m>11){m=0;a++;} state.calInserisciMese=m; state.calInserisciAnno=a; const ms=a+'-'+String(m+1).padStart(2,'0'); if(ms!==state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0')&&window.caricaTimbratureMese) await window.caricaTimbratureMese(ms); render(); };
+    window.ciMesePrecedente = async function() { let m=state.calInserisciMese-1,a=state.calInserisciAnno; if(m<0){m=11;a--;} state.calInserisciMese=m; state.calInserisciAnno=a; const ms=a+'-'+String(m+1).padStart(2,'0'); if(ms!==(state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0'))&&window.caricaTimbratureMese) await window.caricaTimbratureMese(ms); render(); };
+    window.ciMeseSuccessivo = async function() { let m=state.calInserisciMese+1,a=state.calInserisciAnno; if(m>11){m=0;a++;} state.calInserisciMese=m; state.calInserisciAnno=a; const ms=a+'-'+String(m+1).padStart(2,'0'); if(ms!==(state.filtroAnno+'-'+String(state.filtroMese+1).padStart(2,'0'))&&window.caricaTimbratureMese) await window.caricaTimbratureMese(ms); render(); };
     window.apriGiornoCI = function(dipId,ds) { state.calInserisciGiornoAperto={dipId,data:ds,showForm:false,editTimb:null}; window.ciRenderModal(); };
     window.chiudiModalCI = function() { const m=document.getElementById('ci-modal-bg'); if(m) m.remove(); state.calInserisciGiornoAperto=null; };
     window.ciToggleForm = function() { const tipo=document.getElementById('ci-af-tipo')?.value; const lf=document.getElementById('ci-af-lav'),af=document.getElementById('ci-af-ass'); if(lf) lf.style.display=tipo==='lavoro'?'':'none'; if(af) af.style.display=tipo==='assenza'?'':'none'; };
@@ -3951,17 +3965,17 @@ avvia();
       let tHtml='';
       if(!timbG.length) tHtml='<p style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0">Nessuna timbratura</p>';
       else timbG.forEach(t=>{
-        if(t.tipo==='lavoro'){ const noU=!t.uscita||t.uscita===''||t.uscita==='--:--'; const orari=noU?'<span style="color:#d97706">⚠ Entrata: '+(t.entrata||'?')+' - uscita mancante</span>':(t.entrata||'--:--')+' → '+(t.uscita||'--:--')+' (pausa: '+(t.pausa||0)+'min)'; tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo lav">Turno lavoro</div><div class="ci-ti-orari">'+orari+'</div></div><button class="ci-tb2 ci-tb2-e" onclick="window.ciApriModifica(''+t.id+'')">&#9998;</button><button class="ci-tb2 ci-tb2-d" onclick="window.ciElimina(''+t.id+'',''+dipId+'',''+ds+'')">&#128465;</button></div>'; }
-        else if(t.tipo==='assenza') tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo ass">🚫 '+(t.assenza||'Assenza')+'</div></div><button class="ci-tb2 ci-tb2-d" onclick="window.ciElimina(''+t.id+'',''+dipId+'',''+ds+'')">&#128465;</button></div>';
+        if(t.tipo==='lavoro'){ const noU=!t.uscita||t.uscita===''||t.uscita==='--:--'; const orari=noU?'<span style="color:#d97706">⚠ Entrata: '+(t.entrata||'?')+' - uscita mancante</span>':(t.entrata||'--:--')+' → '+(t.uscita||'--:--')+' (pausa: '+(t.pausa||0)+'min)'; tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo lav">Turno lavoro</div><div class="ci-ti-orari">'+orari+'</div></div><button class="ci-tb2 ci-tb2-e" onclick="window.ciApriModifica(''+t.id+'')">✏</button><button class="ci-tb2 ci-tb2-d" onclick="window.ciElimina(''+t.id+'',''+dipId+'',''+ds+'')">🗑</button></div>'; }
+        else if(t.tipo==='assenza') tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo ass">🚫 '+(t.assenza||'Assenza')+'</div></div><button class="ci-tb2 ci-tb2-d" onclick="window.ciElimina(''+t.id+'',''+dipId+'',''+ds+'')">🗑</button></div>';
       });
       const noU=timbG.filter(t=>t.tipo==='lavoro'&&(!t.uscita||t.uscita===''||t.uscita==='--:--'));
       let chiudiH='';
-      if(noU.length){ const tu=noU[0]; chiudiH='<div class="ci-warn"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e">⚠ Uscita mancante</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Uscita</label><input type="time" id="ci-ch-u-'+tu.id+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pausa (min)</label><input type="number" id="ci-ch-p-'+tu.id+'" value="'+(tu.pausa||30)+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div></div><button style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;width:100%;cursor:pointer;font-weight:600" onclick="window.ciChiudiGiornata(''+tu.id+'',''+dipId+'',''+ds+'')">&#128190; Chiudi giornata</button></div>'; }
+      if(noU.length){ const tu=noU[0]; chiudiH='<div class="ci-warn"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e">⚠ Uscita mancante</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Uscita</label><input type="time" id="ci-ch-u-'+tu.id+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div><div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Pausa (min)</label><input type="number" id="ci-ch-p-'+tu.id+'" value="'+(tu.pausa||30)+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div></div><button style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;width:100%;cursor:pointer;font-weight:600" onclick="window.ciChiudiGiornata(''+tu.id+'',''+dipId+'',''+ds+'')">💾 Chiudi giornata</button></div>'; }
       let editH='';
-      if(editTimb){ const t=pool.find(x=>x.id===editTimb); if(t&&t.tipo==='lavoro'){ editH='<div class="ci-af" style="border-color:#3b82f6;background:#eff6ff"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8">&#9998; Modifica</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-ef-en" value="'+(t.entrata||'')+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-us" value="'+(t.uscita||'')+'"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa (min)</label><input type="number" id="ci-ef-pa" value="'+(t.pausa||30)+'"></div><div><label>Sede</label><select id="ci-ef-se">'+sOpts(t.sede)+'</select></div></div><button class="ci-sv" style="background:#3b82f6" onclick="window.ciSalvaModifica(''+t.id+'',''+dipId+'',''+ds+'')">&#128190; Salva</button><button class="ci-cv" onclick="window.ciAnnullaModifica()">Annulla</button></div>'; } }
+      if(editTimb){ const t=pool.find(x=>x.id===editTimb); if(t&&t.tipo==='lavoro'){ editH='<div class="ci-af" style="border-color:#3b82f6;background:#eff6ff"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8">✏ Modifica</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-ef-en" value="'+(t.entrata||'')+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-us" value="'+(t.uscita||'')+'"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa (min)</label><input type="number" id="ci-ef-pa" value="'+(t.pausa||30)+'"></div><div><label>Sede</label><select id="ci-ef-se">'+sOpts(t.sede)+'</select></div></div><button class="ci-sv" style="background:#3b82f6" onclick="window.ciSalvaModifica(''+t.id+'',''+dipId+'',''+ds+'')">💾 Salva</button><button class="ci-cv" onclick="window.ciAnnullaModifica()">Annulla</button></div>'; } }
       let addH='';
-      if(showForm){ addH='<div class="ci-af"><div style="margin-bottom:10px"><label>Tipo</label><select id="ci-af-tipo" onchange="window.ciToggleForm()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lav"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-af-en"></div><div><label>Uscita</label><input type="time" id="ci-af-us"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa (min)</label><input type="number" id="ci-af-pa" value="30"></div><div><label>Sede</label><select id="ci-af-se">'+sOpts(dipSede)+'</select></div></div></div><div id="ci-af-ass" style="display:none"><div style="margin-bottom:10px"><label>Tipo assenza</label><select id="ci-af-voci">'+VOCI.map(v=>'<option>'+v+'</option>').join('')+'</select></div><div style="margin-bottom:10px"><label>Sede</label><select id="ci-af-se-ass">'+sOpts(dipSede)+'</select></div></div><button class="ci-sv" onclick="window.ciSalvaTimb(''+dipId+'',''+ds+'')">&#128190; Salva</button><button class="ci-cv" onclick="window.ciNascondiForm()">Annulla</button></div>'; }
-      document.body.insertAdjacentHTML('beforeend','<div class="ci-mbg" id="ci-modal-bg" onclick="if(event.target===this)window.chiudiModalCI()"><div class="ci-mc"><div class="ci-mh"><div><div class="ci-mt2">&#128197; '+dlabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px">'+dipNome+'</div></div><button class="ci-mx" onclick="window.chiudiModalCI()">&times;</button></div>'+chiudiH+tHtml+editH+(!showForm&&!editTimb?'<button class="ci-add" onclick="window.ciMostraForm()">+ Aggiungi timbratura</button>':'')+addH+'</div></div>');
+      if(showForm){ addH='<div class="ci-af"><div style="margin-bottom:10px"><label>Tipo</label><select id="ci-af-tipo" onchange="window.ciToggleForm()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lav"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-af-en"></div><div><label>Uscita</label><input type="time" id="ci-af-us"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa (min)</label><input type="number" id="ci-af-pa" value="30"></div><div><label>Sede</label><select id="ci-af-se">'+sOpts(dipSede)+'</select></div></div></div><div id="ci-af-ass" style="display:none"><div style="margin-bottom:10px"><label>Tipo assenza</label><select id="ci-af-voci">'+VOCI.map(v=>'<option>'+v+'</option>').join('')+'</select></div><div style="margin-bottom:10px"><label>Sede</label><select id="ci-af-se-ass">'+sOpts(dipSede)+'</select></div></div><button class="ci-sv" onclick="window.ciSalvaTimb(''+dipId+'',''+ds+'')">💾 Salva</button><button class="ci-cv" onclick="window.ciNascondiForm()">Annulla</button></div>'; }
+      document.body.insertAdjacentHTML('beforeend','<div class="ci-mbg" id="ci-modal-bg" onclick="if(event.target===this)window.chiudiModalCI()"><div class="ci-mc"><div class="ci-mh"><div><div class="ci-mt2">📅 '+dlabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px">'+dipNome+'</div></div><button class="ci-mx" onclick="window.chiudiModalCI()">&times;</button></div>'+chiudiH+tHtml+editH+(!showForm&&!editTimb?'<button class="ci-add" onclick="window.ciMostraForm()">+ Aggiungi timbratura</button>':'')+addH+'</div></div>');
     };
 
     async function getDB(){ const{getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'); const{getFirestore}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); return getFirestore(getApps()[0]); }
@@ -3972,27 +3986,32 @@ avvia();
     window.ciChiudiGiornata = async function(tid,dipId,ds){ const u=document.getElementById('ci-ch-u-'+tid)?.value||''; if(!u){alert("Inserisci l'orario di uscita");return;} const upd={uscita:u,pausa:parseInt(document.getElementById('ci-ch-p-'+tid)?.value)||30}; try{ const db=await getDB(); const{updateDoc,doc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'); await updateDoc(doc(db,'timbrature',tid),upd); const p=getPool(ds),i=p.findIndex(t=>t.id===tid); if(i>=0) Object.assign(p[i],upd); window.ciRenderModal(); render(); }catch(err){alert('Errore: '+err.message);} };
 
     window._ciPatchView = function() {
-      if(state.adminTab!=='oggi'||state.adminSubTab!=='inserisci') return;
+      if(!window.state || state.adminTab!=='oggi' || state.adminSubTab!=='inserisci') return;
       const ac=document.querySelector('.admin-content');
       if(!ac) return;
-      const dipId=state.calInserisciDipId||state.dipendenti[0]?.id||'';
+
+      // Vista CALENDARIO
       if(state.inserisciVista==='calendario'){
+        const dipId=state.calInserisciDipId||state.dipendenti[0]?.id||'';
         const dOpts=state.dipendenti.filter(d=>d.attivo!==false).map(d=>'<option value="'+d.id+'"'+(d.id===dipId?' selected':'')+'>'+d.nome+'</option>').join('');
-        ac.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="ci-vbtn" onclick="state.inserisciVista='form';render()">&#9998; Modulo</button><button class="ci-vbtn act">&#128197; Calendario</button><select onchange="state.calInserisciDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">'+dOpts+'</select><div style="display:flex;align-items:center;gap:6px"><button onclick="window.ciMesePrecedente()" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">&#9668;</button><strong style="min-width:130px;text-align:center">'+MESI[state.calInserisciMese]+' '+state.calInserisciAnno+'</strong><button onclick="window.ciMeseSuccessivo()" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">&#9658;</button></div></div>'+window.ciRenderCalBody();
+        ac.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="ci-vbtn" onclick="state.inserisciVista='form';render()">✏ Modulo</button><button class="ci-vbtn act">📅 Calendario</button><select onchange="state.calInserisciDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">'+dOpts+'</select><div style="display:flex;align-items:center;gap:6px"><button onclick="window.ciMesePrecedente()" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">◀</button><strong style="min-width:130px;text-align:center">'+MESI[state.calInserisciMese]+' '+state.calInserisciAnno+'</strong><button onclick="window.ciMeseSuccessivo()" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">▶</button></div></div>'+window.ciRenderCalBody();
         return;
       }
+
+      // Vista FORM - aggiungo solo i pulsanti se non ci sono già
       if(!document.getElementById('ci-view-toggle-btn')){
         const h2=ac.querySelector('h2');
-        if(h2){ const div=document.createElement('div'); div.id='ci-view-toggle-btn'; div.style.cssText='margin-bottom:12px;display:flex;gap:8px'; div.innerHTML='<button class="ci-vbtn act">&#9998; Modulo</button><button class="ci-vbtn" onclick="state.calInserisciDipId=document.getElementById('ai-dip')?.value||state.dipendenti[0]?.id||'';state.calInserisciMese=state.filtroMese;state.calInserisciAnno=state.filtroAnno;state.inserisciVista='calendario';render()">&#128197; Vista Calendario</button>'; ac.insertBefore(div,h2); }
+        if(h2){
+          const div=document.createElement('div');
+          div.id='ci-view-toggle-btn';
+          div.style.cssText='margin-bottom:12px;display:flex;gap:8px';
+          div.innerHTML='<button class="ci-vbtn act">✏ Modulo</button><button class="ci-vbtn" onclick="state.calInserisciDipId=document.getElementById('ai-dip')?.value||state.dipendenti[0]?.id||'';state.calInserisciMese=state.filtroMese;state.calInserisciAnno=state.filtroAnno;state.inserisciVista='calendario';render()">📅 Vista Calendario</button>';
+          ac.insertBefore(div,h2);
+        }
       }
     };
 
-    if(!window._ciObserver){
-      window._ciObserver = new MutationObserver(function() {
-        if(window.state&&state.adminTab==='oggi'&&state.adminSubTab==='inserisci') window._ciPatchView();
-      });
-      window._ciObserver.observe(document.body,{childList:true,subtree:true});
-    }
+    // Chiama subito se siamo già su inserisci
     window._ciPatchView();
   }
 })();

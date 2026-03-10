@@ -4206,7 +4206,7 @@ avvia();
       const _r=window.render;
       window.render=function(){
         _r.apply(this,arguments);
-        if(state.adminTab==='oggi'&&state.adminSubTab==='inserisci') _ciPatchView();
+       if(state.adminTab==='oggi'&&state.adminSubTab==='inserisci') setTimeout(_ciPatchView,80);
       };
     }
 

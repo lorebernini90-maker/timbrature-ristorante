@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable"ontent="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Timbrature">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-12.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <title>Timbrature Ristorante</title>
 <style>
@@ -1714,11 +1714,11 @@ function getRiepilogo() {
       if(!agg) return;
       nTurni++;
       const c = agg.calcolo;
-      tot  += c.totaleMin;
-      diur += c.ordDiurnoMin;
-      nott += c.ordNottMin;
-      strD += c.strDiurnoMin;
-      strN += c.strNottMin;
+      tot  += c.totaleMin      || 0;
+      diur += c.diurneMin      || 0;
+      nott += c.ordNottMin     || 0;
+      strD += c.strDiurniMin   || 0;
+      strN += c.strNotturniMin || 0;
     });
     const assCnt = {};
     VOCI_ASSENZA.forEach(v => { assCnt[v] = ass.filter(a => a.assenza === v && new Date(a.data).getDay() !== 0).length; });

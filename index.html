@@ -3322,7 +3322,7 @@ function esportaExcel() {
       const agg = aggregaTurniGiorno(turni, dip);
       if(agg?.calcolo) {
         totLav  += agg.calcolo?.totaleMin || 0;
-        totStr  += ((agg.calcolo?.strDiurniMin)||0) + ((agg.calcolo?.strNotturniMin||0);
+        totStr  += (agg.calcolo?.strDiurniMin||0) + (agg.calcolo?.strNotturniMin||0);
         totNott += agg.calcolo?.notturneMin || 0;
       }
     });

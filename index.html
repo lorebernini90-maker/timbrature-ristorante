@@ -1194,8 +1194,10 @@ function renderDipendente() {
 
 function renderDipTimbra(dip) {
   const ora=oraNow();
+  const _ieri=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
   const turniOggi=state.timbrature.filter(t=>t.dipendenteId===dip.id&&t.data===oggi()&&t.tipo==="lavoro");
-  const turnoAperto=turniOggi.find(t=>t.aperto===true||(!t.uscita&&t.entrata));
+  const turnoAperto=turniOggi.find(t=>t.aperto===true||(!t.uscita&&t.entrata))
+    || state.timbrature.find(t=>t.dipendenteId===dip.id&&t.data===_ieri&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
   const turniChiusi=turniOggi.filter(t=>t.uscita);
   const hasAssenzaOggi=state.timbrature.find(t=>t.dipendenteId===dip.id&&t.data===oggi()&&t.tipo==="assenza");
 
@@ -1604,7 +1606,8 @@ function renderAdminDashboard() {
     </div>` : ""}
 
     ${(()=>{
-      const turniAperti = state.timbrature.filter(t=>t.data===dataOggi&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
+      const _dataIeri=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+  const turniAperti = state.timbrature.filter(t=>(t.data===dataOggi||t.data===_dataIeri)&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
       if(!turniAperti.length) return "";
       return `<div style="margin-bottom:20px">
         <div style="font-size:12px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">⚠️ Turni aperti senza uscita (${turniAperti.length})</div>
@@ -1990,7 +1993,8 @@ function renderAdminInserisci() {
 
     <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">✏️ Inserisci timbratura manuale</h2>
     ${(()=>{
-      const turniAperti=state.timbrature.filter(t=>t.data===oggi()&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
+      const _ieriIns=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+  const turniAperti=state.timbrature.filter(t=>(t.data===oggi()||t.data===_ieriIns)&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
       if(!turniAperti.length) return "";
       return `<div style="background:#fef9f0;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:16px">
         <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">⚠️ Turni aperti oggi — aggiungi l'uscita manualmente</div>

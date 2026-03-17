@@ -3243,9 +3243,6 @@ function esportaExcel() {
           const orari2 = isSpezzato2 ? mov.turni.map(t=>`${t.entrata}→${t.uscita}`).join("+") : `${mov.turni[0].entrata||""}→${mov.turni[0].uscita||""}`;
           let cella = `LAV ${minToHHMM(c2.totaleMin)}`;
           if(isSpezzato2) cella += " (sp)";
-          if(c2.ordNottMin > 0) cella += ` N${minToHHMM(c2.ordNottMin)}`;
-          if(c2.strDiurniMin > 0) cella += ` SD${minToHHMM(c2.strDiurniMin)}`;
-          if(c2.strNotturniMin > 0) cella += ` SN${minToHHMM(c2.strNotturniMin)}`;
           parti2.push(cella);
         } else {
           parti2.push("(aperto)");
@@ -3259,8 +3256,9 @@ function esportaExcel() {
 
   // Righe totali in fondo
   const rigaTotLav2=["TOTALE ORE LAV.",""];
-  const rigaTotStr2=["di cui STR.",""];
-  const rigaTotNott2=["di cui NOTT.ORD.",""];
+  const rigaTotNott2=["di cui ORD. NOTT.",""];
+  const rigaTotStrD2=["di cui STR. DIURNI",""];
+  const rigaTotStrN2=["di cui STR. NOTTURNI",""];
   const rigaFerie2=["Ferie (h)",""];
   const rigaPermessi2=["Permessi (h)",""];
   const rigaMalattia2=["Malattia (h)",""];
@@ -3271,20 +3269,21 @@ function esportaExcel() {
     const assenzeDip2=tm.filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
     const perGiorno2={};
     turniDip2.forEach(t=>{if(!perGiorno2[t.data])perGiorno2[t.data]=[];perGiorno2[t.data].push(t);});
-    let totLav2=0,totStr2=0,totNott2=0;
+    let totLav2=0,totStrD2=0,totStrN2=0,totNott2=0;
     Object.values(perGiorno2).forEach(turni=>{
       const agg=aggregaTurniGiorno(turni,dip);
-      if(agg?.calcolo){totLav2+=agg.calcolo.totaleMin||0;totStr2+=(agg.calcolo.strDiurniMin||0)+(agg.calcolo.strNotturniMin||0);totNott2+=agg.calcolo.ordNottMin||0;}
+      if(agg?.calcolo){totLav2+=agg.calcolo.totaleMin||0;totStrD2+=agg.calcolo.strDiurniMin||0;totStrN2+=agg.calcolo.strNotturniMin||0;totNott2+=agg.calcolo.ordNottMin||0;}
     });
     rigaTotLav2.push(minToHHMM(totLav2));
-    rigaTotStr2.push(minToHHMM(totStr2));
     rigaTotNott2.push(minToHHMM(totNott2));
+    rigaTotStrD2.push(minToHHMM(totStrD2));
+    rigaTotStrN2.push(minToHHMM(totStrN2));
     rigaFerie2.push((assenzeDip2.filter(a=>a.assenza==="Ferie").length*oreDip).toFixed(1)+"h");
     rigaPermessi2.push((assenzeDip2.filter(a=>a.assenza==="Permesso").length*oreDip).toFixed(1)+"h");
     rigaMalattia2.push((assenzeDip2.filter(a=>a.assenza==="Malattia").length*oreDip).toFixed(1)+"h");
     rigaRiposo2.push(assenzeDip2.filter(a=>a.assenza==="Riposo Compensativo").length+"g");
   });
-  righeTab2.push([],[...rigaTotLav2],[...rigaTotStr2],[...rigaTotNott2],[],[...rigaFerie2],[...rigaPermessi2],[...rigaMalattia2],[...rigaRiposo2]);
+  righeTab2.push([],[...rigaTotLav2],[...rigaTotNott2],[...rigaTotStrD2],[...rigaTotStrN2],[],[...rigaFerie2],[...rigaPermessi2],[...rigaMalattia2],[...rigaRiposo2]);
 
   const ws2=XLSX.utils.aoa_to_sheet(righeTab2);
   ws2["!cols"]=[{wch:18},{wch:10},...dipAttivi.map(()=>({wch:22}))];

@@ -1783,6 +1783,7 @@ function renderAdminReport() {
         const agg=aggregaTurniGiorno(ts,dip); if(!agg) return;
         if(!agg.calcolo) return;
         nTurni++; const c=agg.calcolo;
+        if(!c) return;
         tot+=c.totaleMin||0; diur+=c.diurneMin||0; nott+=c.ordNottMin||0; strD+=c.strDiurniMin||0; strN+=c.strNotturniMin||0;
       });
       const assCnt={};
@@ -3173,6 +3174,7 @@ function esportaCSV() {
 function esportaExcel() {
   const tm=getTimbMese();
   const wb=XLSX.utils.book_new();
+  const _turniAperti=tm.filter(t=>t.tipo==="lavoro"&&t.aperto&&!t.uscita).length;
 
   // ── FOGLIO 1: RIEPILOGO ──
   const righeRiepilogo=[["Dipendente","Contratto","Giorni Lav.","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie (h)","Permessi (h)","Malattia (h)","Riposo Comp. (h)","Giorno Libero (h)"]];
@@ -3206,7 +3208,7 @@ function esportaExcel() {
   Object.values(perDipData).sort((a,b)=>a.data.localeCompare(b.data)).forEach(({dip,data,turni,sede})=>{
     if(!dip) return;
     const agg=aggregaTurniGiorno(turni,dip);
-    if(!agg) return;
+    if(!agg||!agg.calcolo) return;
     const c=agg.calcolo;
     const isSpezzato=turni.length>1;
     const orari=isSpezzato?turni.map(t=>`${t.entrata}→${t.uscita}`).join(" + "):`${turni[0].entrata||""}→${turni[0].uscita||""}`;
@@ -3287,7 +3289,7 @@ function esportaExcel() {
       if(mov.turni.length > 0) {
         const agg = aggregaTurniGiorno(mov.turni, dip);
         const c = agg ? agg.calcolo : null;
-        const oreStr = c ? minToHHMM(c.totaleMin) : "";
+        const oreStr = c ? minToHHMM(c.totaleMin) : "(aperto)";
         const isSpezzato = mov.turni.length > 1;
         parti.push(`LAV ${oreStr}${isSpezzato?" (sp)":""}`);
       }

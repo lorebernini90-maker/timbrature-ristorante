@@ -269,7 +269,7 @@ function generaPIN4() {
 }
 
 function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
-function minToHHMM(min) { if(!min||min<=0) return "0:00"; return `${Math.floor(min/60)}:${String(min%60).padStart(2,"0")}`; }
+function minToHHMM(min) { if(!min||min<=0) return "0:00"; const m=Math.round(min); return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`; }
 function oggi() { return new Date().toISOString().split("T")[0]; }
 function oraNow() { const n=new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
 function euro(n) { return `€ ${(n||0).toFixed(2)}`; }

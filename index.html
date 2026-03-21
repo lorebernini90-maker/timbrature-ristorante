@@ -2218,7 +2218,7 @@ function renderAdminSettimane() {
     const dip = state.dipendenti.find(d=>d.id===dipendenteId);
     const agg = dip ? aggregaTurniGiorno(turni, dip) : null;
     const min = agg ? agg.calcolo?.totaleMin : turni.reduce((s,t)=>s+(t.calcolo?.totaleMin||0),0);
-    const d=new Date(data), sw=new Date(d); sw.setDate(d.getDate()-d.getDay()+1);
+    const d=new Date(data), sw=new Date(d); const _dow=d.getDay(); sw.setDate(d.getDate()+(_dow===0?-6:1-_dow));
     const k=sw.toISOString().split("T")[0];
     if(!sett[k]) sett[k]={};
     if(!sett[k][dipendenteId]) sett[k][dipendenteId]=0;

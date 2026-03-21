@@ -2237,7 +2237,7 @@ function renderAdminSettimane() {
       return `<div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
         <div style="background:#fffbeb;padding:8px 14px;font-weight:700;font-size:13px;color:#92400e">Settimana ${sw} → ${fine.toISOString().split("T")[0]}</div>
         <div style="padding:8px 14px">${state.dipendenti.map(dip=>{
-          const min=sett[sw]?.[dip.id]||0, str=Math.max(0,min-40*60);
+          const min=sett[sw]?.[dip.id]||0, str=Math.max(0,min-sogliaMinutiDip(dip)*6);
           return `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f9fafb">
             <span>${dip.nome}</span>
             <div style="display:flex;gap:10px"><span style="font-weight:600">${minToHHMM(min)}h</span>

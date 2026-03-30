@@ -767,12 +767,12 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
       const calcolo = calcolaTurno(v.entrata, v.uscita, v.pausa, sogliaEff);
       const docData = {dipendenteId:dipId,data,tipo:"lavoro",entrata:v.entrata,uscita:v.uscita,pausa:v.pausa,calcolo,sede};
       if(sogliaCustom>0) docData.sogliaCustom=sogliaCustom;
-      await addDoc(collection(db,"timbrature"),docData);
+      await addDoc(collection(db,"timbrature"),docData).then(ref=>{state.timbrature.push({...docData,id:ref.id});});
       inseriti++;
     }
     window._irGiorni={};
     const el=document.getElementById("calendario-rapido");
-    if(el) el.innerHTML=renderCalendarioRapidoHTML();
+    if(el) el.innerHTML=renderCalendarioRapidoHTML(); render();
     alert(`✅ Inseriti ${inseriti} turni per ${dip.nome}!`);
   }
   else if(t.dataset.salvaTimbraturaAdmin!==undefined) {

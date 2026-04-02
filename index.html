@@ -2078,7 +2078,7 @@ function renderAdminInserisci() {
           <input type="month" id="ir-mese" value="${new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')}" onchange="renderCalendarioRapido()">
         </div>
         <div><label>Sede</label>
-          <select id="ir-sede">${SEDI.map(s=>`<option>${s}</option>`).join("")}</select>
+          <select id="ir-sede">${SEDI.map(s=>`<option${s===(state.filtroSede||SEDI[0])?" selected":""}>${s}</option>`).join("")}</select>
         </div>
       </div>
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px">

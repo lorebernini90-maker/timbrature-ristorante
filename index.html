@@ -1831,7 +1831,7 @@ function renderCalendarioRapidoHTML() {
   const gg = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
   const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
   const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
-  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  const paDef = (()=>{const _v=parseInt(document.getElementById("ir-pausa-default")?.value);return isNaN(_v)?30:_v;})();
 
   let html = '<div style="display:flex;flex-direction:column;gap:6px">';
   for(let g=1; g<=giorniMese; g++) {

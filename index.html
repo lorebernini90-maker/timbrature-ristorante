@@ -292,7 +292,7 @@ function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
 }
 
  window.ricalcolaNotturni = async function() {
-    const turni = state.timbrature.filter(t => t.tipo==="lavoro" && t.entrata && t.uscita && t.entrata<"06:00");
+    const turni = state.timbrature.filter(t => t.tipo==="lavoro" && t.entrata && t.uscita && (t.entrata<"06:00"||t.uscita<t.entrata||(t.calcolo&&(t.calcolo.notturneMin>0||t.calcolo.straordinariMin>0))));
     let ok=0, err=0;
     for(const t of turni) {
       try {

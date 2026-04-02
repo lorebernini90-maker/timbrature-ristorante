@@ -287,8 +287,7 @@ function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
   if(u>1440) nott+=Math.min(u-1440,N2);
   nott=Math.max(0,nott);
   const diur=Math.max(0,tot-nott);
-  const strN=Math.min(str,nott), strD=Math.max(0,str-strN);
-  const ordNott=Math.max(0,nott-strN);
+  let strN=0; if(str>0){const strStart=e+soglia; if(strStart<N2) strN+=Math.min(u,N2)-Math.max(strStart,0); if(u>N1) strN+=Math.min(u,1440)-Math.max(strStart,N1); if(u>1440) strN+=Math.min(u,1440+N2)-Math.max(strStart,1440); strN=Math.max(0,Math.min(strN,str));} const strD=Math.max(0,str-strN); const ordNott=Math.max(0,nott-strN);
   return {totaleMin:tot,diurneMin:diur,notturneMin:nott,straordinariMin:str,strDiurniMin:strD,strNotturniMin:strN,ordNottMin:ordNott};
 }
 

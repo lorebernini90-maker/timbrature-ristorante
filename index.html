@@ -1893,7 +1893,7 @@ async function renderCalendarioRapido() {
 function toggleGiornoRapido(data, checked) {
   const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
   const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
-  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  const paDef = (()=>{const _v=parseInt(document.getElementById("ir-pausa-default")?.value);return isNaN(_v)?30:_v;})();
   if(!window._irGiorni[data]) window._irGiorni[data]={sel:false,entrata:enDef,uscita:usDef,pausa:paDef};
   window._irGiorni[data].sel = checked;
   const el = document.getElementById("calendario-rapido");
@@ -1908,7 +1908,7 @@ function aggiornaGiornoRapido(data, campo, valore) {
 function aggiornaDefaultOrari() {
   const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
   const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
-  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  const paDef = (()=>{const _v=parseInt(document.getElementById("ir-pausa-default")?.value);return isNaN(_v)?30:_v;})();
   // Aggiorna solo i giorni che non sono stati modificati manualmente
   Object.keys(window._irGiorni).forEach(data => {
     if(!window._irGiorni[data]._modificato) {
@@ -1929,7 +1929,7 @@ function selezionaTuttiGiorni(sel) {
   const giorniMese = new Date(anno, m, 0).getDate();
   const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
   const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
-  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  const paDef = (()=>{const _v=parseInt(document.getElementById("ir-pausa-default")?.value);return isNaN(_v)?30:_v;})();
   for(let g=1; g<=giorniMese; g++) {
     const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
     if(!window._irGiorni[dataStr]) window._irGiorni[dataStr]={entrata:enDef,uscita:usDef,pausa:paDef};
@@ -1947,7 +1947,7 @@ function selezionaSoloFeriali() {
   const giorniMese = new Date(anno, m, 0).getDate();
   const enDef = document.getElementById("ir-entrata-default")?.value||"09:00";
   const usDef = document.getElementById("ir-uscita-default")?.value||"17:00";
-  const paDef = parseInt(document.getElementById("ir-pausa-default")?.value)||30;
+  const paDef = (()=>{const _v=parseInt(document.getElementById("ir-pausa-default")?.value);return isNaN(_v)?30:_v;})();
   for(let g=1; g<=giorniMese; g++) {
     const dataStr = `${anno}-${String(m).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
     const dow = new Date(anno, m-1, g).getDay();

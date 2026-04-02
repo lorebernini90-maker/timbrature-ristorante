@@ -294,19 +294,24 @@ function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
  window.ricalcolaNotturni = async function() {
     const turni = state.timbrature.filter(t => t.tipo==="lavoro" && t.entrata && t.uscita && (t.entrata<"06:00"||t.uscita<t.entrata||(t.calcolo&&(t.calcolo.notturneMin>0||t.calcolo.straordinariMin>0))));
     let ok=0, err=0;
-    for(const t of turni) {
-      try {
-        const dip = state.dipendenti.find(d=>d.id===t.dipendenteId);
-        const soglia = (t.sogliaCustom&&t.sogliaCustom>0) ? t.sogliaCustom : sogliaMinutiDip(dip);
-        const c = calcolaTurno(t.entrata, t.uscita, t.pausa||0, soglia);
-        await updateDoc(doc(db,"timbrature",t.id), {calcolo:c});
-        state.timbrature.find(x=>x.id===t.id).calcolo = c;
-        ok++;
-      } catch(e) { err++; console.error(t.id, e); }
+    for(let i=0; i<turni.length; i+=5) {
+      const batch = turni.slice(i, i+5);
+      for(const t of batch) {
+        try {
+          const dip = state.dipendenti.find(d=>d.id===t.dipendenteId);
+          const soglia = (t.sogliaCustom&&t.sogliaCustom>0)?t.sogliaCustom:sogliaMinutiDip(dip);
+          const c = calcolaTurno(t.entrata, t.uscita, t.pausa||0, soglia);
+          await updateDoc(doc(db,"timbrature",t.id), {calcolo:c});
+          state.timbrature.find(x=>x.id===t.id).calcolo = c;
+          ok++;
+        } catch(e) { err++; console.error(t.id, e); }
+      }
+      await new Promise(r=>setTimeout(r,200));
+      document.title = "Ricalcolo " + ok + "/" + turni.length;
     }
     render();
-    alert("Ricalcolo completato: " + ok + " aggiornati, " + err + " errori");
-  };
+    alert("Ricalcolo completato: " + ok + " ok, " + err + " errori");
+  }
   function sogliaMinutiDip(dip) {
   if(dip.sogliaOre) return Math.round(dip.sogliaOre*60);
   return 400;

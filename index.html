@@ -782,7 +782,10 @@ document.addEventListener("click", async function(e) {
 Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     }
     let inseriti=0;
+    const _inseriti=new Set(state.timbrature.filter(t=>t.dipendenteId===dipId&&t.tipo==="lavoro").map(t=>t.data));
     for(const [data,v] of giorni) {
+      if(_inseriti.has(data)){console.warn("Duplicato saltato:",data);continue;}
+      _inseriti.add(data);
       const sogliaEff = sogliaCustom>0?sogliaCustom:sogliaMinutiDip(dip);
       const calcolo = calcolaTurno(v.entrata, v.uscita, v.pausa, sogliaEff);
       const docData = {dipendenteId:dipId,data,tipo:"lavoro",entrata:v.entrata,uscita:v.uscita,pausa:v.pausa,calcolo,sede};

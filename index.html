@@ -76,12 +76,12 @@ tr:hover td { background: #fffbeb; }
   .tooltip-text::before { content:""; position:absolute; top:-4px; left:10px;
     border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:4px solid #1e293b; }
 
-/* âââââââââââââââââââââââââââââââââââââââ
+/* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
    MOBILE RESPONSIVE
-âââââââââââââââââââââââââââââââââââââââ */
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
 @media (max-width: 640px) {
 
-  /* Header admin piÃ¹ compatto */
+  /* Header admin piÃÂ¹ compatto */
   .admin-header { flex-direction: column; align-items: flex-start !important; gap: 10px; padding: 12px 14px !important; }
   .admin-header-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
   .admin-header-actions select,
@@ -100,11 +100,11 @@ tr:hover td { background: #fffbeb; }
   /* Contenuto admin padding ridotto */
   .admin-content { padding: 14px !important; }
 
-  /* Tabelle â scroll orizzontale con indicatore */
+  /* Tabelle Ã¢ÂÂ scroll orizzontale con indicatore */
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table-scroll table { min-width: 500px; }
 
-  /* Tabelle dense â card mobile */
+  /* Tabelle dense Ã¢ÂÂ card mobile */
   .table-to-cards thead { display: none; }
   .table-to-cards tr { display: block; background: white; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; padding: 10px 12px; }
   .table-to-cards td { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-top: 1px solid #f3f4f6; font-size: 13px; }
@@ -119,7 +119,7 @@ tr:hover td { background: #fffbeb; }
   .btn { padding: 11px 18px !important; font-size: 14px !important; min-height: 44px; }
   .btn-sm { padding: 8px 12px !important; font-size: 13px !important; min-height: 38px; }
 
-  /* Input e select piÃ¹ alti */
+  /* Input e select piÃÂ¹ alti */
   input, select { padding: 11px 12px !important; font-size: 15px !important; min-height: 44px; }
 
   /* Row responsive */
@@ -152,7 +152,7 @@ tr:hover td { background: #fffbeb; }
   .grid-auto { grid-template-columns: 1fr !important; }
   .macro-tabs button { padding: 7px 10px !important; font-size: 11px !important; }
 }
-  /* âââ CALENDARIO INSERISCI âââ */
+  /* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ CALENDARIO INSERISCI Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ */
   .ci-vbtn{padding:6px 14px;border:1px solid #f59e0b;border-radius:6px;background:#fff;color:#f59e0b;font-size:13px;cursor:pointer;font-weight:600;}
   .ci-vbtn.act{background:#f59e0b;color:#fff;}
   .ci-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;}
@@ -277,7 +277,7 @@ function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); r
 function minToHHMM(min) { if(!min||min<=0) return "0:00"; const m=Math.round(min); return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`; }
 function oggi() { return new Date().toISOString().split("T")[0]; }
 function oraNow() { const n=new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
-function euro(n) { return `â¬ ${(n||0).toFixed(2)}`; }
+function euro(n) { return `Ã¢ÂÂ¬ ${(n||0).toFixed(2)}`; }
 
 function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
   if(!entrata||!uscita) return null;
@@ -338,8 +338,8 @@ function sogliaPerTurno(timb, dip) {
   return sogliaMinutiDip(dip);
 }
 
-// ââ AGGREGAZIONE TURNI SPEZZATI ââââââââââââââââââââââââââââââââ
-// Raggruppa piÃ¹ turni dello stesso giorno per un dipendente e ricalcola
+// Ã¢ÂÂÃ¢ÂÂ AGGREGAZIONE TURNI SPEZZATI Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+// Raggruppa piÃÂ¹ turni dello stesso giorno per un dipendente e ricalcola
 // straordinari sul totale giornaliero (non per singolo turno)
 function aggregaTurniGiorno(turniGiorno, dip) {
   if(!turniGiorno.length) return null;
@@ -464,7 +464,7 @@ function calcolaCostoAssenzeMensili(dipId) {
     .map(a => a.data);
   const episodi = raggruppaEpisodiMalattia(dateMalattiaTutte);
 
-  // Costruisce mappa dataâ{episodioIndex, giornoProgressivo}
+  // Costruisce mappa dataÃ¢ÂÂ{episodioIndex, giornoProgressivo}
   const mapaGiornoProgressivo = {};
   episodi.forEach((ep, idx) => {
     ep.forEach((data, i) => {
@@ -495,7 +495,7 @@ function calcolaCostoAssenzeMensili(dipId) {
     if(v === "Malattia" || v === "Giorno Libero") return;
     const giorni = assenzeValide.filter(a => a.assenza === v).length;
     // Congedo Parentale: costo 0 (INPS eroga 30% direttamente al dipendente)
-    // Riposo Compensativo: costo 0 (giÃ  pagato nel giorno lavorato extra)
+    // Riposo Compensativo: costo 0 (giÃÂ  pagato nel giorno lavorato extra)
     const costoZero = v === "Congedo Parentale" || v === "Riposo Compensativo";
     const costo = costoZero ? 0 : giorni * costoGiorno;
     dettaglio[v] = { giorni, ore: giorni * oreDip, costo, costoZero };
@@ -519,7 +519,7 @@ function calcolaCostoAssenzeMensili(dipId) {
            tariffa: dip.tariffaOraria, costoMalattia, dettaglioMalattia };
 }
 
-// ââ HELPER ANNUALE: calcola costo da array di timbrature passato dall'esterno ââ
+// Ã¢ÂÂÃ¢ÂÂ HELPER ANNUALE: calcola costo da array di timbrature passato dall'esterno Ã¢ÂÂÃ¢ÂÂ
 function calcolaCostoDaTurni(dipId, turniExt) {
   const dip = state.dipendenti.find(d => d.id === dipId);
   if(!dip?.tariffaOraria) return null;
@@ -673,7 +673,7 @@ async function avvia() {
     ascoltaTimbrature();
     state.vista="login"; render();
   } catch(e) {
-    document.getElementById("app").innerHTML=`<div class="loading"><div style="color:#dc2626">â Errore Firebase: ${e.message}</div></div>`;
+    document.getElementById("app").innerHTML=`<div class="loading"><div style="color:#dc2626">Ã¢ÂÂ Errore Firebase: ${e.message}</div></div>`;
   }
 }
 
@@ -728,7 +728,7 @@ document.addEventListener("click", async function(e) {
     if(!confirm(`Confermi entrata alle ${ora}?`))return;
     const _newTimb704 = await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
     state.timbrature.push({id:_newTimb704.id,dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
-    alert(`â Entrata registrata alle ${ora}`);
+    alert(`Ã¢ÂÂ Entrata registrata alle ${ora}`);
   }
   else if(t.dataset.timbraUscita!==undefined) {
     const dip=state.utenteCorrente;
@@ -741,7 +741,7 @@ document.addEventListener("click", async function(e) {
     const calcolo=calcolaTurno(timb.entrata,ora,pausaNum,sogliaMinutiDip(dip));
     await updateDoc(doc(db,"timbrature",timbId),{uscita:ora,pausa:pausaNum,calcolo,aperto:false});
     const _i716=state.timbrature.findIndex(x=>x.id===timbId); if(_i716>=0) Object.assign(state.timbrature[_i716],{uscita:ora,pausa:pausaNum,calcolo,aperto:false});
-    alert(`â Uscita registrata alle ${ora}`);
+    alert(`Ã¢ÂÂ Uscita registrata alle ${ora}`);
   }
   else if(t.dataset.addTurno!==undefined) {
     const dip=state.utenteCorrente;
@@ -754,7 +754,7 @@ document.addEventListener("click", async function(e) {
     const sede=document.getElementById("inp-sede")?.value||SEDI[0];
     const _newTimb728 = await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede});
     state.timbrature.push({id:_newTimb728.id,dipendenteId:dip.id,data:dataTurno,tipo:"lavoro",entrata,uscita,pausa:pausaNum,calcolo,sede});
-    alert("â Turno registrato!");
+    alert("Ã¢ÂÂ Turno registrato!");
   }
   else if(t.hasAttribute("data-add-assenza-btn")){
     const dip=state.utenteCorrente;
@@ -783,7 +783,7 @@ document.addEventListener("click", async function(e) {
     const duplicati = giorni.filter(([data])=>state.timbrature.some(t=>t.dipendenteId===dipId&&t.data===data&&t.tipo==="lavoro"));
     if(duplicati.length){
       const nomi = duplicati.map(([d])=>d).join(", ");
-      if(!confirm(`Attenzione: esistono giÃ  turni per ${duplicati.length} giorno/i (${nomi}).
+      if(!confirm(`Attenzione: esistono giÃÂ  turni per ${duplicati.length} giorno/i (${nomi}).
 Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     }
     let inseriti=0;
@@ -801,7 +801,7 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     window._irGiorni={};
     const el=document.getElementById("calendario-rapido");
     if(el) el.innerHTML=renderCalendarioRapidoHTML(); render();
-    alert(`â Inseriti ${inseriti} turni per ${dip.nome}!`);
+    alert(`Ã¢ÂÂ Inseriti ${inseriti} turni per ${dip.nome}!`);
   }
   else if(t.dataset.salvaTimbraturaAdmin!==undefined) {
     const dipId=document.getElementById("ai-dip")?.value;
@@ -938,13 +938,13 @@ function renderLogin() {
     : dipAttivi;
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;text-align:center">
-      <h1 style="font-size:20px;font-weight:700">ð½ï¸ Timbrature Ristorante</h1>
+      <h1 style="font-size:20px;font-weight:700">Ã°ÂÂÂ½Ã¯Â¸Â Timbrature Ristorante</h1>
     </div>
     <div class="login-wrap"><div class="login-card">
       <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Chi sei?</h2>
       <p style="color:#6b7280;font-size:14px;margin-bottom:14px">Seleziona il tuo nome per timbrare</p>
       <div style="position:relative;margin-bottom:16px">
-        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:16px">ð</span>
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:16px">Ã°ÂÂÂ</span>
         <input type="text" placeholder="Cerca il tuo nome..." value="${cerca}"
           oninput="window._loginCerca=this.value;renderLoginList()"
           style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none"
@@ -954,12 +954,12 @@ function renderLogin() {
         ${filtrati.map(d=>`
         <div class="login-item" data-login-dip="${d.id}">
           <div style="font-weight:600">${d.nome}</div>
-          <span style="color:#f59e0b;font-size:20px">${d.pin?"ð":"â"}</span>
+          <span style="color:#f59e0b;font-size:20px">${d.pin?"Ã°ÂÂÂ":"Ã¢ÂÂ"}</span>
         </div>`).join("")}
         ${filtrati.length===0?`<div style="text-align:center;color:#9ca3af;padding:20px;font-size:14px">Nessun dipendente trovato</div>`:""}
       </div>
       <div data-login-admin style="background:#1e293b;color:white;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px">
-        <span style="font-size:20px">ð</span>
+        <span style="font-size:20px">Ã°ÂÂÂ</span>
         <div style="text-align:left"><div style="font-weight:700;font-size:14px">Area Admin</div><div style="font-size:11px;opacity:0.7">Solo per il titolare</div></div>
       </div>
     </div></div>`;
@@ -980,12 +980,12 @@ function renderSupervisoreTab(dip) {
       const haAssenza = timbrOggi.some(t=>t.tipo==="assenza");
       const aperto = timbrOggi.some(t=>t.tipo==="lavoro"&&(t.aperto||(!t.uscita&&t.entrata)));
       const badge = aperto
-        ? `<span style="font-size:11px;background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:10px">â± In turno</span>`
+        ? `<span style="font-size:11px;background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:10px">Ã¢ÂÂ± In turno</span>`
         : haLavoro
-          ? `<span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px">â Presente</span>`
+          ? `<span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px">Ã¢ÂÂ Presente</span>`
           : haAssenza
-            ? `<span style="font-size:11px;background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:10px">ð¶ Assente</span>`
-            : `<span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px">â Non timb.</span>`;
+            ? `<span style="font-size:11px;background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:10px">Ã°ÂÂÂ¶ Assente</span>`
+            : `<span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px">Ã¢ÂÂ Non timb.</span>`;
       return `<div onclick="state.supDipSelezionato='${d.id}';caricaTimbratureMese(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')).then(()=>render())"
         style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;
                display:flex;justify-content:space-between;align-items:center;cursor:pointer;
@@ -1008,14 +1008,14 @@ function renderSupervisoreTab(dip) {
     return `
       <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">ð Vista Supervisore</div>
+          <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">Ã°ÂÂÂ Vista Supervisore</div>
         </div>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
       <div style="max-width:600px;margin:0 auto;padding:16px">
         <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:16px">
-          <button onclick="window.supSetTab('colleghi')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${supTab==='colleghi'?'white':'transparent'};color:${supTab==='colleghi'?'#7c3aed':'#6b7280'};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${supTab==='colleghi'?'2px solid #7c3aed':'none'};margin-bottom:${supTab==='colleghi'?'-2px':'0'}">ð¥ Colleghi</button>
-          <button onclick="window.supSetTab('bancaore')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${supTab==='bancaore'?'white':'transparent'};color:${supTab==='bancaore'?'#7c3aed':'#6b7280'};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${supTab==='bancaore'?'2px solid #7c3aed':'none'};margin-bottom:${supTab==='bancaore'?'-2px':'0'}">ð¦ Banca Ore</button>
+          <button onclick="window.supSetTab('colleghi')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${supTab==='colleghi'?'white':'transparent'};color:${supTab==='colleghi'?'#7c3aed':'#6b7280'};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${supTab==='colleghi'?'2px solid #7c3aed':'none'};margin-bottom:${supTab==='colleghi'?'-2px':'0'}">Ã°ÂÂÂ¥ Colleghi</button>
+          <button onclick="window.supSetTab('bancaore')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${supTab==='bancaore'?'white':'transparent'};color:${supTab==='bancaore'?'#7c3aed':'#6b7280'};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${supTab==='bancaore'?'2px solid #7c3aed':'none'};margin-bottom:${supTab==='bancaore'?'-2px':'0'}">Ã°ÂÂÂ¦ Banca Ore</button>
         </div>
         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">
           Seleziona un dipendente per vedere le timbrature
@@ -1048,8 +1048,8 @@ function renderSupervisoreTab(dip) {
     const assenze = items.filter(t=>t.tipo==="assenza");
 
     const btnModifica = (t) => `
-      <button data-modifica-timb="${t.id}" style="font-size:11px;padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;color:#374151">âï¸</button>
-      <button data-elimina-timb="${t.id}" style="font-size:11px;padding:3px 8px;border:1px solid #fca5a5;border-radius:6px;background:white;cursor:pointer;color:#dc2626">ð</button>`;
+      <button data-modifica-timb="${t.id}" style="font-size:11px;padding:3px 8px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;color:#374151">Ã¢ÂÂÃ¯Â¸Â</button>
+      <button data-elimina-timb="${t.id}" style="font-size:11px;padding:3px 8px;border:1px solid #fca5a5;border-radius:6px;background:white;cursor:pointer;color:#dc2626">Ã°ÂÂÂ</button>`;
 
     if(turni.length===0 && assenze.length>0) {
       return assenze.map(t=>`
@@ -1070,8 +1070,8 @@ function renderSupervisoreTab(dip) {
           <div style="display:flex;gap:8px;align-items:center">
             <span style="font-weight:600">${t.data}</span>
             ${aperto
-              ?`<span style="color:#d97706">â ï¸ ${t.entrata} â in corso</span>`
-              :`<span style="color:#6b7280">${t.entrata} â ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min)</span></span>`
+              ?`<span style="color:#d97706">Ã¢ÂÂ Ã¯Â¸Â ${t.entrata} Ã¢ÂÂ in corso</span>`
+              :`<span style="color:#6b7280">${t.entrata} Ã¢ÂÂ ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min)</span></span>`
             }
             ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
           </div>
@@ -1085,12 +1085,12 @@ function renderSupervisoreTab(dip) {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;gap:6px;align-items:center">
           <span style="font-weight:700">${data}</span>
-          <span class="badge badge-orange">âï¸ Spezzato</span>
+          <span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>
         </div>
         <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo?.totaleMin)}h tot.</span>
       </div>
       ${turni.map((t,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#6b7280;margin-left:8px;margin-bottom:4px">
-        <span><span style="color:#92400e;font-weight:600">Turno ${i+1}:</span> ${t.entrata} â ${t.uscita} (${t.pausa}min) ${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
+        <span><span style="color:#92400e;font-weight:600">Turno ${i+1}:</span> ${t.entrata} Ã¢ÂÂ ${t.uscita} (${t.pausa}min) ${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
         <div style="display:flex;gap:4px">${btnModifica(t)}</div>
       </div>`).join("")}
     </div>`;
@@ -1099,7 +1099,7 @@ function renderSupervisoreTab(dip) {
   // Aggiungi turno manuale
   const formAggiungi = `
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:10px">â Aggiungi timbratura</div>
+      <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:10px">Ã¢ÂÂ Aggiungi timbratura</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
         <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Data</label>
           <input type="date" id="sup-add-data" value="${oggi2}" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
@@ -1118,8 +1118,8 @@ function renderSupervisoreTab(dip) {
 
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-weight:700;color:#374151">ð ${dip.nome} <span style="font-weight:400;font-size:12px;color:#9ca3af">${dip.tipo}</span></div>
-      <button onclick="window.supTornaLista()" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer">â Indietro</button>
+      <div style="font-weight:700;color:#374151">Ã°ÂÂÂ ${dip.nome} <span style="font-weight:400;font-size:12px;color:#9ca3af">${dip.tipo}</span></div>
+      <button onclick="window.supTornaLista()" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer">Ã¢ÂÂ Indietro</button>
     </div>
     <div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
@@ -1194,13 +1194,13 @@ function renderDipendente() {
   const nottM=turniMese.reduce((s,t)=>s+(t.calcolo?.notturneMin||0),0);
   const assM=state.timbrature.filter(t=>{const d=new Date(t.data);return t.dipendenteId===dip.id&&t.tipo==="assenza"&&d.getMonth()===mese&&d.getFullYear()===anno;}).length;
   const tabs=dip.supervisore
-    ?[["timbra","â±ï¸ Timbra"],["riepilogo","ð Riepilogo"],["storico","ð Storico"],["supervisore","ð Supervisore"]]
-    :[["timbra","â±ï¸ Timbra"],["riepilogo","ð Riepilogo"],["storico","ð Storico"]];
+    ?[["timbra","Ã¢ÂÂ±Ã¯Â¸Â Timbra"],["riepilogo","Ã°ÂÂÂ Riepilogo"],["storico","Ã°ÂÂÂ Storico"],["supervisore","Ã°ÂÂÂ Supervisore"]]
+    :[["timbra","Ã¢ÂÂ±Ã¯Â¸Â Timbra"],["riepilogo","Ã°ÂÂÂ Riepilogo"],["storico","Ã°ÂÂÂ Storico"]];
   let content="";
   if(state.dipTab==="timbra") content=renderDipTimbra(dip);
   else if(state.dipTab==="riepilogo") content=renderDipRiepilogo(turniMese,totM,strM,nottM,assM);
   else if(state.dipTab==="supervisore") {
-    // Precarica il mese corrente se non giÃ  in cache
+    // Precarica il mese corrente se non giÃÂ  in cache
     const meseCorr2 = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     caricaTimbratureMese(meseCorr2);
     content=renderSupervisoreTab(dip);
@@ -1208,8 +1208,8 @@ function renderDipendente() {
   else content=renderDipStorico(dip);
   return `
     <div style="background:#f59e0b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <div><h1 style="font-size:18px;font-weight:700">ð Ciao, ${dip.nome.split(" ")[0]}!</h1>
-      <p style="font-size:12px;opacity:0.85">${dip.tipo} â¢ <span id="clock">${oraNow()}</span></p></div>
+      <div><h1 style="font-size:18px;font-weight:700">Ã°ÂÂÂ Ciao, ${dip.nome.split(" ")[0]}!</h1>
+      <p style="font-size:12px;opacity:0.85">${dip.tipo} Ã¢ÂÂ¢ <span id="clock">${oraNow()}</span></p></div>
       <button class="btn btn-white btn-sm" data-logout>Esci</button>
     </div>
     <div style="max-width:600px;margin:0 auto;padding:16px">
@@ -1231,19 +1231,19 @@ function renderDipTimbra(dip) {
 
   return `
     <div class="sezione">
-      <div class="sezione-titolo">ð Timbratura</div>
+      <div class="sezione-titolo">Ã°ÂÂÂ Timbratura</div>
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:48px;font-weight:700;color:#1e293b;letter-spacing:2px" id="big-clock">${ora}</div>
         <div style="color:#6b7280;font-size:13px">${oggi()}</div>
       </div>
 
-      ${hasAssenzaOggi?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;text-align:center;font-size:13px;color:#dc2626;margin-bottom:12px">â ï¸ Hai giÃ  un'assenza registrata oggi</div>`:""}
+      ${hasAssenzaOggi?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;text-align:center;font-size:13px;color:#dc2626;margin-bottom:12px">Ã¢ÂÂ Ã¯Â¸Â Hai giÃÂ  un'assenza registrata oggi</div>`:""}
 
       ${turniChiusi.length>0?`
       <div style="margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Turni completati oggi</div>
         ${turniChiusi.map(t=>`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span>â ${t.entrata} â ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>
+          <span>Ã¢ÂÂ ${t.entrata} Ã¢ÂÂ ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>
           <span style="font-weight:700;color:#059669">${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
         </div>`).join("")}
       </div>`:""}
@@ -1251,7 +1251,7 @@ function renderDipTimbra(dip) {
       ${turnoAperto?`
       <!-- TURNO APERTO: mostra uscita -->
       <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:16px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:12px">ð¡ Turno in corso â entrata alle ${turnoAperto.entrata}</div>
+        <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:12px">Ã°ÂÂÂ¡ Turno in corso Ã¢ÂÂ entrata alle ${turnoAperto.entrata}</div>
         <div style="margin-bottom:12px">
           <label>Ora uscita <span style="font-weight:400;color:#92400e;text-transform:none;letter-spacing:0">(modifica se hai dimenticato di timbrare)</span></label>
           <input type="time" id="inp-ora-uscita" value="${ora}">
@@ -1261,36 +1261,36 @@ function renderDipTimbra(dip) {
           <input type="number" id="inp-pausa-uscita" value="30" min="0" max="120">
         </div>
         <button class="btn btn-primary" style="width:100%;padding:14px;font-size:16px;font-weight:700" data-timbra-uscita="${turnoAperto.id}">
-          ð´ Timbra Uscita
+          Ã°ÂÂÂ´ Timbra Uscita
         </button>
       </div>
       `:`
       <!-- NESSUN TURNO APERTO: mostra entrata -->
       ${!hasAssenzaOggi?`
-      ${dip.sede?`<div style="font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:12px">ð ${dip.sede}</div>`:""}
+      ${dip.sede?`<div style="font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:12px">Ã°ÂÂÂ ${dip.sede}</div>`:""}
       <input type="hidden" id="inp-sede-entrata" value="${dip.sede||SEDI[0]}">
       <div style="margin-bottom:14px">
         <label>Ora entrata <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">(modifica se hai dimenticato di timbrare)</span></label>
         <input type="time" id="inp-ora-entrata" value="${ora}">
       </div>
       <button class="btn btn-primary" style="width:100%;padding:16px;font-size:18px;font-weight:700;background:#059669" data-timbra-entrata>
-        ð¢ Timbra Entrata
+        Ã°ÂÂÂ¢ Timbra Entrata
       </button>
-      ${turniChiusi.length>0?`<div style="text-align:center;margin-top:10px;font-size:12px;color:#9ca3af">Hai giÃ  completato ${turniChiusi.length} turno/i oggi. Premi per aggiungere un turno spezzato.</div>`:""}
+      ${turniChiusi.length>0?`<div style="text-align:center;margin-top:10px;font-size:12px;color:#9ca3af">Hai giÃÂ  completato ${turniChiusi.length} turno/i oggi. Premi per aggiungere un turno spezzato.</div>`:""}
       `:""}
       `}
     </div>
     <div class="sezione">
-      <div class="sezione-titolo">ð Registra assenza</div>
+      <div class="sezione-titolo">Ã°ÂÂÂ Registra assenza</div>
       <div class="grid-auto" style="margin-bottom:12px">
         <div><label>Tipo assenza</label>
           <select id="inp-tipo-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
         </div>
         <input type="hidden" id="inp-sede-assenza" value="${dip.sede||SEDI[0]}">
-        <div><label>ModalitÃ  selezione</label>
+        <div><label>ModalitÃÂ  selezione</label>
           <select id="inp-modo-assenza" onchange="toggleModoAssenza('dip')">
             <option value="singola">Giorno singolo</option>
-            <option value="intervallo">Intervallo (da â a)</option>
+            <option value="intervallo">Intervallo (da Ã¢ÂÂ a)</option>
             <option value="multipla">Giorni multipli</option>
           </select>
         </div>
@@ -1305,20 +1305,20 @@ function renderDipTimbra(dip) {
         </div>
       </div>
       <div id="dip-assenza-multipla" style="display:none;margin-bottom:12px">
-        <label>Seleziona piÃ¹ date</label>
+        <label>Seleziona piÃÂ¹ date</label>
         <div style="margin-bottom:8px">
           <label>Mese</label>
           <input type="month" id="dip-mese-multiplo" value="${new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')}" onchange="aggiornaMeseMultiplo('dip')" style="max-width:180px">
         </div>
         <div id="dip-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("dip")}</div>
       </div>
-      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>ð Registra assenza</button>
+      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px" data-add-assenza-btn>Ã°ÂÂÂ Registra assenza</button>
     </div>`;
 }
 
 function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {
   return `
-    <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">ð ${MESI[new Date().getMonth()]} ${new Date().getFullYear()}</div>
+    <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">Ã°ÂÂÂ ${MESI[new Date().getMonth()]} ${new Date().getFullYear()}</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
       ${[["Ore lavorate",minToHHMM(totM)+"h","#1e293b","#f0fdf4"],["Turni",turniMese.length,"#1e293b","#eff6ff"],
          ["Giorni assenza",assM,assM>0?"#d97706":"#9ca3af","#fffbeb"]
@@ -1326,7 +1326,7 @@ function renderDipRiepilogo(turniMese,totM,strM,nottM,assM) {
     </div>`;
 }
 
-// ââ STORICO DIPENDENTE: raggruppa turni spezzati per data ââââââ
+// Ã¢ÂÂÃ¢ÂÂ STORICO DIPENDENTE: raggruppa turni spezzati per data Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function renderDipStorico(dip) {
   // Filtri: data singola o mese
   const filtroData = document.getElementById("dip-filtro-data")?.value || "";
@@ -1369,8 +1369,8 @@ function renderDipStorico(dip) {
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span style="font-weight:600">${t.data}</span>
           ${aperto
-            ?`<span style="color:#d97706">â ï¸ ${t.entrata} â in corso</span>`
-            :`<span style="color:#6b7280">${t.entrata} â ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>`
+            ?`<span style="color:#d97706">Ã¢ÂÂ Ã¯Â¸Â ${t.entrata} Ã¢ÂÂ in corso</span>`
+            :`<span style="color:#6b7280">${t.entrata} Ã¢ÂÂ ${t.uscita} <span style="color:#9ca3af">(${t.pausa}min pausa)</span></span>`
           }
         </div>
         ${t.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:aperto?`<span style="color:#d97706;font-size:12px">in corso</span>`:""}
@@ -1384,13 +1384,13 @@ function renderDipStorico(dip) {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;gap:6px;align-items:center">
           <span style="font-weight:700">${data}</span>
-          <span class="badge badge-orange">âï¸ Spezzato</span>
+          <span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>
         </div>
         <span style="font-weight:700;color:#c2410c">${minToHHMM(agg.calcolo?.totaleMin)}h tot.</span>
       </div>
       ${turni.map((t,i)=>`<div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#6b7280;margin-left:8px;margin-bottom:3px">
         <span style="color:#92400e;font-weight:600">Turno ${i+1}:</span>
-        <span>${t.entrata} â ${t.uscita} (${t.pausa}min pausa)</span>
+        <span>${t.entrata} Ã¢ÂÂ ${t.uscita} (${t.pausa}min pausa)</span>
         <span style="color:#9ca3af">${minToHHMM(t.calcolo?.totaleMin||0)}h</span>
       </div>`).join("")}
     </div>`;
@@ -1401,7 +1401,7 @@ function renderDipStorico(dip) {
 
   return `
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">ð Cerca turno</div>
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">Ã°ÂÂÂ Cerca turno</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
         <div style="flex:1;min-width:130px">
           <label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Giorno specifico</label>
@@ -1417,7 +1417,7 @@ function renderDipStorico(dip) {
         </div>
         <button onclick="document.getElementById('dip-filtro-data').value=''; document.getElementById('dip-filtro-mese').value=''; render()"
           style="padding:7px 14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap">
-          ð Tutto
+          Ã°ÂÂÂ Tutto
         </button>
       </div>
     </div>
@@ -1449,24 +1449,24 @@ function renderAdmin() {
 
   // Macro-tab config
   const macros=[
-    {key:"oggi", label:"ð Oggi", subs:[["dashboard","ð  Dashboard"],["presenze",`ðï¸ Presenze${getAlertUsciteMancanti&&getAlertUsciteMancanti().length>0?` <span style="background:#ef4444;color:white;border-radius:10px;padding:0 5px;font-size:10px">${getAlertUsciteMancanti().length}</span>`:""}`],["inserisci","âï¸ Inserisci"]]},
-    {key:"periodo", label:"ð Periodo", subs:[["report","ð Report"],["settimane","ð Settimane"],["scheda","ð¤ Scheda"],["giornaliero","ð Giornaliero"]]},
-    {key:"economia", label:"ð¶ Economia", subs:[["costi","ð¶ Costi"],["maggiorazioni","ð Maggiorazioni"],["bancaore","ð¦ Banca Ore"]]},
-    {key:"gestione", label:"âï¸ Gestione", subs:[["ferie","ðï¸ Ferie"],["dipendenti","ð¥ Dipendenti"],["impostazioni","âï¸ Impostazioni"]]},
+    {key:"oggi", label:"Ã°ÂÂÂ Oggi", subs:[["dashboard","Ã°ÂÂÂ  Dashboard"],["presenze",`Ã°ÂÂÂÃ¯Â¸Â Presenze${getAlertUsciteMancanti&&getAlertUsciteMancanti().length>0?` <span style="background:#ef4444;color:white;border-radius:10px;padding:0 5px;font-size:10px">${getAlertUsciteMancanti().length}</span>`:""}`],["inserisci","Ã¢ÂÂÃ¯Â¸Â Inserisci"]]},
+    {key:"periodo", label:"Ã°ÂÂÂ Periodo", subs:[["report","Ã°ÂÂÂ Report"],["settimane","Ã°ÂÂÂ Settimane"],["scheda","Ã°ÂÂÂ¤ Scheda"],["giornaliero","Ã°ÂÂÂ Giornaliero"]]},
+    {key:"economia", label:"Ã°ÂÂÂ¶ Economia", subs:[["costi","Ã°ÂÂÂ¶ Costi"],["maggiorazioni","Ã°ÂÂÂ Maggiorazioni"],["bancaore","Ã°ÂÂÂ¦ Banca Ore"]]},
+    {key:"gestione", label:"Ã¢ÂÂÃ¯Â¸Â Gestione", subs:[["ferie","Ã°ÂÂÂÃ¯Â¸Â Ferie"],["dipendenti","Ã°ÂÂÂ¥ Dipendenti"],["impostazioni","Ã¢ÂÂÃ¯Â¸Â Impostazioni"]]},
   ];
   const macroCorrente = macros.find(m=>m.subs.some(s=>s[0]===sub))?.key || state.adminTab;
   const subCorrente = macros.find(m=>m.key===macroCorrente)?.subs || [];
   return `
     <div class="admin-header" style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <div><h1 style="font-size:18px;font-weight:700">ð Area Admin</h1>
+      <div><h1 style="font-size:18px;font-weight:700">Ã°ÂÂÂ Area Admin</h1>
       <p style="font-size:12px;opacity:0.7">Presenze in tempo reale</p></div>
       <div class="admin-header-actions" style="display:flex;gap:8px;align-items:center">
         <select id="admin-filtro-sede" onchange="aggiornaSede()" style="border-radius:8px;padding:6px 10px;font-size:12px;border:1px solid #475569;background:#334155;color:white">
           <option value="">Tutte le sedi</option>
           ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
         </select>
-        <button class="btn btn-sm btn-primary" data-export-csv>â¬ï¸ CSV</button>
-        <button class="btn btn-sm btn-primary" data-export-excel>â¬ï¸ Excel</button>
+        <button class="btn btn-sm btn-primary" data-export-csv>Ã¢Â¬ÂÃ¯Â¸Â CSV</button>
+        <button class="btn btn-sm btn-primary" data-export-excel>Ã¢Â¬ÂÃ¯Â¸Â Excel</button>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
     </div>
@@ -1501,7 +1501,7 @@ function renderAdmin() {
     </div>`;
 }
 
-// ââ DASHBOARD OGGI ââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ DASHBOARD OGGI Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function getAlertUsciteMancanti() {
   const oggiStr = oggi();
   const oraCorrente = timeToMin(oraNow());
@@ -1539,13 +1539,13 @@ function renderAdminDashboard() {
     const turni = timbratureOggi.filter(t=>t.dipendenteId===d.id&&t.tipo==="lavoro");
     return turni.some(t=>t.entrata&&!t.uscita);
   });
-  // Ore totali giÃ  registrate oggi
+  // Ore totali giÃÂ  registrate oggi
   let oreTotOggi = 0;
   timbratureOggi.filter(t=>t.tipo==="lavoro"&&t.calcolo).forEach(t=>oreTotOggi+=t.calcolo.totaleMin||0);
 
   return `
     <div style="margin-bottom:20px">
-      <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:4px">ð  Dashboard â ${dataOggi}</div>
+      <div style="font-size:15px;font-weight:700;color:#374151;margin-bottom:4px">Ã°ÂÂÂ  Dashboard Ã¢ÂÂ ${dataOggi}</div>
       <div style="font-size:12px;color:#9ca3af">Panoramica della giornata in corso</div>
     </div>
 
@@ -1553,33 +1553,33 @@ function renderAdminDashboard() {
     <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:24px">
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;text-align:center">
         <div style="font-size:28px;font-weight:700;color:#059669">${presenti.length}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px">â Presenti</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">Ã¢ÂÂ Presenti</div>
       </div>
       <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:14px;text-align:center">
         <div style="font-size:28px;font-weight:700;color:#dc2626">${nonTimbrati.length}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px">â³ Non timbrati</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">Ã¢ÂÂ³ Non timbrati</div>
       </div>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;text-align:center">
         <div style="font-size:28px;font-weight:700;color:#2563eb">${assentiGiust.length}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px">ðï¸ Assenti giust.</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">Ã°ÂÂÂÃ¯Â¸Â Assenti giust.</div>
       </div>
       <div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:14px;text-align:center">
         <div style="font-size:28px;font-weight:700;color:#d97706">${minToHHMM(oreTotOggi)}h</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px">â± Ore registrate</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">Ã¢ÂÂ± Ore registrate</div>
       </div>
     </div>
 
     <!-- IN SERVIZIO ADESSO -->
     ${inServizio.length > 0 ? `
     <div style="margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">ð¢ In servizio adesso (${inServizio.length})</div>
+      <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã°ÂÂÂ¢ In servizio adesso (${inServizio.length})</div>
       ${inServizio.map(d => {
         const t = timbratureOggi.filter(x=>x.dipendenteId===d.id&&x.tipo==="lavoro").find(x=>!x.uscita);
         return `<div class="row">
           <div style="display:flex;gap:8px;align-items:center">
-            <span style="color:#10b981;font-size:16px">ð¢</span>
+            <span style="color:#10b981;font-size:16px">Ã°ÂÂÂ¢</span>
             <span style="font-weight:600">${d.nome}</span>
-            <span style="color:#6b7280;font-size:12px">Entrata: ${t?.entrata||"â"}</span>
+            <span style="color:#6b7280;font-size:12px">Entrata: ${t?.entrata||"Ã¢ÂÂ"}</span>
           </div>
           <span style="font-size:11px;color:#9ca3af">${d.tipo}</span>
         </div>`;
@@ -1589,16 +1589,16 @@ function renderAdminDashboard() {
     <!-- PRESENTI OGGI (con uscita) -->
     ${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).length > 0 ? `
     <div style="margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">â Turno completato (${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).length})</div>
+      <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã¢ÂÂ Turno completato (${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).length})</div>
       ${presenti.filter(d=>!inServizio.find(x=>x.id===d.id)).map(d => {
         const turni = timbratureOggi.filter(t=>t.dipendenteId===d.id&&t.tipo==="lavoro");
         const agg = aggregaTurniGiorno(turni, d);
         return `<div class="row">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <span style="color:#6b7280;font-size:16px">â</span>
+            <span style="color:#6b7280;font-size:16px">Ã¢ÂÂ</span>
             <span style="font-weight:600">${d.nome}</span>
-            ${turni.length>1?`<span class="badge badge-orange">âï¸ Spezzato</span>`:""}
-            <span style="color:#6b7280;font-size:12px">${turni.map(t=>t.entrata+"â"+t.uscita).join(" + ")}</span>
+            ${turni.length>1?`<span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>`:""}
+            <span style="color:#6b7280;font-size:12px">${turni.map(t=>t.entrata+"Ã¢ÂÂ"+t.uscita).join(" + ")}</span>
           </div>
           <span style="font-weight:700">${minToHHMM(agg?.calcolo?.totaleMin||turni[0]?.calcolo?.totaleMin||0)}h</span>
         </div>`;
@@ -1608,7 +1608,7 @@ function renderAdminDashboard() {
     <!-- ASSENTI GIUSTIFICATI -->
     ${assentiGiust.length > 0 ? `
     <div style="margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">ðï¸ Assenti giustificati (${assentiGiust.length})</div>
+      <div style="font-size:12px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã°ÂÂÂÃ¯Â¸Â Assenti giustificati (${assentiGiust.length})</div>
       ${assentiGiust.map(d => {
         const a = timbratureOggi.find(t=>t.dipendenteId===d.id&&t.tipo==="assenza");
         return `<div class="row">
@@ -1623,10 +1623,10 @@ function renderAdminDashboard() {
     <!-- NON TIMBRATI -->
     ${nonTimbrati.length > 0 ? `
     <div style="margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">â³ Non ancora timbrati (${nonTimbrati.length})</div>
+      <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã¢ÂÂ³ Non ancora timbrati (${nonTimbrati.length})</div>
       ${nonTimbrati.map(d=>`<div class="row">
         <div style="display:flex;gap:8px;align-items:center">
-          <span style="color:#dc2626">ð´</span>
+          <span style="color:#dc2626">Ã°ÂÂÂ´</span>
           <span style="font-weight:600">${d.nome}</span>
           <span style="color:#9ca3af;font-size:12px">${d.tipo}</span>
         </div>
@@ -1638,14 +1638,14 @@ function renderAdminDashboard() {
   const turniAperti = state.timbrature.filter(t=>(t.data===dataOggi||t.data===_dataIeri)&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
       if(!turniAperti.length) return "";
       return `<div style="margin-bottom:20px">
-        <div style="font-size:12px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">â ï¸ Turni aperti senza uscita (${turniAperti.length})</div>
+        <div style="font-size:12px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã¢ÂÂ Ã¯Â¸Â Turni aperti senza uscita (${turniAperti.length})</div>
         ${turniAperti.map(t=>{
           const d=state.dipendenti.find(x=>x.id===t.dipendenteId);
           return `<div class="row" style="background:#fef9f0;border-color:#fde68a">
             <div style="display:flex;gap:8px;align-items:center">
-              <span>â ï¸</span>
+              <span>Ã¢ÂÂ Ã¯Â¸Â</span>
               <span style="font-weight:600">${d?.nome||"?"}</span>
-              <span style="color:#92400e;font-size:12px">${t.data} â Entrata: ${t.entrata} â uscita non registrata</span>
+              <span style="color:#92400e;font-size:12px">${t.data} Ã¢ÂÂ Entrata: ${t.entrata} Ã¢ÂÂ uscita non registrata</span>
             </div>
             <span style="font-size:11px;color:#9ca3af">Chiudi dall'Inserimento manuale</span>
           </div>`;
@@ -1656,7 +1656,7 @@ function renderAdminDashboard() {
     ${presenti.length===0&&nonTimbrati.length===0&&assentiGiust.length===0?`<div class="empty">Nessun dato per oggi.</div>`:""}`;
 }
 
-// ââ PRESENZE: conta per data (non per timbratura) ââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ PRESENZE: conta per data (non per timbratura) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function renderAdminPresenze() {
   const dataOggi=oggi();
   const dipPresenze = getDipendentiAttivi();
@@ -1672,10 +1672,10 @@ function renderAdminPresenze() {
       const agg = aggregaTurniGiorno(turniOggi, d);
       return `<div class="row">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span style="color:#10b981;font-size:16px">â</span>
+          <span style="color:#10b981;font-size:16px">Ã¢ÂÂ</span>
           <span style="font-weight:600">${d.nome}</span>
-          <span class="badge badge-orange">âï¸ Spezzato (${turniOggi.length} turni)</span>
-          ${turniOggi.map(t=>`<span style="font-size:11px;color:#6b7280">${t.entrata}â${t.uscita||"â¦"}</span>`).join(" | ")}
+          <span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato (${turniOggi.length} turni)</span>
+          ${turniOggi.map(t=>`<span style="font-size:11px;color:#6b7280">${t.entrata}Ã¢ÂÂ${t.uscita||"Ã¢ÂÂ¦"}</span>`).join(" | ")}
         </div>
         <span style="font-weight:700">${minToHHMM(agg.calcolo?.totaleMin)}h</span>
       </div>`;
@@ -1683,9 +1683,9 @@ function renderAdminPresenze() {
     const t=timbs[0];
     return `<div class="row">
       <div style="display:flex;gap:8px;align-items:center">
-        <span style="color:#10b981;font-size:16px">â</span>
+        <span style="color:#10b981;font-size:16px">Ã¢ÂÂ</span>
         <span style="font-weight:600">${d.nome}</span>
-        ${t?.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} â ${t.uscita||"in corso"}</span>`:`<span class="badge badge-blue">${t?.assenza}</span>`}
+        ${t?.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata} Ã¢ÂÂ ${t.uscita||"in corso"}</span>`:`<span class="badge badge-blue">${t?.assenza}</span>`}
       </div>
       ${t?.calcolo?`<span style="font-weight:700">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
     </div>`;
@@ -1694,23 +1694,23 @@ function renderAdminPresenze() {
   // Raggruppa timbrati per sede (usa la sede della prima timbratura di lavoro del giorno)
   const sedeDip = d => {
     const t = state.timbrature.find(t=>t.data===dataOggi&&t.dipendenteId===d.id&&t.tipo==="lavoro");
-    return t?.sede || "â";
+    return t?.sede || "Ã¢ÂÂ";
   };
   const sediPresenti = [...new Set(timbrati.map(sedeDip))].sort();
 
   return `
-    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">ðï¸ Presenze oggi â ${dataOggi}</h2>
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">Ã°ÂÂÂÃ¯Â¸Â Presenze oggi Ã¢ÂÂ ${dataOggi}</h2>
     ${nonTimbrati.length>0?`
       <div style="margin-bottom:16px">
-        <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">â ï¸ Non hanno ancora timbrato (${nonTimbrati.length})</div>
-        ${nonTimbrati.map(d=>`<div class="alert-red"><span>ð´</span><span style="font-weight:600">${d.nome}</span><span style="color:#9ca3af;font-size:12px">${d.tipo}</span></div>`).join("")}
+        <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã¢ÂÂ Ã¯Â¸Â Non hanno ancora timbrato (${nonTimbrati.length})</div>
+        ${nonTimbrati.map(d=>`<div class="alert-red"><span>Ã°ÂÂÂ´</span><span style="font-weight:600">${d.nome}</span><span style="color:#9ca3af;font-size:12px">${d.tipo}</span></div>`).join("")}
       </div>`:""}
     ${timbrati.length>0?`
       <div>
         ${sediPresenti.map(sede=>{
           const dipSede = timbrati.filter(d=>sedeDip(d)===sede);
           return `<div style="margin-bottom:16px">
-            <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">ð  ${sede} â Presenti (${dipSede.length})</div>
+            <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ã°ÂÂÂ  ${sede} Ã¢ÂÂ Presenti (${dipSede.length})</div>
             ${dipSede.map(renderRigaDip).join("")}
           </div>`;
         }).join("")}
@@ -1737,7 +1737,7 @@ function getTimbMese() {
   });
 }
 
-// ââ RIEPILOGO: aggrega turni spezzati per giorno âââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ RIEPILOGO: aggrega turni spezzati per giorno Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function getRiepilogo() {
   const tm = getTimbMese();
   return state.dipendenti.map(dip => {
@@ -1818,7 +1818,7 @@ function renderAdminReport() {
       return {dip,tot,diur,nott,strD,strN,assCnt,nTurni};
     });
     const meseStr = tAnno.length===0
-      ? `<div class="empty">Nessuna timbratura caricata per il ${anno}. Il report annuale usa solo i dati giÃ  in memoria â naviga i mesi dell'anno per caricarli.</div>`
+      ? `<div class="empty">Nessuna timbratura caricata per il ${anno}. Il report annuale usa solo i dati giÃÂ  in memoria Ã¢ÂÂ naviga i mesi dell'anno per caricarli.</div>`
       : '';
     contenuto = meseStr || renderReportTabella(rAnnuale, `Nessuna timbratura per il ${anno}`);
   }
@@ -1837,17 +1837,17 @@ function renderAdminReport() {
     ${contenuto}`;
 }
 
-// ââ INSERIMENTO RAPIDO MENSILE âââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ INSERIMENTO RAPIDO MENSILE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 // Stato locale calendario rapido
 window._irGiorni = {}; // { "2026-03-01": {sel:true, entrata:"09:00", uscita:"17:00", pausa:30} }
 
 function getDayOfWeek(anno, mese, giorno) {
-  // Algoritmo di Zeller â non usa Date per evitare problemi di fuso orario
+  // Algoritmo di Zeller Ã¢ÂÂ non usa Date per evitare problemi di fuso orario
   let m = mese, y = anno;
   if(m < 3) { m += 12; y -= 1; }
   const k = y % 100, j = Math.floor(y / 100);
   const h = (giorno + Math.floor(13*(m+1)/5) + k + Math.floor(k/4) + Math.floor(j/4) - 2*j) % 7;
-  // h: 0=Sab,1=Dom,2=Lun,...6=Ven â converti a 0=Dom,1=Lun,...6=Sab
+  // h: 0=Sab,1=Dom,2=Lun,...6=Ven Ã¢ÂÂ converti a 0=Dom,1=Lun,...6=Sab
   return (h + 6) % 7;
 }
 
@@ -1882,7 +1882,7 @@ function renderCalendarioRapidoHTML() {
     const bg = sel ? "#f0fdf4" : bgExistR;
     const border = sel ? "1px solid #86efac" : borderExistR;
     const label = dom ? `<span style="color:#7c3aed;font-weight:700">${gg[dow]}</span>` :
-                  fest ? `<span style="color:#dc2626;font-weight:700">${gg[dow]} ð</span>` :
+                  fest ? `<span style="color:#dc2626;font-weight:700">${gg[dow]} Ã°ÂÂÂ</span>` :
                   `<span style="color:#374151;font-weight:600">${gg[dow]}</span>`;
     html += `<div style="background:${bg};border:${border};border-radius:8px;padding:8px 10px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1895,7 +1895,7 @@ function renderCalendarioRapidoHTML() {
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto">
           <input type="time" value="${stato.entrata}" onchange="aggiornaGiornoRapido('${dataStr}','entrata',this.value)"
             style="width:90px;padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
-          <span style="color:#9ca3af;font-size:12px">â</span>
+          <span style="color:#9ca3af;font-size:12px">Ã¢ÂÂ</span>
           <input type="time" value="${stato.uscita}" onchange="aggiornaGiornoRapido('${dataStr}','uscita',this.value)"
             style="width:90px;padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
           <input type="number" value="${stato.pausa}" min="0" max="120" onchange="aggiornaGiornoRapido('${dataStr}','pausa',parseInt(this.value)||0)"
@@ -2028,7 +2028,7 @@ function renderAdminInserisci() {
     +'</span></div>'
     +'<div class="ci-cal-grid">'+rows+'</div>'
     +'<div id="ci-multi-panel" style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px">'
-    +'<div style="font-weight:700;font-size:14px;color:#1e40af;margin-bottom:12px">&#9889; Salva giorni selezionati</div>'
+    +'<div style="font-weight:700;font-size:14px;color:#1e40af;margin-bottom:12px">Salva giorni selezionati</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
     +'<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px">Tipo</label>'
     +'<select id="ci-mp-tipo" onchange="ciMpTogTipoFn()" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'
@@ -2043,7 +2043,7 @@ function renderAdminInserisci() {
     +'<select id="ci-mp-se" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'+sOpts(dipSede)+'</select></div></div>'
     +'<div style="display:flex;align-items:center;gap:10px">'
     +'<span id="ci-mp-count" style="font-size:13px;color:#6b7280;flex:1">0 giorni selezionati</span>'
-    +'<button onclick="ciDeselTuttiFn()" style="padding:7px 14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer">&#10005; Deseleziona tutti</button>'
+    +'<button onclick="ciDeselTuttiFn()" style="padding:7px 14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer">Deseleziona tutti</button>'
     +'<button onclick="ciSalvaMultiFn()" style="padding:7px 18px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">&#128190; Salva giorni selezionati</button>'
     +'</div></div>'
     +'<div id="lista-timbrature">'+listaHtml+'</div>';
@@ -2071,17 +2071,17 @@ function renderListaTimbratureHTML(filtroDipId) {
           onchange="aggiornaBarraEliminazione()">
         <span style="font-weight:600;color:#374151">${dip?.nome||"?"}</span>
         <span style="color:#9ca3af">${t.data}</span>
-        ${tipo==="festivo"?`<span class="badge badge-red">ð Festivo</span>`:tipo==="domenica"?`<span class="badge badge-purple">âï¸ Dom.</span>`:""}
-        ${isSpezzato?`<span class="badge badge-orange">âï¸ Spezzato</span>`:""}
+        ${tipo==="festivo"?`<span class="badge badge-red">Ã°ÂÂÂ Festivo</span>`:tipo==="domenica"?`<span class="badge badge-purple">Ã¢ÂÂÃ¯Â¸Â Dom.</span>`:""}
+        ${isSpezzato?`<span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>`:""}
         ${t.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">${t.sede}</span>`:""}
-        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}â${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
-        ${t.sogliaCustom?`<span class="badge" style="background:#ede9fe;color:#5b21b6">â± soglia ${(t.sogliaCustom/60).toFixed(2)}h</span>`:""}
+        ${t.tipo==="lavoro"?`<span style="color:#6b7280">${t.entrata}Ã¢ÂÂ${t.uscita} (${t.pausa}min)</span>`:`<span class="badge badge-blue">${t.assenza}</span>`}
+        ${t.sogliaCustom?`<span class="badge" style="background:#ede9fe;color:#5b21b6">Ã¢ÂÂ± soglia ${(t.sogliaCustom/60).toFixed(2)}h</span>`:""}
         ${t.calcolo?.straordinariMin>0?`<span class="badge badge-red">+${minToHHMM(t.calcolo.straordinariMin)}h STR</span>`:""}
       </div>
       <div style="display:flex;gap:6px;align-items:center">
         ${t.calcolo?`<span style="font-weight:700;font-size:13px">${minToHHMM(t.calcolo.totaleMin)}h</span>`:""}
-        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-timb="${t.id}">âï¸</button>
-        <button class="btn btn-sm btn-danger" data-elimina-timb="${t.id}">ðï¸</button>
+        <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-timb="${t.id}">Ã¢ÂÂÃ¯Â¸Â</button>
+        <button class="btn btn-sm btn-danger" data-elimina-timb="${t.id}">Ã°ÂÂÂÃ¯Â¸Â</button>
       </div>
     </div>`;}).join("");
   return `
@@ -2090,7 +2090,7 @@ function renderListaTimbratureHTML(filtroDipId) {
       <div style="display:flex;gap:6px">
         <button onclick="selezionaTutteTimbrature(true)" style="padding:5px 10px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">Seleziona tutte</button>
         <button onclick="selezionaTutteTimbrature(false)" style="padding:5px 10px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">Deseleziona</button>
-        <button class="btn btn-sm btn-danger" data-elimina-selezionati>ðï¸ Elimina selezionate</button>
+        <button class="btn btn-sm btn-danger" data-elimina-selezionati>Ã°ÂÂÂÃ¯Â¸Â Elimina selezionate</button>
       </div>
     </div>
     ${righe}`;
@@ -2102,8 +2102,8 @@ function renderModaleTimbratura() {
   return `
     <div class="modal-bg" onclick="if(event.target===this){state.modaleTimbratura=null;render()}">
       <div class="modal">
-        <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">âï¸ Modifica timbratura</h3>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:16px">${dip?.nome} â ${t.data}</p>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Ã¢ÂÂÃ¯Â¸Â Modifica timbratura</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:16px">${dip?.nome} Ã¢ÂÂ ${t.data}</p>
         ${t.tipo==="lavoro"?`
           <div class="grid-auto" style="gap:12px;margin-bottom:12px">
             <div><label>Entrata</label><input id="mt-entrata" type="time" value="${t.entrata||""}"></div>
@@ -2158,7 +2158,7 @@ function renderAdminSettimane() {
     ${keys.map(sw=>{
       const fine=new Date(sw); fine.setDate(fine.getDate()+6);
       return `<div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
-        <div style="background:#fffbeb;padding:8px 14px;font-weight:700;font-size:13px;color:#92400e">Settimana ${sw} â ${fine.toISOString().split("T")[0]}</div>
+        <div style="background:#fffbeb;padding:8px 14px;font-weight:700;font-size:13px;color:#92400e">Settimana ${sw} Ã¢ÂÂ ${fine.toISOString().split("T")[0]}</div>
         <div style="padding:8px 14px">${state.dipendenti.map(dip=>{
           const oreSett=dip.oreSett||40; const min=sett[sw]?.[dip.id]||0, str=Math.max(0,min-oreSett*60);
           return `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f9fafb">
@@ -2235,7 +2235,7 @@ function renderAdminCosti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;gap:6px;align-items:center">
-        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ð¶ Costo del lavoro</h2>
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂ¶ Costo del lavoro</h2>
         <div style="display:flex;gap:4px;background:#f3f4f6;border-radius:10px;padding:3px">
           <button style="${tabStyle('mensile')}" onclick="window.state.costiTab='mensile';window.render()">Mensile</button>
           <button style="${tabStyle('annuale')}" onclick="window.state.costiTab='annuale';window.render()">Annuale</button>
@@ -2245,29 +2245,29 @@ function renderAdminCosti() {
     </div>
     ${contenuto}
     <div class="info-box" style="margin-top:16px;background:#eff6ff;border-color:#bfdbfe">
-      <p><strong>ð¥ Malattia (CCNL Turismo + integrazione INPS):</strong></p>
-      <p>â¢ Giorni 1â3 (carenza): 100% a carico azienda</p>
-      <p>â¢ Giorni 4â20: 50% a carico azienda (INPS copre 50%)</p>
-      <p>â¢ Giorni 21+: 33% a carico azienda (INPS copre 67%)</p>
-      <p style="font-size:11px;color:#6b7280">* Giorni consecutivi (con gap â¤3gg) contano come stesso episodio</p>
-      <p style="margin-top:6px"><strong>ð¶ Congedo Parentale:</strong> costo aziendale 0% â INPS eroga il 30% direttamente al dipendente</p>
-      <p style="margin-top:4px"><strong>ð´ Riposo Compensativo:</strong> costo aziendale 0% â giÃ  contabilizzato nel giorno lavorato extra</p>
+      <p><strong>Ã°ÂÂÂ¥ Malattia (CCNL Turismo + integrazione INPS):</strong></p>
+      <p>Ã¢ÂÂ¢ Giorni 1Ã¢ÂÂ3 (carenza): 100% a carico azienda</p>
+      <p>Ã¢ÂÂ¢ Giorni 4Ã¢ÂÂ20: 50% a carico azienda (INPS copre 50%)</p>
+      <p>Ã¢ÂÂ¢ Giorni 21+: 33% a carico azienda (INPS copre 67%)</p>
+      <p style="font-size:11px;color:#6b7280">* Giorni consecutivi (con gap Ã¢ÂÂ¤3gg) contano come stesso episodio</p>
+      <p style="margin-top:6px"><strong>Ã°ÂÂÂ¶ Congedo Parentale:</strong> costo aziendale 0% Ã¢ÂÂ INPS eroga il 30% direttamente al dipendente</p>
+      <p style="margin-top:4px"><strong>Ã°ÂÂÂ´ Riposo Compensativo:</strong> costo aziendale 0% Ã¢ÂÂ giÃÂ  contabilizzato nel giorno lavorato extra</p>
     </div>
     <div class="info-box" style="margin-top:16px">
-      <p><strong>ð Maggiorazioni applicate:</strong></p>
-      <p>â¢ Straordinario diurno: +${MAGGIORAZIONI.strDiurno*100}% sulla tariffa base</p>
-      <p>â¢ Straordinario notturno: +${MAGGIORAZIONI.strNotturno*100}% sulla tariffa base</p>
-      <p>â¢ Ordinario notturno: +${MAGGIORAZIONI.ordinarioNotturno*100}% sulla tariffa base</p>
-      <p>â¢ Domenica: +${MAGGIORAZIONI.domenica*100}% sulle ore ordinarie</p>
-      <p>â¢ Festivo: +${MAGGIORAZIONI.festivo*100}% sulle ore ordinarie</p>
-      <p>â¢ âï¸ Turni spezzati: gli straordinari sono calcolati sul totale giornaliero aggregato</p>
+      <p><strong>Ã°ÂÂÂ Maggiorazioni applicate:</strong></p>
+      <p>Ã¢ÂÂ¢ Straordinario diurno: +${MAGGIORAZIONI.strDiurno*100}% sulla tariffa base</p>
+      <p>Ã¢ÂÂ¢ Straordinario notturno: +${MAGGIORAZIONI.strNotturno*100}% sulla tariffa base</p>
+      <p>Ã¢ÂÂ¢ Ordinario notturno: +${MAGGIORAZIONI.ordinarioNotturno*100}% sulla tariffa base</p>
+      <p>Ã¢ÂÂ¢ Domenica: +${MAGGIORAZIONI.domenica*100}% sulle ore ordinarie</p>
+      <p>Ã¢ÂÂ¢ Festivo: +${MAGGIORAZIONI.festivo*100}% sulle ore ordinarie</p>
+      <p>Ã¢ÂÂ¢ Ã¢ÂÂÃ¯Â¸Â Turni spezzati: gli straordinari sono calcolati sul totale giornaliero aggregato</p>
     </div>`;
 }
 
 function renderAdminMaggiorazioni() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ð Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂ Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
     </div>
     ${state.dipendenti.map(dip=>{
       const r=calcolaCostoMensile(dip.id);
@@ -2278,19 +2278,19 @@ function renderAdminMaggiorazioni() {
       const ra=calcolaCostoAssenzeMensili(dip.id);
       return `<div class="cost-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-weight:700;font-size:14px">${dip.nome} <span style="font-weight:400;color:#6b7280;font-size:12px">${dip.tipo} â¢ â¬ ${dip.tariffaOraria}/h</span></div>
+            <div style="font-weight:700;font-size:14px">${dip.nome} <span style="font-weight:400;color:#6b7280;font-size:12px">${dip.tipo} Ã¢ÂÂ¢ Ã¢ÂÂ¬ ${dip.tariffaOraria}/h</span></div>
             <div style="font-size:18px;font-weight:700;color:#059669">${euro(r.totale)}</div>
           </div>
-          <div class="cost-row"><span>Ore ordinarie diurne (${r.totOrdDiurne.toFixed(2)}h Ã â¬${dip.tariffaOraria})</span><span>${euro(r.costoOrdDiurno)}</span></div>
+          <div class="cost-row"><span>Ore ordinarie diurne (${r.totOrdDiurne.toFixed(2)}h ÃÂ Ã¢ÂÂ¬${dip.tariffaOraria})</span><span>${euro(r.costoOrdDiurno)}</span></div>
           <div class="cost-row"><span style="color:#4f46e5">Ore ordinarie notturne +${MAGGIORAZIONI.ordinarioNotturno*100}% (${r.totOrdNott.toFixed(2)}h)</span><span style="color:#4f46e5">${euro(r.costoOrdNott)}</span></div>
           <div class="cost-row"><span style="color:#ea580c">Straordinari diurni +${MAGGIORAZIONI.strDiurno*100}% (${r.totStrDiurni.toFixed(2)}h)</span><span style="color:#ea580c">${euro(r.costoStrDiurno)}</span></div>
           <div class="cost-row"><span style="color:#dc2626">Straordinari notturni +${MAGGIORAZIONI.strNotturno*100}% (${r.totStrNott.toFixed(2)}h)</span><span style="color:#dc2626">${euro(r.costoStrNott)}</span></div>
           ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:#7c3aed">Magg. domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica}g)</span><span style="color:#7c3aed">${euro(r.costoMaggDom)}</span></div>`:""}
           ${r.giorniFestivi>0?`<div class="cost-row"><span style="color:#b45309">Magg. festivo +${MAGGIORAZIONI.festivo*100}% (${r.giorniFestivi}g)</span><span style="color:#b45309">${euro(r.costoMaggFest)}</span></div>`:""}
           ${ra&&ra.totaleCosto>0?Object.entries(ra.dettaglio).filter(([v,det])=>det.giorni>0).map(([v,det])=>{
-            if(v==="Congedo Parentale") return `<div class="cost-row"><span style="color:#6b7280">Congedo Parentale (${det.giorni}g â costo INPS, azienda 0)</span><span style="color:#6b7280">â¬ 0,00</span></div>`;
-            if(v==="Riposo Compensativo") return `<div class="cost-row"><span style="color:#6b7280">Riposo Compensativo (${det.giorni}g â costo 0)</span><span style="color:#6b7280">â¬ 0,00</span></div>`;
-            return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g Ã ${ra.oreDip.toFixed(2)}h Ã â¬${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;
+            if(v==="Congedo Parentale") return `<div class="cost-row"><span style="color:#6b7280">Congedo Parentale (${det.giorni}g Ã¢ÂÂ costo INPS, azienda 0)</span><span style="color:#6b7280">Ã¢ÂÂ¬ 0,00</span></div>`;
+            if(v==="Riposo Compensativo") return `<div class="cost-row"><span style="color:#6b7280">Riposo Compensativo (${det.giorni}g Ã¢ÂÂ costo 0)</span><span style="color:#6b7280">Ã¢ÂÂ¬ 0,00</span></div>`;
+            return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g ÃÂ ${ra.oreDip.toFixed(2)}h ÃÂ Ã¢ÂÂ¬${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;
           }).join(""):""}
           <div class="cost-total">
             <span>Totale ${MESI[state.filtroMese]}</span>
@@ -2304,7 +2304,7 @@ function renderAdminMaggiorazioni() {
 
 function calcolaCostoTeoricoGiorno(ds) {
   // Costo teorico = tutti i dipendenti attivi con tariffa * ore soglia
-  // (esclusi intermittenti, escluse domeniche per semplicitÃ )
+  // (esclusi intermittenti, escluse domeniche per semplicitÃÂ )
   if(new Date(ds).getDay()===0) return 0;
   return getDipendentiAttivi()
     .filter(d=>d.tariffaOraria&&d.tipo!=="Intermittente")
@@ -2359,7 +2359,7 @@ function renderAdminGiornaliero() {
   const giorniNomiBrevi=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ð Costo giornaliero</h2>${filtriHTML()}
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂ Costo giornaliero</h2>${filtriHTML()}
     </div>
     <!-- KPI confronto mensile -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px">
@@ -2390,14 +2390,14 @@ function renderAdminGiornaliero() {
         return `<div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:11px;font-weight:700;color:#6b7280">${giorniNomiBrevi[d.getDay()]}</div>
           <div style="font-size:20px;font-weight:700;color:#374151">${d.getDate()}</div>
-          ${isFest?`<div style="font-size:10px;color:#dc2626">ð Festivo</div>`:""}
-          <div style="font-size:12px;font-weight:700;color:${costoReale>0?"#059669":"#9ca3af"};margin-top:4px">${costoReale>0?euro(costoReale):"â"}</div>
+          ${isFest?`<div style="font-size:10px;color:#dc2626">Ã°ÂÂÂ Festivo</div>`:""}
+          <div style="font-size:12px;font-weight:700;color:${costoReale>0?"#059669":"#9ca3af"};margin-top:4px">${costoReale>0?euro(costoReale):"Ã¢ÂÂ"}</div>
           ${costoConAssenze>costoReale?`<div style="font-size:10px;color:#ea580c">${euro(costoConAssenze)} +ass.</div>`:""}
           ${costoTeorico>0&&costoConAssenze<costoTeorico?`<div style="font-size:10px;color:#7c3aed">${euro(costoTeorico)} teo.</div>`:""}
           <div style="font-size:10px;color:#9ca3af">${timbrature.length>0?timbrature.length+" timb.":""}</div>
         </div>`;}).join("")}
     </div>
-    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">ð Dettaglio per data</h3>
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">Ã°ÂÂÂ Dettaglio per data</h3>
     <div class="grid-auto" style="margin-bottom:12px;max-width:300px">
       <div><label>Seleziona data</label>
         <input type="date" id="filtro-data-giorno" value="${oggi()}" onchange="aggiornaCostoGiorno()">
@@ -2433,10 +2433,10 @@ function renderDettaglioGiorno(dataStr) {
         const r=calcolaCostoAggregato(agg.calcolo,dataStr,dip);
         if(r){ costo=r.totale; }
         if(lavoro.length>1){
-          dettaglio=`âï¸ Spezzato: ${lavoro.map(t=>`${t.entrata}â${t.uscita}`).join(" + ")} (${minToHHMM(agg.calcolo?.totaleMin)}h tot.)`;
+          dettaglio=`Ã¢ÂÂÃ¯Â¸Â Spezzato: ${lavoro.map(t=>`${t.entrata}Ã¢ÂÂ${t.uscita}`).join(" + ")} (${minToHHMM(agg.calcolo?.totaleMin)}h tot.)`;
         } else {
           const t=lavoro[0];
-          dettaglio=`${t.entrata}â${t.uscita} (${minToHHMM(agg.calcolo?.totaleMin)}h)`;
+          dettaglio=`${t.entrata}Ã¢ÂÂ${t.uscita} (${minToHHMM(agg.calcolo?.totaleMin)}h)`;
         }
       }
     }
@@ -2460,7 +2460,7 @@ function renderDettaglioGiorno(dataStr) {
         ${costoAssenza>0?`<span class="badge" style="background:#fff7ed;color:#ea580c">+${euro(costoAssenza)} ass.</span>`:""}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-        <span style="font-weight:700;color:#059669">${costoTotale>0?euro(costoTotale):"â"}</span>
+        <span style="font-weight:700;color:#059669">${costoTotale>0?euro(costoTotale):"Ã¢ÂÂ"}</span>
         ${costoTeorico>0&&costoTotale<costoTeorico?`<span style="font-size:11px;color:#7c3aed">${euro(costoTeorico)} teo.</span>`:""}
       </div>
     </div>`;
@@ -2506,16 +2506,16 @@ window.aggiornaCostoGiorno=function(){
 // Calcola monte ferie annuo dinamicamente da oreSett e fineContratto
 function calcolaMonteFerie(dip) {
   if(!dip || (dip.tipo||"").toLowerCase() === "intermittente") return 0;
-  if(dip.monteFerie) return dip.monteFerie; // valore manuale ha prioritÃ  sul calcolo auto
+  if(dip.monteFerie) return dip.monteFerie; // valore manuale ha prioritÃÂ  sul calcolo auto
   const oreSett = dip.oreSett || 40;
   const fineContratto = dip.fineContratto || null;
   const annoCorr = state.filtroAnno || new Date().getFullYear();
   let mesi = 12;
   if(fineContratto) {
     const [fy, fm] = fineContratto.split("-").map(Number);
-    if(fy < annoCorr) return 0;          // giÃ  cessato
+    if(fy < annoCorr) return 0;          // giÃÂ  cessato
     if(fy === annoCorr) mesi = fm;        // scade durante l'anno
-    // se fy > annoCorr â 12 mesi (contratto va oltre l'anno)
+    // se fy > annoCorr Ã¢ÂÂ 12 mesi (contratto va oltre l'anno)
   }
   return Math.round(172 * (oreSett / 40) * (mesi / 12));
 }
@@ -2524,7 +2524,7 @@ function renderAdminFerie() {
   const anno=state.filtroAnno;
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ðï¸ Monte Ferie & Permessi ${anno}</h2>
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂÃ¯Â¸Â Monte Ferie & Permessi ${anno}</h2>
       <select data-filtro-anno style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
         ${[2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040].map(y=>`<option${y===anno?" selected":""}>${y}</option>`).join("")}
       </select>
@@ -2547,25 +2547,25 @@ function renderAdminFerie() {
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
             <div>
               <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-                <span style="font-weight:600">ðï¸ Ferie</span>
+                <span style="font-weight:600">Ã°ÂÂÂÃ¯Â¸Â Ferie</span>
                 <span style="color:#6b7280">${ferieOre.toFixed(1)}h / ${monteFerie}h</span>
               </div>
               <div class="progress-bar"><div class="progress-fill" style="width:${percF}%;background:${percF>90?"#ef4444":percF>70?"#f59e0b":"#10b981"}"></div></div>
-              <div style="font-size:12px;margin-top:4px;color:${ferieRimaste<0?"#dc2626":ferieRimaste<8?"#f59e0b":"#059669"};font-weight:600">${ferieRimaste<0?"â ï¸ Debito: "+Math.abs(ferieRimaste).toFixed(1)+"h (â"+Math.abs(ferieRimaste/oreDip).toFixed(1)+" giorni)":"Rimaste: "+ferieRimaste.toFixed(1)+"h (â"+(ferieRimaste/oreDip).toFixed(1)+" giorni)"}</div>
+              <div style="font-size:12px;margin-top:4px;color:${ferieRimaste<0?"#dc2626":ferieRimaste<8?"#f59e0b":"#059669"};font-weight:600">${ferieRimaste<0?"Ã¢ÂÂ Ã¯Â¸Â Debito: "+Math.abs(ferieRimaste).toFixed(1)+"h (Ã¢ÂÂ"+Math.abs(ferieRimaste/oreDip).toFixed(1)+" giorni)":"Rimaste: "+ferieRimaste.toFixed(1)+"h (Ã¢ÂÂ"+(ferieRimaste/oreDip).toFixed(1)+" giorni)"}</div>
             </div>
             <div>
               <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-                <span style="font-weight:600">ð Permessi</span>
+                <span style="font-weight:600">Ã°ÂÂÂ Permessi</span>
                 <span style="color:#6b7280">${permOre.toFixed(1)}h / ${montePermessi}h</span>
               </div>
               <div class="progress-bar"><div class="progress-fill" style="width:${percP}%;background:${percP>90?"#ef4444":percP>70?"#f59e0b":"#10b981"}"></div></div>
-              <div style="font-size:12px;margin-top:4px;color:${permRimasti<0?"#dc2626":permRimasti<4?"#f59e0b":"#059669"};font-weight:600">${permRimasti<0?"â ï¸ Debito: "+Math.abs(permRimasti).toFixed(1)+"h (â"+Math.abs(permRimasti/oreDip).toFixed(1)+" giorni)":"Rimasti: "+permRimasti.toFixed(1)+"h (â"+(permRimasti/oreDip).toFixed(1)+" giorni)"}</div>
+              <div style="font-size:12px;margin-top:4px;color:${permRimasti<0?"#dc2626":permRimasti<4?"#f59e0b":"#059669"};font-weight:600">${permRimasti<0?"Ã¢ÂÂ Ã¯Â¸Â Debito: "+Math.abs(permRimasti).toFixed(1)+"h (Ã¢ÂÂ"+Math.abs(permRimasti/oreDip).toFixed(1)+" giorni)":"Rimasti: "+permRimasti.toFixed(1)+"h (Ã¢ÂÂ"+(permRimasti/oreDip).toFixed(1)+" giorni)"}</div>
             </div>
           </div>
         </div>`;}).join("")}`;
 }
 
-// ââ BANCA ORE âââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ BANCA ORE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 // Calcola banca ore cumulativa da inizio anno (o da mese selezionato indietro)
 function calcolaBancaOreMultiMese(dipId) {
   const dip = state.dipendenti.find(d => d.id === dipId);
@@ -2602,7 +2602,7 @@ function calcolaBancaOreMultiMese(dipId) {
   const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0 && a.assenza !== "Giorno Libero");
   // assenze neutre: non cambiano surplus/deficit
   const saldo = totaleSurplus - totaleDeficit;
-  return { dip, soglia, totaleSurplus, totaleDeficit, saldo, dettaglioMesi, periodoLabel: `Genâ${MESI[meseFiltro]} ${annoFiltro}` };
+  return { dip, soglia, totaleSurplus, totaleDeficit, saldo, dettaglioMesi, periodoLabel: `GenÃ¢ÂÂ${MESI[meseFiltro]} ${annoFiltro}` };
 }
 
 function calcolaBancaOre(dipId) {
@@ -2650,12 +2650,12 @@ function calcolaBancaOre(dipId) {
   // Trova il range di date del mese
   const anno = state.filtroAnno, mese = state.filtroMese;
   const giorniMese = new Date(anno, mese+1, 0).getDate();
-  // Raggruppa per settimana ISO (lunedÃ¬)
+  // Raggruppa per settimana ISO (lunedÃÂ¬)
   const orePerSett = {};
   for(let g=1; g<=giorniMese; g++){
     const dataStr = `${anno}-${String(mese+1).padStart(2,'0')}-${String(g).padStart(2,'0')}`;
     const d = new Date(dataStr+'T12:00:00');
-    // LunedÃ¬ della settimana
+    // LunedÃÂ¬ della settimana
     const dow = d.getDay(); const offsetLun = dow===0?-6:1-dow;
     const lun = new Date(d); lun.setDate(d.getDate()+offsetLun);
     const lunStr = lun.toISOString().slice(0,10);
@@ -2682,7 +2682,7 @@ function renderAdminBancaOre() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:center;gap:8px">
-        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ð¦ Banca Ore</h2>
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂ¦ Banca Ore</h2>
         <span class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
           <span class="tooltip-text">Confronta le ore lavorate con la soglia giornaliera. Surplus = ore extra (straordinari). Deficit = ore mancanti rispetto al contratto.</span>
@@ -2707,12 +2707,12 @@ function renderAdminBancaOre() {
         const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
         const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
         const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
-        const icon = b.saldo > 0 ? "ð" : b.saldo < 0 ? "ð" : "âï¸";
+        const icon = b.saldo > 0 ? "Ã°ÂÂÂ" : b.saldo < 0 ? "Ã°ÂÂÂ" : "Ã¢ÂÂÃ¯Â¸Â";
         return `<div style="background:${sbg};border:1px solid ${sbr};border-radius:12px;padding:14px">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px">${b.dip.nome}
-            <span style="font-weight:400;color:#6b7280;font-size:11px"> â soglia ${(b.soglia/60).toFixed(2)}h/g</span>
-            ${(()=>{ const eccMens=((b.totaleSurplus-b.totaleDeficit)/60); if(eccMens>2) return `<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">â ï¸ +${eccMens.toFixed(1)}h/mese</span>`; if(eccMens<-2) return `<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#059669;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">ð ${eccMens.toFixed(1)}h/mese</span>`; return ''; })()}
-            ${(()=>{ const sw=(b.settimaneAlert||[]).filter(s=>s.eccedenza>0); if(sw.length) return `<span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">â ï¸ ${sw.length} sett. >40h</span>`; return ''; })()}
+            <span style="font-weight:400;color:#6b7280;font-size:11px"> Ã¢ÂÂ soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+            ${(()=>{ const eccMens=((b.totaleSurplus-b.totaleDeficit)/60); if(eccMens>2) return `<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">Ã¢ÂÂ Ã¯Â¸Â +${eccMens.toFixed(1)}h/mese</span>`; if(eccMens<-2) return `<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#059669;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">Ã°ÂÂÂ ${eccMens.toFixed(1)}h/mese</span>`; return ''; })()}
+            ${(()=>{ const sw=(b.settimaneAlert||[]).filter(s=>s.eccedenza>0); if(sw.length) return `<span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">Ã¢ÂÂ Ã¯Â¸Â ${sw.length} sett. >40h</span>`; return ''; })()}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
             <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
@@ -2738,9 +2738,9 @@ function renderAdminBancaOre() {
       <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:14px">
         <div style="background:#f9fafb;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px">
           <div style="font-weight:700;font-size:13px">${b.dip.nome}
-            <span style="font-weight:400;color:#6b7280;font-size:11px"> â ${b.dip.tipo} â soglia ${(b.soglia/60).toFixed(2)}h/g</span>
-            ${(()=>{ const eccMens=(b.totaleSurplus-b.totaleDeficit)/60; if(eccMens>2) return `<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">â ï¸ +${eccMens.toFixed(1)}h eccedenza mensile</span>`; return ''; })()}
-            ${(()=>{ const sw=(b.settimaneAlert||[]).filter(s=>s.eccedenza>0); if(!sw.length) return ''; return sw.map(s=>`<span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">â ï¸ Sett. ${s.lunStr.slice(5).replace('-','/')}: ${s.oreLav.toFixed(1)}h (+${s.eccedenza.toFixed(1)}h)</span>`).join(''); })()}
+            <span style="font-weight:400;color:#6b7280;font-size:11px"> Ã¢ÂÂ ${b.dip.tipo} Ã¢ÂÂ soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+            ${(()=>{ const eccMens=(b.totaleSurplus-b.totaleDeficit)/60; if(eccMens>2) return `<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">Ã¢ÂÂ Ã¯Â¸Â +${eccMens.toFixed(1)}h eccedenza mensile</span>`; return ''; })()}
+            ${(()=>{ const sw=(b.settimaneAlert||[]).filter(s=>s.eccedenza>0); if(!sw.length) return ''; return sw.map(s=>`<span style="background:#fffbeb;border:1px solid #fde68a;color:#d97706;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px">Ã¢ÂÂ Ã¯Â¸Â Sett. ${s.lunStr.slice(5).replace('-','/')}: ${s.oreLav.toFixed(1)}h (+${s.eccedenza.toFixed(1)}h)</span>`).join(''); })()}
           </div>
           <div style="display:flex;gap:12px;font-size:12px;font-weight:700;flex-wrap:wrap">
             <span style="color:#dc2626">+${minToHHMM(b.totaleSurplus)}h surplus</span>
@@ -2760,14 +2760,14 @@ function renderAdminBancaOre() {
               const isFest = isFestivo(g.data);
               const rowbg = isFest ? "#fef2f2" : dow===0 ? "#f5f3ff" : g.diff < 0 ? "#fef9f0" : "";
               const dc = g.diff > 0 ? "#dc2626" : g.diff < 0 ? "#059669" : "#9ca3af";
-              const dl = g.diff === 0 ? "â" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
+              const dl = g.diff === 0 ? "Ã¢ÂÂ" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
               return `<tr style="background:${rowbg}">
                 <td style="font-weight:600;font-size:12px">${g.data}</td>
-                <td style="font-size:11px">${giorniSettimana[dow]}${isFest?" ð":""}</td>
+                <td style="font-size:11px">${giorniSettimana[dow]}${isFest?" Ã°ÂÂÂ":""}</td>
                 <td>${g.tipo==="assenza"
                   ? `<span class="badge badge-blue">${g.assenza}</span>`
                   : g.isSpezzato
-                    ? `<span class="badge badge-orange">âï¸ Spezzato</span>`
+                    ? `<span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>`
                     : `<span class="badge badge-green">Lavoro</span>`}
                 </td>
                 <td style="font-weight:600">${minToHHMM(g.oreMin)}h</td>
@@ -2790,10 +2790,10 @@ function renderAdminBancaOre() {
 
 function renderAdminImpostazioni() {
   return `
-    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">âï¸ Impostazioni</h2>
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">Ã¢ÂÂÃ¯Â¸Â Impostazioni</h2>
 
     <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px">ð Sicurezza accessi</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">Ã°ÂÂÂ Sicurezza accessi</div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6">
         <div>
           <div style="font-size:13px;font-weight:600">PIN obbligatorio</div>
@@ -2808,15 +2808,15 @@ function renderAdminImpostazioni() {
         Dipendenti senza PIN: ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length}
         ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
           ? `<span style="color:#dc2626"> (${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).map(d=>d.nome.split(" ")[0]).join(", ")})</span>`
-          : ' â'}
+          : ' Ã¢ÂÂ'}
         ${state.dipendenti.filter(d=>!d.pin&&!d.dataFineContratto).length>0
-          ? `<button onclick="window.assegnaPinMancanti()" class="btn btn-primary btn-sm" style="margin-top:8px">ð Assegna PIN automatici</button>`
+          ? `<button onclick="window.assegnaPinMancanti()" class="btn btn-primary btn-sm" style="margin-top:8px">Ã°ÂÂÂ Assegna PIN automatici</button>`
           : ""}
       </div>
     </div>
 
     <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px">ð¦ Banca Ore</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">Ã°ÂÂÂ¦ Banca Ore</div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
         <div>
           <div style="font-size:13px;font-weight:600">Visualizzazione cumulativa di default</div>
@@ -2830,11 +2830,11 @@ function renderAdminImpostazioni() {
     </div>
 
     <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px">ð¾ Backup dati</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">Ã°ÂÂÂ¾ Backup dati</div>
       <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Esporta tutti i dati in JSON per backup o ripristino</div>
-      <button onclick="window.esportaBackup()" class="btn btn-primary" style="margin-right:8px">â¬ï¸ Esporta backup JSON</button>
+      <button onclick="window.esportaBackup()" class="btn btn-primary" style="margin-right:8px">Ã¢Â¬ÂÃ¯Â¸Â Esporta backup JSON</button>
       <label class="btn" style="background:#e5e7eb;color:#374151;cursor:pointer;display:inline-block;padding:9px 18px;font-weight:700;font-size:13px;border-radius:8px">
-        â¬ï¸ Importa backup
+        Ã¢Â¬ÂÃ¯Â¸Â Importa backup
         <input type="file" accept=".json" onchange="window.importaBackup(this)" style="display:none">
       </label>
     </div>
@@ -2848,7 +2848,7 @@ function renderAdminDipendenti() {
       <button class="btn btn-primary btn-sm" data-apri-modale-nuovo>+ Aggiungi</button>
     </div>
     <div style="position:relative;margin-bottom:12px">
-      <input type="text" id="dip-search" placeholder="ð Cerca dipendente..."
+      <input type="text" id="dip-search" placeholder="Ã°ÂÂÂ Cerca dipendente..."
         oninput="document.querySelectorAll('[data-dip-row]').forEach(el=>{el.style.display=el.dataset.dipRow.toLowerCase().includes(this.value.toLowerCase())?'':'none'})"
         style="width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
     </div>
@@ -2860,24 +2860,24 @@ function renderAdminDipendenti() {
         return `<div class="row" data-dip-row="${d.nome}" style="opacity:${isAttivo?1:0.6}">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span style="font-weight:600">${d.nome}</span>
-            ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">â¸ Inattivo</span>`:""}
+            ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">Ã¢ÂÂ¸ Inattivo</span>`:""}
             <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
             <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
-            ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">â¬${d.tariffaOraria}/h</span>`:""}
-            ${d.pin?`<span class="badge badge-green">ð PIN</span>`:""}
-            ${d.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">ð ${d.sede}</span>`:`<span class="badge" style="background:#fef9c3;color:#92400e">ð sede n/d</span>`}
-            ${d.email?`<span style="font-size:11px;color:#6b7280">âï¸ ${d.email}</span>`:""}
+            ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">Ã¢ÂÂ¬${d.tariffaOraria}/h</span>`:""}
+            ${d.pin?`<span class="badge badge-green">Ã°ÂÂÂ PIN</span>`:""}
+            ${d.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">Ã°ÂÂÂ ${d.sede}</span>`:`<span class="badge" style="background:#fef9c3;color:#92400e">Ã°ÂÂÂ sede n/d</span>`}
+            ${d.email?`<span style="font-size:11px;color:#6b7280">Ã¢ÂÂÃ¯Â¸Â ${d.email}</span>`:""}
             ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
           </div>
           <div style="display:flex;gap:6px;align-items:center">
             <select onchange="window.aggiornaSedeDip('${d.id}', this.value)"
               style="padding:4px 8px;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">
               ${SEDI.map(s=>`<option value="${s}"${d.sede===s?' selected':''}>${s}</option>`).join('')}
-              <option value="" ${!d.sede||!SEDI.includes(d.sede)?'selected':''}>â nessuna â</option>
+              <option value="" ${!d.sede||!SEDI.includes(d.sede)?'selected':''}>Ã¢ÂÂ nessuna Ã¢ÂÂ</option>
             </select>
-            ${d.email?`<button class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8" onclick="window.inviaEmailPin('${d.id}')">âï¸ Invia PIN</button>`:""}
-            <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">âï¸</button>
-            <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">ðï¸</button>
+            ${d.email?`<button class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8" onclick="window.inviaEmailPin('${d.id}')">Ã¢ÂÂÃ¯Â¸Â Invia PIN</button>`:""}
+            <button class="btn btn-sm" style="background:#f3f4f6;color:#374151" data-modifica-dip="${d.id}">Ã¢ÂÂÃ¯Â¸Â</button>
+            <button class="btn btn-sm btn-danger" data-elimina-dip="${d.id}">Ã°ÂÂÂÃ¯Â¸Â</button>
           </div>
         </div>`;
       };
@@ -2889,16 +2889,16 @@ function renderAdminDipendenti() {
       return html;
     })()}
     <div class="info-box">
-      <p><strong>ð Note:</strong></p>
-      <p>â¢ Tariffa, soglia straordinario, ferie e permessi non sono visibili ai dipendenti</p>
-      <p>â¢ Festivi inclusi: 25/4, 1/5, 2/6, 24/6, 15/8, 1/11, 8/12, 25/12, 26/12, Pasqua, Pasquetta</p>
-      <p>â¢ âï¸ Turni spezzati supportati: piÃ¹ timbrature nello stesso giorno vengono aggregate</p>
+      <p><strong>Ã°ÂÂÂ Note:</strong></p>
+      <p>Ã¢ÂÂ¢ Tariffa, soglia straordinario, ferie e permessi non sono visibili ai dipendenti</p>
+      <p>Ã¢ÂÂ¢ Festivi inclusi: 25/4, 1/5, 2/6, 24/6, 15/8, 1/11, 8/12, 25/12, 26/12, Pasqua, Pasquetta</p>
+      <p>Ã¢ÂÂ¢ Ã¢ÂÂÃ¯Â¸Â Turni spezzati supportati: piÃÂ¹ timbrature nello stesso giorno vengono aggregate</p>
     </div>`;
 }
 
 function renderModaleDip() {
   const d=state.modaleDip?.dip||{};
-  const titolo=state.modaleDip?.mode==="modifica"?"âï¸ Modifica dipendente":"â Nuovo dipendente";
+  const titolo=state.modaleDip?.mode==="modifica"?"Ã¢ÂÂÃ¯Â¸Â Modifica dipendente":"Ã¢ÂÂ Nuovo dipendente";
   return `
     <div class="modal-bg" onclick="if(event.target===this){state.modaleDip=null;render()}">
       <div class="modal">
@@ -2908,14 +2908,14 @@ function renderModaleDip() {
           <div><label>Contratto</label>
             <select id="md-tipo">${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}</select>
           </div>
-          <div><label>Tariffa â¬/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
+          <div><label>Tariffa Ã¢ÂÂ¬/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Ore settimanali contratto</label><input id="md-ore-sett" type="number" step="0.5" placeholder="Es. 40" value="${d.oreSett||40}"></div>
-          <div><label>Monte ferie annuo (ore) <span style="font-weight:400;color:#9ca3af;font-size:11px">â lascia vuoto per calcolo automatico</span></label><input id="md-ferie" type="number" step="1" placeholder="Auto (da ore sett.)" value="${d.monteFerie||''}"></div>
+          <div><label>Monte ferie annuo (ore) <span style="font-weight:400;color:#9ca3af;font-size:11px">Ã¢ÂÂ lascia vuoto per calcolo automatico</span></label><input id="md-ferie" type="number" step="1" placeholder="Auto (da ore sett.)" value="${d.monteFerie||''}"></div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><label style="margin:0">Ruolo supervisore</label><input type="checkbox" id="md-supervisore" ${d.supervisore?"checked":""}></div>
           <div><label>Ferie pregresse (ore)</label><input id="md-ferie-pregresse" type="number" step="0.01" placeholder="Es. 40" value="${d.feriePregresse||""}"></div>
           <div><label>Monte permessi annuo (ore)</label><input id="md-permessi" type="number" step="1" placeholder="Es. 24" value="${d.montePermessi||""}"></div>
-          <div><label>PIN (4 cifre)</label><div style="display:flex;gap:6px"><input id="md-pin" type="text" maxlength="4" placeholder="Auto" value="${d.pin||(state.modaleDip.mode==='nuovo'?window._nuovoPinGenerato||'':'')}" style="font-size:18px;letter-spacing:4px;font-weight:700"><button type="button" onclick="document.getElementById('md-pin').value=generaPIN4()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;cursor:pointer;font-size:12px;white-space:nowrap">ð Genera</button></div></div>
+          <div><label>PIN (4 cifre)</label><div style="display:flex;gap:6px"><input id="md-pin" type="text" maxlength="4" placeholder="Auto" value="${d.pin||(state.modaleDip.mode==='nuovo'?window._nuovoPinGenerato||'':'')}" style="font-size:18px;letter-spacing:4px;font-weight:700"><button type="button" onclick="document.getElementById('md-pin').value=generaPIN4()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;cursor:pointer;font-size:12px;white-space:nowrap">Ã°ÂÂÂ Genera</button></div></div>
           <div><label>Data fine contratto</label><input id="md-fine-contratto" type="date" value="${d.fineContratto||""}"></div>
           <div><label>Email</label><input id="md-email" type="email" placeholder="mario.rossi@email.com" value="${d.email||""}"></div>
           <div><label>Telefono</label><input id="md-telefono" type="tel" placeholder="+39 333 1234567" value="${d.telefono||""}"></div>
@@ -2936,7 +2936,7 @@ function renderModaleDip() {
     </div>`;
 }
 
-// ââ SCHEDA DIPENDENTE: aggrega turni spezzati per giorno âââââââ
+// Ã¢ÂÂÃ¢ÂÂ SCHEDA DIPENDENTE: aggrega turni spezzati per giorno Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function renderAdminScheda() {
   const dipId=state.schedaDipId||state.dipendenti[0]?.id||"";
   const dip=state.dipendenti.find(d=>d.id===dipId);
@@ -2976,7 +2976,7 @@ function renderAdminScheda() {
 
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ð¤ Scheda dipendente</h2>
+      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂ¤ Scheda dipendente</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <select onchange="window.cambiaSchedaDip(this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">
           ${state.dipendenti.map(d=>`<option value="${d.id}"${d.id===dipId?" selected":""}>${d.nome}</option>`).join("")}
@@ -2987,7 +2987,7 @@ function renderAdminScheda() {
 
     ${dip?`
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:16px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px">${dip.nome} â ${MESI[state.filtroMese]} ${state.filtroAnno}</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px">${dip.nome} Ã¢ÂÂ ${MESI[state.filtroMese]} ${state.filtroAnno}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">
         ${[
           ["Giorni lav.", nGiorni],
@@ -3008,7 +3008,7 @@ function renderAdminScheda() {
       </div>
     </div>
 
-    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:10px">ð Dettaglio giornaliero</h3>
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:10px">Ã°ÂÂÂ Dettaglio giornaliero</h3>
     <div style="overflow-x:auto"><table>
       <thead><tr>
         <th style="text-align:left">Data</th><th>Giorno</th><th>Sede</th><th>Tipo</th>
@@ -3022,16 +3022,16 @@ function renderAdminScheda() {
           return `<tr style="background:${bg};opacity:0.4">
             <td style="font-size:12px">${ds}</td>
             <td><span style="font-size:11px">${giorno}</span></td>
-            <td colspan="9" style="color:#9ca3af;font-size:12px">${isFest?"ð Festivo":isDom?"âï¸ Domenica":"â"}</td>
+            <td colspan="9" style="color:#9ca3af;font-size:12px">${isFest?"Ã°ÂÂÂ Festivo":isDom?"Ã¢ÂÂÃ¯Â¸Â Domenica":"Ã¢ÂÂ"}</td>
           </tr>`;
         }
         if(assGiorno){
           return `<tr style="background:${bg}">
             <td style="font-weight:600;font-size:12px">${ds}</td>
-            <td><span style="font-size:11px">${giorno}${isFest?" ð":isDom?" âï¸":""}</span></td>
+            <td><span style="font-size:11px">${giorno}${isFest?" Ã°ÂÂÂ":isDom?" Ã¢ÂÂÃ¯Â¸Â":""}</span></td>
             <td><span style="font-size:11px">${assGiorno.sede||""}</span></td>
             <td><span class="badge badge-blue">Assenza</span></td>
-            <td colspan="6">â</td>
+            <td colspan="6">Ã¢ÂÂ</td>
             <td>${assGiorno.assenza}</td>
           </tr>`;
         }
@@ -3040,21 +3040,21 @@ function renderAdminScheda() {
         const calcAgg=agg?.calcolo;
         const isSpezzato=turniGiorno.length>1;
         const orariHTML=isSpezzato
-          ?turniGiorno.map((t,i)=>`<span style="font-size:11px;display:block">Turno ${i+1}: ${t.entrata}â${t.uscita} (${t.pausa||0}min)</span>`).join("")
-          :`${turniGiorno[0].entrata||"â"}â${turniGiorno[0].uscita||"â"} (${turniGiorno[0].pausa||0}min)`;
+          ?turniGiorno.map((t,i)=>`<span style="font-size:11px;display:block">Turno ${i+1}: ${t.entrata}Ã¢ÂÂ${t.uscita} (${t.pausa||0}min)</span>`).join("")
+          :`${turniGiorno[0].entrata||"Ã¢ÂÂ"}Ã¢ÂÂ${turniGiorno[0].uscita||"Ã¢ÂÂ"} (${turniGiorno[0].pausa||0}min)`;
         const sede=turniGiorno[0]?.sede||"";
         return `<tr style="background:${bg}">
           <td style="font-weight:600;font-size:12px">${ds}</td>
-          <td><span style="font-size:11px">${giorno}${isFest?" ð":isDom?" âï¸":""}</span></td>
+          <td><span style="font-size:11px">${giorno}${isFest?" Ã°ÂÂÂ":isDom?" Ã¢ÂÂÃ¯Â¸Â":""}</span></td>
           <td><span style="font-size:11px">${sede}</span></td>
-          <td>${isSpezzato?`<span class="badge badge-orange">âï¸ Spezzato</span>`:`<span class="badge badge-green">Lavoro</span>`}</td>
+          <td>${isSpezzato?`<span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>`:`<span class="badge badge-green">Lavoro</span>`}</td>
           <td style="font-size:11px;text-align:left">${orariHTML}</td>
-          <td style="font-weight:700">${calcAgg?minToHHMM(calcAgg.totaleMin)+"h":"â"}</td>
-          <td>${calcAgg?minToHHMM(calcAgg.diurneMin)+"h":"â"}</td>
-          <td style="color:#4f46e5">${calcAgg&&calcAgg.notturneMin>0?minToHHMM(calcAgg.notturneMin)+"h":"â"}</td>
-          <td style="color:#ea580c">${calcAgg&&calcAgg.strDiurniMin>0?minToHHMM(calcAgg.strDiurniMin)+"h":"â"}</td>
-          <td style="color:#dc2626">${calcAgg&&calcAgg.strNotturniMin>0?minToHHMM(calcAgg.strNotturniMin)+"h":"â"}</td>
-          <td>â</td>
+          <td style="font-weight:700">${calcAgg?minToHHMM(calcAgg.totaleMin)+"h":"Ã¢ÂÂ"}</td>
+          <td>${calcAgg?minToHHMM(calcAgg.diurneMin)+"h":"Ã¢ÂÂ"}</td>
+          <td style="color:#4f46e5">${calcAgg&&calcAgg.notturneMin>0?minToHHMM(calcAgg.notturneMin)+"h":"Ã¢ÂÂ"}</td>
+          <td style="color:#ea580c">${calcAgg&&calcAgg.strDiurniMin>0?minToHHMM(calcAgg.strDiurniMin)+"h":"Ã¢ÂÂ"}</td>
+          <td style="color:#dc2626">${calcAgg&&calcAgg.strNotturniMin>0?minToHHMM(calcAgg.strNotturniMin)+"h":"Ã¢ÂÂ"}</td>
+          <td>Ã¢ÂÂ</td>
         </tr>`;
       }).join("")}
       </tbody>
@@ -3078,11 +3078,11 @@ function esportaCSV() {
     const c=agg.calcolo, tipo=getTipoGiorno(data);
     const costo=calcolaCostoAggregato(c,data,dip);
     const isSpezzato=turni.length>1;
-    const orari=isSpezzato?turni.map(t=>`${t.entrata}â${t.uscita}`).join(" + "):`${turni[0].entrata||""}â${turni[0].uscita||""}`;
+    const orari=isSpezzato?turni.map(t=>`${t.entrata}Ã¢ÂÂ${t.uscita}`).join(" + "):`${turni[0].entrata||""}Ã¢ÂÂ${turni[0].uscita||""}`;
     righe.push([dip.nome,dip.tipo,data,tipo,orari,"",isSpezzato?turni.reduce((s,t)=>s+(t.pausa||0),0):"",
       minToHHMM(c.totaleMin),minToHHMM(c.diurneMin),minToHHMM(c.notturneMin),
       minToHHMM(c.strDiurniMin),minToHHMM(c.strNotturniMin),"",
-      costo?costo.totale.toFixed(2):"",isSpezzato?"SÃ¬":"No"]);
+      costo?costo.totale.toFixed(2):"",isSpezzato?"SÃÂ¬":"No"]);
   });
   tm.filter(t=>t.tipo==="assenza").forEach(t=>{
     const dip=state.dipendenti.find(x=>x.id===t.dipendenteId);
@@ -3099,7 +3099,7 @@ function esportaExcel() {
   const wb=XLSX.utils.book_new();
   const _turniAperti=tm.filter(t=>t.tipo==="lavoro"&&t.aperto&&!t.uscita).length;
 
-  // ââ FOGLIO 1: RIEPILOGO ââ
+  // Ã¢ÂÂÃ¢ÂÂ FOGLIO 1: RIEPILOGO Ã¢ÂÂÃ¢ÂÂ
   const righeRiepilogo=[["Dipendente","Contratto","Giorni Lav.","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie (h)","Permessi (h)","Malattia (h)","Riposo Comp. (h)","Giorno Libero (h)"]];
   state.dipendenti.forEach(dip=>{
     const r=getRiepilogo().find(x=>x.dip.id===dip.id);
@@ -3117,7 +3117,7 @@ function esportaExcel() {
   ws1["!cols"]=[{wch:20},{wch:14},{wch:10},{wch:10},{wch:10},{wch:11},{wch:11},{wch:12},{wch:7},{wch:9},{wch:9},{wch:13},{wch:13}];
   XLSX.utils.book_append_sheet(wb,ws1,"Riepilogo");
 
-  // ââ FOGLIO 2: PRESENZE (tabellone giorni Ã dipendenti con dettaglio) ââ
+  // Ã¢ÂÂÃ¢ÂÂ FOGLIO 2: PRESENZE (tabellone giorni ÃÂ dipendenti con dettaglio) Ã¢ÂÂÃ¢ÂÂ
   const anno = state.filtroAnno;
   const mese = state.filtroMese;
   const giorniDelMese = new Date(anno, mese+1, 0).getDate();
@@ -3163,7 +3163,7 @@ function esportaExcel() {
         const c2 = agg2 ? agg2.calcolo : null;
         if(c2) {
           const isSpezzato2 = mov.turni.length > 1;
-          const orari2 = isSpezzato2 ? mov.turni.map(t=>`${t.entrata}â${t.uscita}`).join("+") : `${mov.turni[0].entrata||""}â${mov.turni[0].uscita||""}`;
+          const orari2 = isSpezzato2 ? mov.turni.map(t=>`${t.entrata}Ã¢ÂÂ${t.uscita}`).join("+") : `${mov.turni[0].entrata||""}Ã¢ÂÂ${mov.turni[0].uscita||""}`;
           let cella = `LAV ${minToHHMM(c2.totaleMin)}`;
           if(isSpezzato2) cella += " (sp)";
           parti2.push(cella);
@@ -3212,7 +3212,7 @@ function esportaExcel() {
   ws2["!cols"]=[{wch:18},{wch:10},...dipAttivi.map(()=>({wch:22}))];
   XLSX.utils.book_append_sheet(wb,ws2,"Presenze");
 
-  // ââ FOGLIO 4: ORE MENSILI PER DIPENDENTE ââ
+  // Ã¢ÂÂÃ¢ÂÂ FOGLIO 4: ORE MENSILI PER DIPENDENTE Ã¢ÂÂÃ¢ÂÂ
   const righeOreM = [["Dipendente","Contratto","Ore Sett. Contratto","Ore Mensili Teoriche","Ore Lavorate","Differenza","Straordinari Giorn.","Note"]];
 
   dipAttivi.forEach(dip => {
@@ -3241,7 +3241,7 @@ function esportaExcel() {
     const oreLav = minLavorati / 60;
     const oreStr = minStr / 60;
     const diff = oreLav - oreTeoriche;
-    const nota = diff > 2 ? "â ï¸ Eccedenza" : diff < -2 ? "â ï¸ Mancanti" : "â Regolare";
+    const nota = diff > 2 ? "Ã¢ÂÂ Ã¯Â¸Â Eccedenza" : diff < -2 ? "Ã¢ÂÂ Ã¯Â¸Â Mancanti" : "Ã¢ÂÂ Regolare";
 
     righeOreM.push([
       dip.nome,
@@ -3266,17 +3266,17 @@ window.cambiaSchedaDip=function(id){state.schedaDipId=id;render();};
 window.inviaEmailPin=function(dipId){
   const dip = state.dipendenti.find(d=>d.id===dipId);
   if(!dip || !dip.email) return;
-  const pin = dip.pin || "â";
+  const pin = dip.pin || "Ã¢ÂÂ";
   const nome = dip.nome;
   const url = "https://lorebernini90-maker.github.io/timbrature-ristorante/";
-  const subject = encodeURIComponent(`Accesso app Timbrature â ${nome}`);
+  const subject = encodeURIComponent(`Accesso app Timbrature Ã¢ÂÂ ${nome}`);
   const body = encodeURIComponent(
 `Ciao ${nome.split(" ")[0]},
 
 ecco le tue credenziali per accedere all'app timbrature del ristorante:
 
-ð Link: ${url}
-ð PIN: ${pin}
+Ã°ÂÂÂ Link: ${url}
+Ã°ÂÂÂ PIN: ${pin}
 
 Come accedere:
 1. Apri il link sopra (o usa l'icona sul telefono)
@@ -3284,8 +3284,8 @@ Come accedere:
 3. Inserisci il PIN a 4 cifre
 
 Come timbrare:
-â¢ Arrivo: premi il pulsante verde ENTRATA
-â¢ Uscita: premi il pulsante rosso USCITA
+Ã¢ÂÂ¢ Arrivo: premi il pulsante verde ENTRATA
+Ã¢ÂÂ¢ Uscita: premi il pulsante rosso USCITA
 
 Per qualsiasi problema contatta il responsabile.
 
@@ -3296,7 +3296,7 @@ Cordiali saluti`
 
 window.assegnaPinMancanti=async function(){
   const senzaPin = state.dipendenti.filter(d=>!d.pin);
-  if(senzaPin.length===0){alert("â Tutti i dipendenti hanno giÃ  un PIN!");return;}
+  if(senzaPin.length===0){alert("Ã¢ÂÂ Tutti i dipendenti hanno giÃÂ  un PIN!");return;}
   const conf = confirm(`Assegnare un PIN a ${senzaPin.length} dipendenti senza PIN?`);
   if(!conf) return;
   const nuoviPin = [];
@@ -3310,13 +3310,13 @@ window.assegnaPinMancanti=async function(){
   render();
   // Mostra riepilogo PIN assegnati
   const lista = nuoviPin.map(x=>`${x.nome}: ${x.pin}`).join("\n");
-  alert("â PIN assegnati:\n\n"+lista+"\n\nAnnotati e distribuili ai dipendenti!");
+  alert("Ã¢ÂÂ PIN assegnati:\n\n"+lista+"\n\nAnnotati e distribuili ai dipendenti!");
 };
 
 
 // Migrazione email/telefono da file Excel
 window.migraEmailTelefono = async function() {
-  if(localStorage.getItem("emailMigrazione_v1")) return; // giÃ  eseguita
+  if(localStorage.getItem("emailMigrazione_v1")) return; // giÃÂ  eseguita
   const dati = [
   {nome: "IANNONE NOEMI ALESSANDRA", email: "noemiiannone70@gmail.com", telefono: "+39 3922537817"},
   {nome: "MAURANTONIO NICCOLO'", email: "nmauro001@gmail.com", telefono: "+39 3273783103"},
@@ -3419,7 +3419,7 @@ window.importaBackup=async function(input){
         dipImportati++;
       }
     }
-    // Importa timbrature che non esistono giÃ 
+    // Importa timbrature che non esistono giÃÂ 
     let timbImportate = 0;
     for(const t of backup.timbrature){
       const {id,...data}=t;
@@ -3432,9 +3432,9 @@ window.importaBackup=async function(input){
         timbImportate++;
       }
     }
-    alert(`â Backup importato!\n${dipImportati} dipendenti aggiunti\n${timbImportate} timbrature aggiunte`);
+    alert(`Ã¢ÂÂ Backup importato!\n${dipImportati} dipendenti aggiunti\n${timbImportate} timbrature aggiunte`);
   } catch(e) {
-    alert("â Errore: " + e.message);
+    alert("Ã¢ÂÂ Errore: " + e.message);
   }
 };
 window.renderLoginList=function(){
@@ -3446,7 +3446,7 @@ window.renderLoginList=function(){
   el.innerHTML=filtrati.map(d=>`
     <div class="login-item" data-login-dip="${d.id}">
       <div style="font-weight:600">${d.nome}</div>
-      <span style="color:#f59e0b;font-size:20px">${d.pin?"ð":"â"}</span>
+      <span style="color:#f59e0b;font-size:20px">${d.pin?"Ã°ÂÂÂ":"Ã¢ÂÂ"}</span>
     </div>`).join("")+(filtrati.length===0?`<div style="text-align:center;color:#9ca3af;padding:20px;font-size:14px">Nessun dipendente trovato</div>`:"");
 };
 window.aggiornaBarraEliminazione=function(){
@@ -3507,7 +3507,7 @@ async function caricaTimbratureMese(meseStr) {
     const snap = await getDocs(q);
     const risultati = snap.docs.map(d=>({id:d.id,...d.data()}));
     window._cacheTimbrMese[meseStr] = risultati;
-    // Aggiorna anche state.timbrature se Ã¨ lo stesso anno del filtro corrente
+    // Aggiorna anche state.timbrature se ÃÂ¨ lo stesso anno del filtro corrente
     if(parseInt(anno) === state.filtroAnno) {
       // Integra i nuovi dati in state.timbrature (evita duplicati)
       const idsEsistenti = new Set(state.timbrature.map(t=>t.id));
@@ -3518,7 +3518,7 @@ async function caricaTimbratureMese(meseStr) {
 }
 
 function getTimbrMeseCalendario(meseStr, dipId) {
-  // Se il mese coincide con il filtro corrente, usa state.timbrature giÃ  caricato
+  // Se il mese coincide con il filtro corrente, usa state.timbrature giÃÂ  caricato
   const meseCorrente = `${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}`;
   if(meseStr === meseCorrente) {
     return dipId ? state.timbrature.filter(t=>t.dipendenteId===dipId) : state.timbrature;
@@ -3556,7 +3556,7 @@ function renderCalendarioMultiplo(prefisso) {
     const haAssenza = timbrGiorno.some(t => t.tipo==="assenza");
     const bgExist = haLavoro ? "#dcfce7" : haAssenza ? "#ffedd5" : "white";
     const borderExist = haLavoro ? "#86efac" : haAssenza ? "#fdba74" : "#e5e7eb";
-    const dotExist = haLavoro ? `<div style="font-size:7px;color:#16a34a;line-height:1">â</div>` : haAssenza ? `<div style="font-size:7px;color:#ea580c;line-height:1">â</div>` : "";
+    const dotExist = haLavoro ? `<div style="font-size:7px;color:#16a34a;line-height:1">Ã¢ÂÂ</div>` : haAssenza ? `<div style="font-size:7px;color:#ea580c;line-height:1">Ã¢ÂÂ</div>` : "";
     html+=`<div id="${prefisso}-giorno-${ds}" onclick="toggleGiorno('${prefisso}','${ds}')" style="cursor:pointer;padding:5px 2px;border-radius:6px;font-size:13px;border:1px solid ${sel?"#f59e0b":borderExist};background:${sel?"#f59e0b":bgExist};color:${sel?"white":"inherit"};text-align:center" data-data="${ds}">${g}${dotExist}</div>`;
   }
   const dateList=[...set].sort().filter(d=>d.startsWith(`${anno}-${String(mese+1).padStart(2,"0")}`));
@@ -3636,16 +3636,16 @@ function renderSupBancaOre(dip) {
 
   return `
     <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">ð Vista Supervisore</div>
+      <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">Ã°ÂÂÂ Vista Supervisore</div>
       <button class="btn btn-white btn-sm" data-logout>Esci</button>
     </div>
     <div style="max-width:600px;margin:0 auto;padding:16px">
       <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb;margin-bottom:16px">
-        <button onclick="window.supSetTab('colleghi')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:transparent;color:#6b7280;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:none">ð¥ Colleghi</button>
-        <button onclick="window.supSetTab('bancaore')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:white;color:#7c3aed;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:2px solid #7c3aed;margin-bottom:-2px">ð¦ Banca Ore</button>
+        <button onclick="window.supSetTab('colleghi')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:transparent;color:#6b7280;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:none">Ã°ÂÂÂ¥ Colleghi</button>
+        <button onclick="window.supSetTab('bancaore')" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:white;color:#7c3aed;cursor:pointer;border-radius:8px 8px 0 0;border-bottom:2px solid #7c3aed;margin-bottom:-2px">Ã°ÂÂÂ¦ Banca Ore</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">ð¦ Banca Ore</h2>
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">Ã°ÂÂÂ¦ Banca Ore</h2>
         ${filtriHTML()}
       </div>
       <div class="info-box" style="margin-bottom:16px">
@@ -3665,10 +3665,10 @@ function renderSupBancaOre(dip) {
           const sc = b.saldo > 0 ? "#dc2626" : b.saldo < 0 ? "#059669" : "#6b7280";
           const sbg = b.saldo > 0 ? "#fef2f2" : b.saldo < 0 ? "#f0fdf4" : "#f9fafb";
           const sbr = b.saldo > 0 ? "#fecaca" : b.saldo < 0 ? "#bbf7d0" : "#e5e7eb";
-          const icon = b.saldo > 0 ? "ð" : b.saldo < 0 ? "ð" : "âï¸";
+          const icon = b.saldo > 0 ? "Ã°ÂÂÂ" : b.saldo < 0 ? "Ã°ÂÂÂ" : "Ã¢ÂÂÃ¯Â¸Â";
           return `<div style="background:${sbg};border:1px solid ${sbr};border-radius:12px;padding:14px">
             <div style="font-weight:700;font-size:13px;margin-bottom:8px">${b.dip.nome}
-              <span style="font-weight:400;color:#6b7280;font-size:11px"> â soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+              <span style="font-weight:400;color:#6b7280;font-size:11px"> Ã¢ÂÂ soglia ${(b.soglia/60).toFixed(2)}h/g</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
               <div style="background:white;border-radius:8px;padding:8px;border:1px solid #e5e7eb">
@@ -3694,7 +3694,7 @@ function renderSupBancaOre(dip) {
         <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:14px">
           <div style="background:#f9fafb;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;gap:8px">
             <div style="font-weight:700;font-size:13px">${b.dip.nome}
-              <span style="font-weight:400;color:#6b7280;font-size:11px"> â ${b.dip.tipo} â soglia ${(b.soglia/60).toFixed(2)}h/g</span>
+              <span style="font-weight:400;color:#6b7280;font-size:11px"> Ã¢ÂÂ ${b.dip.tipo} Ã¢ÂÂ soglia ${(b.soglia/60).toFixed(2)}h/g</span>
             </div>
             <div style="display:flex;gap:12px;font-size:12px;font-weight:700;flex-wrap:wrap">
               <span style="color:#dc2626">+${minToHHMM(b.totaleSurplus)}h surplus</span>
@@ -3714,14 +3714,14 @@ function renderSupBancaOre(dip) {
                 const isFest = isFestivo(g.data);
                 const rowbg = isFest ? "#fef2f2" : dow===0 ? "#f5f3ff" : g.diff < 0 ? "#fef9f0" : "";
                 const dc = g.diff > 0 ? "#dc2626" : g.diff < 0 ? "#059669" : "#9ca3af";
-                const dl = g.diff === 0 ? "â" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
+                const dl = g.diff === 0 ? "Ã¢ÂÂ" : (g.diff > 0 ? "+" : "") + minToHHMM(Math.abs(g.diff)) + "h";
                 return `<tr style="background:${rowbg}">
                   <td style="font-weight:600;font-size:12px">${g.data}</td>
-                  <td style="font-size:11px">${giorniSettimana[dow]}${isFest?" ð":""}</td>
+                  <td style="font-size:11px">${giorniSettimana[dow]}${isFest?" Ã°ÂÂÂ":""}</td>
                   <td>${g.tipo==="assenza"
                     ? `<span class="badge badge-blue">${g.assenza}</span>`
                     : g.isSpezzato
-                      ? `<span class="badge badge-orange">âï¸ Spezzato</span>`
+                      ? `<span class="badge badge-orange">Ã¢ÂÂÃ¯Â¸Â Spezzato</span>`
                       : `<span class="badge badge-green">Lavoro</span>`}
                   </td>
                   <td style="font-weight:600">${minToHHMM(g.oreMin)}h</td>

@@ -1996,7 +1996,9 @@ function renderAdminInserisci() {
   function isDom(d){return new Date(d+'T12:00:00').getDay()===0;}
   function pad(n){return n<10?'0'+n:''+n;}
   var oggi2=oggi();
-  var anno=(state.calAnno||state.filtroAnno),mese=(state.calMese!=null&&state.calMese!==undefined?state.calMese:state.filtroMese);
+  if(state.calMese==null||isNaN(state.calMese))state.calMese=state.filtroMese;
+  if(!state.calAnno)state.calAnno=state.filtroAnno;
+  var anno=state.calAnno,mese=state.calMese;
   var ms=anno+'-'+pad(mese+1);
   var dOpts=state.dipendenti.map(function(d){return '<option value="'+d.id+'"'+(d.id===dipId?' selected':'')+'>'+d.nome+'</option>';}).join('');
   var timbr=getTimbrMeseCalendario(ms,dipId);

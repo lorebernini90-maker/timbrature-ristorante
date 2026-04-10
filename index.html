@@ -9,12 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Timbrature">
 <link rel="apple-touch-icon" href="icon-12.png">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-window.ciTogSelFn=function(dipId,ds,el){if(!state.calSelezionati)state.calSelezionati=new Set();if(state.calSelezionati.has(ds))state.calSelezionati.delete(ds);else state.calSelezionati.add(ds);document.querySelectorAll('[data-ds]').forEach(function(d){if(d.dataset.ds===ds){if(state.calSelezionati.has(ds))d.classList.add('ci-sel');else d.classList.remove('ci-sel');}});var cnt=document.getElementById('ci-mp-count');if(cnt)cnt.textContent=(state.calSelezionati?state.calSelezionati.size:0)+' giorni selezionati';};
-window.ciDeselTuttiFn=function(){state.calSelezionati=new Set();document.querySelectorAll('.ci-sel').forEach(function(d){d.classList.remove('ci-sel');});var cnt=document.getElementById('ci-mp-count');if(cnt)cnt.textContent='0 giorni selezionati';};
-window.ciMpTogTipoFn=function(){var t=document.getElementById('ci-mp-tipo');if(!t)return;var lav=document.getElementById('ci-mp-lav-wrap');var ass=document.getElementById('ci-mp-ass-wrap');if(lav)lav.style.display=t.value==='lavoro'?'grid':'none';if(ass)ass.style.display=t.value==='assenza'?'block':'none';};
-window.ciSalvaMultiFn=async function(){if(!state.calSelezionati||!state.calSelezionati.size){alert('Seleziona almeno un giorno!');return;}var dipId=state.calDipId||(state.dipendenti[0]?state.dipendenti[0].id:'');var tipo=document.getElementById('ci-mp-tipo')?document.getElementById('ci-mp-tipo').value:'lavoro';var dip=state.dipendenti.find(function(d){return d.id===dipId;});if(!dip){alert('Seleziona un dipendente!');return;}var r=await ciGetDB();var db=r.db;var giorni=[...state.calSelezionati].sort();var inseriti=0;var _fatti=new Set();try{for(var i=0;i<giorni.length;i++){var ds=giorni[i];if(_fatti.has(ds))continue;_fatti.add(ds);if(tipo==='lavoro'){var en=document.getElementById('ci-mp-en')?document.getElementById('ci-mp-en').value:'';var us=document.getElementById('ci-mp-us')?document.getElementById('ci-mp-us').value:'';var pa=document.getElementById('ci-mp-pa')?parseInt(document.getElementById('ci-mp-pa').value)||30:30;var se=document.getElementById('ci-mp-se')?document.getElementById('ci-mp-se').value:(dip?dip.sede:'');if(!en){alert('Inserisci orario entrata!');return;}var sogliaEff=dip&&dip.sogliaOre?dip.sogliaOre*60:null;var calcolo=calcolaTurno(en,us,pa,sogliaEff);var docData={dipendenteId:dipId,data:ds,tipo:'lavoro',entrata:en,uscita:us,pausa:pa,calcolo:calcolo,sede:se,sbloccata:false};await r.fs.addDoc(r.fs.collection(db,'timbrature'),docData).then(function(ref){state.timbrature.push(Object.assign({},docData,{id:ref.id}));});}else{var assenza=document.getElementById('ci-mp-assenza')?document.getElementById('ci-mp-assenza').value:'Ferie';var se2=document.getElementById('ci-mp-se')?document.getElementById('ci-mp-se').value:(dip?dip.sede:'');var docData2={dipendenteId:dipId,data:ds,tipo:'assenza',assenza:assenza,sede:se2,sbloccata:false};await r.fs.addDoc(r.fs.collection(db,'timbrature'),docData2).then(function(ref){state.timbrature.push(Object.assign({},docData2,{id:ref.id}));});}inseriti++;}alert('✅ Inseriti '+inseriti+' turni per '+dip.nome+'!');window.ciDeselTuttiFn();if(window._cacheTimbrMese)delete window._cacheTimbrMese;render();}catch(err){alert('Errore: '+err.message);}};
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <title>Timbrature Ristorante</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -159,7 +154,7 @@ tr:hover td { background: #fffbeb; }
   .ci-cal-hd{text-align:center;font-size:11px;font-weight:700;color:#9ca3af;padding:4px 0;}
   .ci-cal-day{border:1.5px solid #e5e7eb;border-radius:8px;min-height:64px;padding:4px 5px;cursor:pointer;background:#fff;transition:box-shadow .15s;}
   .ci-cal-day:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);border-color:#f59e0b;}
-  .ci-cal-day.ci-today{border:2px solid #f59e0b!important;background:#fffbeb;}.ci-cal-day.ci-sel{border:2.5px solid #1e40af!important;background:#dbeafe;}
+  .ci-cal-day.ci-today{border:2px solid #f59e0b!important;background:#fffbeb;}
   .ci-cal-day.ci-empty{background:transparent;border:none;cursor:default;}
   .ci-cal-day.ci-dom,.ci-cal-day.ci-fest{background:#f9fafb;}
   .ci-cal-day.ci-dom .ci-dn,.ci-cal-day.ci-fest .ci-dn{color:#9ca3af;}
@@ -2008,14 +2003,147 @@ function renderAdminInserisci() {
     for(var d=1;d<=dim;d++){
       var ds=anno+'-'+pad(mese+1)+'-'+pad(d);
       var tg=timbs.filter(function(t){return t.data===ds;});
-      var cls='ci-cal-day'+(ds===tod?' ci-today':'')+( isDom(ds)?' ci-dom':isFest(ds)?' ci-fest':''  )+(state.calSelezionati&&state.calSelezionati.has(ds)?' ci-sel':'');
+      var cls='ci-cal-day'+(ds===tod?' ci-today':'')+( isDom(ds)?' ci-dom':isFest(ds)?' ci-fest':''  );
       var bdg='';
       if(!tg.length){if(!isDom(ds)&&!isFest(ds))bdg='<span class="ci-db ci-db-p">+</span>';}
       else tg.forEach(function(t){if(t.tipo==='lavoro'){var noU=!t.uscita||t.uscita===''||t.uscita==='--:--';bdg+=noU?'<span class="ci-db ci-db-u">!'+(t.entrata||'?')+'</span>':'<span class="ci-db ci-db-l">'+(t.entrata||'?')+'->'+(t.uscita||'?')+'</span>';}else if(t.tipo==='assenza')bdg+='<span class="ci-db ci-db-a">'+((t.assenza||'Ass').substring(0,8))+'</span>';});
-      rows+='<div class="'+cls+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciTogSelFn(this.dataset.did,this.dataset.ds,this)"><div class="ci-dn">'+d+'</div><div class="ci-dbs">'+bdg+'</div></div>';
+      rows+='<div class="'+cls+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciApriFn(this.dataset.did,this.dataset.ds)"><div class="ci-dn">'+d+'</div><div class="ci-dbs">'+bdg+'</div></div>';
     }
     rows+='</div>';
-    return '<div style="padding:20px"><select onchange="state.calDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">'+dOpts+'</select><span style="display:flex;align-items:center;gap:4px"><button onclick="ciMesePrecFn()" style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">&lt;</button><b style="min-width:120px;text-align:center">'+MESI[mese]+' '+anno+'</b><button onclick="ciMeseSuccFn()" style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">&gt;</button></span></div>'+rows+'</div>';+'<div id="ci-multi-panel" style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px"><div style="font-weight:700;font-size:14px;color:#1e40af;margin-bottom:12px">⚡ Salva giorni selezionati</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Tipo</label><select id="ci-mp-tipo" onchange="ciMpTogTipoFn()" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px"><option value=\'lavoro\'>Turno di lavoro</option><option value=\'assenza\'>Assenza</option></select></div><div id="ci-mp-ass-wrap" style="display:none"><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Tipo assenza</label><select id="ci-mp-assenza" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'+VOCI_ASSENZA.map(function(v){return\'<option>\'+v+\'</option>\';}).join(\'\')+'</select></div></div><div id="ci-mp-lav-wrap" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px"><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Entrata</label><input type=\'time\' id=\'ci-mp-en\' style=\'width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px\'></div><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Uscita</label><input type=\'time\' id=\'ci-mp-us\' style=\'width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px\'></div><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pausa (min)</label><input type=\'number\' id=\'ci-mp-pa\' value=\'30\' min=\'0\' max=\'120\' style=\'width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px\'></div><div><label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Sede</label><select id=\'ci-mp-se\' style=\'width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px\'>'+sOpts(dipSede)+'</select></div></div><div style="display:flex;align-items:center;gap:10px"><span id="ci-mp-count" style="font-size:13px;color:#6b7280;flex:1">0 giorni selezionati</span><button onclick="ciDeselTuttiFn()" style="padding:7px 14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer">✕ Deseleziona tutti</button><button onclick="ciSalvaMultiFn()" style="padding:7px 18px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">💾 Salva giorni selezionati</button></div></div>'
+    return '<div style="padding:20px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="ci-vbtn" onclick="state.calVista=null;render()">Modulo</button><button class="ci-vbtn act">Calendario</button><select onchange="state.calDipId=this.value;render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">'+dOpts+'</select><span style="display:flex;align-items:center;gap:4px"><button onclick="ciMesePrecFn()" style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">&lt;</button><b style="min-width:120px;text-align:center">'+MESI[mese]+' '+anno+'</b><button onclick="ciMeseSuccFn()" style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;cursor:pointer">&gt;</button></span></div>'+rows+'</div>';
+  }
+  return `<div style="display:flex;gap:8px;margin-bottom:12px"><button class="ci-vbtn act">Modulo</button><button class="ci-vbtn" onclick="state.calDipId=document.getElementById('ai-dip')?document.getElementById('ai-dip').value:(state.dipendenti[0]?state.dipendenti[0].id:'');state.calMese=state.filtroMese;state.calAnno=state.filtroAnno;state.calVista='calendario';render()">Calendario</button></div>
+
+    <h2 style="font-size:15px;font-weight:700;color:#374151;margin-bottom:16px">âï¸ Inserisci timbratura manuale</h2>
+    ${(()=>{
+      const _ieriIns=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+  const turniAperti=state.timbrature.filter(t=>(t.data===oggi()||t.data===_ieriIns)&&t.tipo==="lavoro"&&(t.aperto===true||(!t.uscita&&t.entrata)));
+      if(!turniAperti.length) return "";
+      return `<div style="background:#fef9f0;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">â ï¸ Turni aperti oggi â aggiungi l'uscita manualmente</div>
+        ${turniAperti.map(t=>{
+          const d=state.dipendenti.find(x=>x.id===t.dipendenteId);
+          return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 0">
+            <span><strong>${d?.nome||"?"}</strong> â ${t.data} entrata ${t.entrata}</span>
+          </div>`;
+        }).join("")}
+      </div>`;
+    })()}
+    <div class="grid-auto" style="margin-bottom:12px">
+      <div><label>Dipendente</label>
+        <select id="ai-dip" onchange="(async()=>{const meseEl=document.getElementById('admin-mese-multiplo');const mv=meseEl?.value||(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0'));await caricaTimbratureMese(mv);const el=document.getElementById('admin-calendario-multiplo');if(el)el.innerHTML=renderCalendarioMultiplo('admin');})()">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
+      </div>
+      <div><label>Data</label><input type="date" id="ai-data" value="${oggi()}"></div>
+      <div><label>Sede</label>
+        <select id="ai-sede">${SEDI.map(s=>`<option${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      <div><label>Tipo</label>
+        <select id="ai-tipo" onchange="toggleTipoAdmin()">
+          <option value="lavoro">Turno di lavoro</option>
+          <option value="assenza">Assenza</option>
+        </select>
+      </div>
+    </div>
+    <div id="ai-lavoro-fields" class="grid-auto" style="margin-bottom:12px">
+      <div><label>Entrata</label><input type="time" id="ai-entrata"></div>
+      <div><label>Uscita</label><input type="time" id="ai-uscita"></div>
+      <div><label>Pausa (min)</label><input type="number" id="ai-pausa" value="30" min="0"></div>
+      <div><label><span class="tooltip-wrap">Soglia str. (min) <span style="font-weight:400;color:#9ca3af">opz.</span>
+          <span class="tooltip-icon">?</span>
+          <span class="tooltip-text">La soglia Ã¨ il numero di minuti giornalieri oltre i quali scattano gli straordinari. Es: 400 = 6h 40min. Lascia vuoto per usare quella del dipendente.</span>
+        </span></label>
+        <input type="number" id="ai-soglia-custom" placeholder="Default dipendente" min="0" max="720">
+      </div>
+    </div>
+    <div id="ai-assenza-fields" style="display:none;margin-bottom:12px">
+      <div class="grid-auto" style="margin-bottom:12px">
+        <div><label>Tipo assenza</label>
+          <select id="ai-assenza">${VOCI_ASSENZA.map(v=>`<option>${v}</option>`).join("")}</select>
+        </div>
+        <div><label>ModalitÃ  selezione</label>
+          <select id="ai-modo-assenza" onchange="toggleModoAssenza('admin')">
+            <option value="singola">Giorno singolo</option>
+            <option value="intervallo">Intervallo (da â a)</option>
+            <option value="multipla">Giorni multipli</option>
+          </select>
+        </div>
+      </div>
+      <div id="admin-assenza-singola" class="grid-auto" style="margin-bottom:12px">
+        <div><label>Data</label><input type="date" id="ai-data-assenza" value="${oggi()}"></div>
+      </div>
+      <div id="admin-assenza-intervallo" style="display:none;margin-bottom:12px">
+        <div class="grid-auto">
+          <div><label>Da</label><input type="date" id="ai-data-ass-da" value="${oggi()}"></div>
+          <div><label>A</label><input type="date" id="ai-data-ass-a" value="${oggi()}"></div>
+        </div>
+      </div>
+      <div id="admin-assenza-multipla" style="display:none;margin-bottom:12px">
+        <label>Seleziona piÃ¹ date</label>
+        <div style="margin-bottom:8px">
+          <label>Mese</label>
+          <input type="month" id="admin-mese-multiplo" value="${new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')}" onchange="aggiornaMeseMultiplo('admin')" style="max-width:180px">
+        </div>
+        <div id="admin-calendario-multiplo" style="margin-top:8px">${renderCalendarioMultiplo("admin")}</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" data-salva-timbratura-admin>ð¾ Salva timbratura</button>
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
+
+    <!-- INSERIMENTO RAPIDO MENSILE -->
+    <div style="margin-bottom:24px">
+      <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">â¡ Inserimento rapido mensile</h3>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:14px">Seleziona i giorni nel calendario, imposta l'orario di default e personalizza singolo giorno se necessario.</p>
+      <div class="grid-auto" style="margin-bottom:12px">
+        <div><label>Dipendente</label>
+          <select id="ir-dip" onchange="renderCalendarioRapido()">${getDipendentiAttivi().map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}</select>
+        </div>
+        <div><label>Mese</label>
+          <input type="month" id="ir-mese" value="${new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')}" onchange="renderCalendarioRapido()">
+        </div>
+        <div><label>Sede</label>
+          <select id="ir-sede">${SEDI.map(s=>`<option${s===(state.filtroSede||SEDI[0])?" selected":""}>${s}</option>`).join("")}</select>
+        </div>
+      </div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px">Orario default (si applica a tutti i giorni selezionati)</div>
+        <div class="grid-auto">
+          <div><label>Entrata</label><input type="time" id="ir-entrata-default" value="09:00" oninput="aggiornaDefaultOrari()"></div>
+          <div><label>Uscita</label><input type="time" id="ir-uscita-default" value="17:00" oninput="aggiornaDefaultOrari()"></div>
+          <div><label>Pausa (min)</label><input type="number" id="ir-pausa-default" value="30" min="0" max="120" oninput="aggiornaDefaultOrari()"></div>
+          <div><label>Soglia str. (min) <span style="font-weight:400;color:#9ca3af">opz.</span></label><input type="number" id="ir-soglia-default" placeholder="Default dip." min="0" max="720"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button onclick="selezionaTuttiGiorni(true)" style="padding:6px 12px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer">â Seleziona tutti</button>
+        <button onclick="selezionaTuttiGiorni(false)" style="padding:6px 12px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer">â¬ Deseleziona tutti</button>
+        <button onclick="selezionaSoloFeriali()" style="padding:6px 12px;font-size:12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer">ð Solo LunâSab</button>
+      </div>
+      <div id="calendario-rapido" style="margin-bottom:14px">${renderCalendarioRapidoHTML()}</div>
+      <button class="btn btn-primary" style="width:100%" data-salva-inserimento-rapido>â¡ Inserisci tutti i turni selezionati</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
+    <h3 style="font-size:14px;font-weight:700;color:#374151;margin-bottom:12px">ð Gestisci timbrature</h3>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-end">
+      <div style="flex:1;min-width:160px">
+        <label>Filtra dipendente</label>
+        <select id="filtro-dip-lista" onchange="renderListaTimbrature()">
+          <option value="">Tutti</option>
+          ${state.dipendenti.map(d=>`<option value="${d.id}">${d.nome}</option>`).join("")}
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label>Filtra mese</label>
+        <input type="month" id="filtro-mese-lista"
+          value="${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,'0')}"
+          onchange="renderListaTimbrature()"
+          style="width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px">
+      </div>
+      <button onclick="document.getElementById('filtro-dip-lista').value='';document.getElementById('filtro-mese-lista').value='';renderListaTimbrature()"
+        style="padding:9px 14px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap;height:fit-content">
+        ð Tutto
+      </button>
+    </div>
     <div id="lista-timbrature">${renderListaTimbratureHTML()}</div>`;
 }
 

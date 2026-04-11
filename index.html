@@ -4,16 +4,440 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#f59e0b">
-<meta name="apple-mobile-web-app-capable"ontent="yes">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Timbrature">
+<meta name="apple-mobile-web-app-title" content="TimbròApp">
 <link rel="apple-touch-icon" href="icon-12.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<title>Timbrature Ristorante</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>TimbròApp — Gestione presenze CCNL</title>
 <style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — TimbròApp
+   Palette: Ink Navy + Warm Slate + Amber accent
+═══════════════════════════════════════════════ */
+:root {
+  --ink:       #0f172a;
+  --ink-80:    #1e293b;
+  --ink-60:    #334155;
+  --slate:     #64748b;
+  --slate-30:  #cbd5e1;
+  --slate-10:  #f1f5f9;
+  --white:     #ffffff;
+  --amber:     #f59e0b;
+  --amber-d:   #d97706;
+  --amber-l:   #fef3c7;
+  --amber-ll:  #fffbeb;
+  --green:     #059669;
+  --green-l:   #d1fae5;
+  --red:       #dc2626;
+  --red-l:     #fee2e2;
+  --blue:      #2563eb;
+  --blue-l:    #dbeafe;
+  --purple:    #7c3aed;
+  --purple-l:  #ede9fe;
+  --orange:    #ea580c;
+  --orange-l:  #ffedd5;
+
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --shadow-sm: 0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+  --shadow:    0 4px 16px rgba(15,23,42,0.10), 0 1px 4px rgba(15,23,42,0.06);
+  --shadow-lg: 0 12px 40px rgba(15,23,42,0.14), 0 4px 12px rgba(15,23,42,0.08);
+
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --transition: 0.18s cubic-bezier(.4,0,.2,1);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; min-height: 100vh; }
+
+body {
+  font-family: var(--font);
+  background: var(--slate-10);
+  min-height: 100vh;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LOADING ── */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 60vh; flex-direction: column; gap: 14px;
+  color: var(--slate); font-size: 15px; font-weight: 500;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--slate-30);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; border-radius: var(--radius);
+  padding: 9px 18px; font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: all var(--transition);
+  font-family: var(--font); letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: var(--amber); color: var(--ink-80); }
+.btn-primary:hover { background: var(--amber-d); }
+.btn-white  { background: var(--white); color: var(--ink-80); border: 1px solid var(--slate-30); }
+.btn-dark   { background: var(--ink-80); color: var(--white); }
+.btn-danger { background: var(--red); color: var(--white); }
+.btn-sm     { padding: 6px 12px; font-size: 12px; }
+
+/* ── INPUTS ── */
+input, select, textarea {
+  width: 100%;
+  border: 1.5px solid var(--slate-30);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-size: 14px; font-family: var(--font);
+  outline: none; background: var(--white);
+  color: var(--ink); transition: border-color var(--transition), box-shadow var(--transition);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+}
+label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--slate); margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+
+/* ── BADGES ── */
+.badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 20px;
+  font-weight: 600; display: inline-flex; align-items: center; gap: 3px;
+}
+.badge-blue   { background: var(--blue-l);   color: var(--blue); }
+.badge-green  { background: var(--green-l);  color: var(--green); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+.badge-red    { background: var(--red-l);    color: var(--red); }
+.badge-orange { background: var(--orange-l); color: var(--orange); }
+.badge-amber  { background: var(--amber-l);  color: var(--amber-d); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--white); border-radius: var(--radius-lg);
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  background: var(--slate-10); color: var(--slate);
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+  padding: 9px 10px; text-align: center; font-weight: 700;
+  border-bottom: 1px solid var(--slate-30);
+}
+th:first-child { text-align: left; }
+td { padding: 9px 10px; text-align: center; border-top: 1px solid rgba(15,23,42,0.05); }
+td:first-child { text-align: left; }
+tr:hover td { background: var(--amber-ll); }
+.empty { text-align: center; color: var(--slate); padding: 40px; font-size: 14px; }
+
+/* ── ROW LIST ── */
+.row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: var(--radius); font-size: 13px;
+  margin-bottom: 6px; background: var(--white);
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: var(--shadow-sm); gap: 6px; flex-wrap: wrap;
+  transition: box-shadow var(--transition);
+}
+.row:hover { box-shadow: var(--shadow); }
+
+/* ── SEZIONE ── */
+.sezione {
+  background: var(--slate-10); border: 1px solid rgba(15,23,42,0.06);
+  border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px;
+}
+.sezione-titolo {
+  font-size: 11px; font-weight: 700; color: var(--slate);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px;
+}
+
+/* ── ALERT ── */
+.alert-red {
+  background: var(--red-l); border: 1px solid #fecaca;
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 13px; color: var(--red); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── INFO BOX ── */
+.info-box {
+  background: var(--slate-10); border-radius: var(--radius);
+  padding: 14px; font-size: 13px; color: var(--ink-60); margin-top: 16px;
+  border: 1px solid rgba(15,23,42,0.06);
+}
+.info-box p { margin: 4px 0; line-height: 1.5; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar { background: var(--slate-30); border-radius: 99px; height: 8px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 99px; }
+
+/* ── COST CARDS ── */
+.cost-card {
+  background: var(--white); border: 1px solid rgba(15,23,42,0.06);
+  border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.cost-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--slate-10);
+}
+.cost-row:last-child { border-bottom: none; }
+.cost-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0 0; font-size: 15px; font-weight: 700;
+  border-top: 2px solid var(--slate-30); margin-top: 6px;
+}
+
+/* ── TOOLTIP ── */
+.tooltip-wrap { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+.tooltip-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; background: var(--slate-30); color: var(--slate);
+  border-radius: 50%; font-size: 10px; font-weight: 700; cursor: help;
+}
+.tooltip-icon:hover + .tooltip-text, .tooltip-text:hover { display: block; }
+.tooltip-text {
+  display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 100;
+  width: 220px; background: var(--ink); color: white; font-size: 11px;
+  font-weight: 400; line-height: 1.5; padding: 8px 10px;
+  border-radius: var(--radius); box-shadow: var(--shadow-lg); pointer-events: none;
+}
+.tooltip-text::before {
+  content: ""; position: absolute; top: -4px; left: 10px;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-bottom: 4px solid var(--ink);
+}
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px; overflow-y: auto;
+  backdrop-filter: blur(2px);
+}
+.modal {
+  background: var(--white); border-radius: var(--radius-xl);
+  padding: 28px; width: 100%; max-width: 540px;
+  box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn { from { opacity:0; transform: translateY(8px) scale(0.98); } to { opacity:1; transform: none; } }
+
+/* ── GRID ── */
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+
+/* ── LOGIN SCREEN ── */
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 20px; }
+.login-card {
+  background: var(--white); border-radius: var(--radius-xl); padding: 40px 32px;
+  width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); text-align: center;
+  border: 1px solid rgba(15,23,42,0.06);
+  animation: modalIn 0.25s ease;
+}
+.login-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; border: 1.5px solid var(--slate-30); border-radius: var(--radius);
+  margin-bottom: 8px; cursor: pointer; transition: all var(--transition);
+  font-size: 14px; font-weight: 500; text-align: left; background: var(--white);
+}
+.login-item:hover { border-color: var(--amber); background: var(--amber-ll); transform: translateY(-1px); box-shadow: var(--shadow); }
+
+/* ── HEADER BAR — dipendente ── */
+.dip-header {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink-60) 100%);
+  color: white; padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: relative; overflow: hidden;
+}
+.dip-header::after {
+  content: "";
+  position: absolute; top: -20px; right: -20px;
+  width: 120px; height: 120px;
+  background: var(--amber); opacity: 0.12;
+  border-radius: 50%;
+}
+
+/* ── HEADER BAR — admin ── */
+.admin-header {
+  background: var(--ink); color: white;
+  padding: 14px 20px; display: flex;
+  justify-content: space-between; align-items: center;
+}
+
+/* ── MACRO TABS ── */
+.macro-tabs { display: flex; gap: 3px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.macro-tabs::-webkit-scrollbar { display: none; }
+.macro-tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 700; border: none;
+  border-radius: 10px 10px 0 0; cursor: pointer; transition: all var(--transition);
+  font-family: var(--font); white-space: nowrap; flex-shrink: 0;
+}
+.macro-tab.active   { background: var(--white); color: var(--ink); box-shadow: 0 -2px 8px rgba(15,23,42,0.06); }
+.macro-tab.inactive { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+.macro-tab.inactive:hover { background: rgba(255,255,255,0.16); color: white; }
+
+/* ── SUB TABS ── */
+.sub-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+.sub-tabs::-webkit-scrollbar { display: none; }
+.sub-tab {
+  padding: 7px 16px; font-size: 12px; font-weight: 600; border: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0; cursor: pointer;
+  font-family: var(--font); white-space: nowrap; flex-shrink: 0;
+  transition: all var(--transition);
+}
+.sub-tab.active { background: var(--white); color: var(--amber-d); border-bottom: 2px solid var(--amber); margin-bottom: -1px; }
+.sub-tab.inactive { background: transparent; color: var(--slate); }
+.sub-tab.inactive:hover { color: var(--ink); background: rgba(15,23,42,0.04); }
+
+/* ── DIP TAB (bottom nav style) ── */
+.dip-tab-bar { display: flex; gap: 2px; border-bottom: 2px solid rgba(15,23,42,0.08); }
+.dip-tab {
+  padding: 9px 16px; font-size: 13px; font-weight: 600; border: none;
+  background: transparent; cursor: pointer; font-family: var(--font);
+  transition: all var(--transition); border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.dip-tab.active { color: var(--amber-d); border-bottom: 2px solid var(--amber); margin-bottom: -2px; background: var(--amber-ll); }
+.dip-tab.inactive { color: var(--slate); }
+.dip-tab.inactive:hover { color: var(--ink); background: var(--slate-10); }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.kpi-card {
+  background: var(--white); border: 1px solid rgba(15,23,42,0.06);
+  border-radius: var(--radius-lg); padding: 16px; text-align: center;
+  box-shadow: var(--shadow-sm); transition: box-shadow var(--transition);
+}
+.kpi-card:hover { box-shadow: var(--shadow); }
+.kpi-value { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.kpi-label { font-size: 11px; color: var(--slate); margin-top: 4px; font-weight: 500; }
+
+/* ── BIG CLOCK ── */
+#big-clock {
+  font-size: 52px; font-weight: 700; color: var(--ink);
+  letter-spacing: -1px; font-variant-numeric: tabular-nums;
+  font-family: var(--mono);
+}
+
+/* ── BANCA ORE CARDS ── */
+.bancaore-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 24px; }
+
+/* ── SCHEDA INFO ── */
+.scheda-info { display: flex; gap: 12px; flex-wrap: wrap; }
+.scheda-table td:nth-child(4), .scheda-table th:nth-child(4),
+.scheda-table td:nth-child(5), .scheda-table th:nth-child(5) { /* kept */ }
+
+/* ── TABLE SCROLL ── */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll table { min-width: 1350px; }
+
+/* ── TABLE TO CARDS (mobile) ── */
+.table-to-cards thead { display: none; }
+.table-to-cards tr { display: block; background: var(--white); border: 1px solid rgba(15,23,42,0.06); border-radius: var(--radius); margin-bottom: 8px; padding: 10px 12px; }
+.table-to-cards td { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-top: 1px solid var(--slate-10); font-size: 13px; }
+.table-to-cards td:first-child { border-top: none; font-weight: 700; font-size: 14px; padding-bottom: 8px; }
+.table-to-cards td[data-label]::before { content: attr(data-label); font-size: 11px; color: var(--slate); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* ── FILTRI WRAP ── */
+.filtri-wrap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ── ADMIN CONTENT ── */
+.admin-content { padding: 20px; }
+
+/* ── CALENDARIO INSERISCI (ci-*) ── */
+.ci-vbtn { padding: 6px 14px; border: 1.5px solid var(--amber); border-radius: var(--radius-sm); background: var(--white); color: var(--amber-d); font-size: 13px; cursor: pointer; font-weight: 600; font-family: var(--font); transition: all var(--transition); }
+.ci-vbtn.act { background: var(--amber); color: var(--white); }
+.ci-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 8px; }
+.ci-cal-hd { text-align: center; font-size: 11px; font-weight: 700; color: var(--slate); padding: 4px 0; }
+.ci-cal-day { border: 1.5px solid rgba(15,23,42,0.08); border-radius: var(--radius); min-height: 64px; padding: 4px 5px; cursor: pointer; background: var(--white); transition: all var(--transition); }
+.ci-cal-day:hover { box-shadow: var(--shadow); border-color: var(--amber); }
+.ci-cal-day.ci-today { border: 2px solid var(--amber) !important; background: var(--amber-ll); }
+.ci-cal-day.ci-sel { border: 2.5px solid var(--blue) !important; background: var(--blue-l); }
+.ci-cal-day.ci-empty { background: transparent; border: none; cursor: default; }
+.ci-cal-day.ci-dom, .ci-cal-day.ci-fest { background: var(--slate-10); }
+.ci-cal-day.ci-dom .ci-dn, .ci-cal-day.ci-fest .ci-dn { color: var(--slate); }
+.ci-dn { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.ci-dbs { display: flex; flex-direction: column; gap: 2px; }
+.ci-db { font-size: 10px; border-radius: 4px; padding: 1px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ci-db-l { background: var(--green-l); color: var(--green); }
+.ci-db-a { background: var(--red-l); color: #991b1b; }
+.ci-db-u { background: var(--amber-l); color: #92400e; }
+.ci-db-p { background: var(--purple-l); color: #3730a3; font-style: italic; }
+.ci-mbg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 9000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.ci-mc { background: var(--white); border-radius: var(--radius-xl); padding: 22px 26px; min-width: 320px; max-width: 540px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: modalIn 0.2s ease; }
+.ci-mh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.ci-mt2 { font-size: 16px; font-weight: 700; color: var(--ink); }
+.ci-mx { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--slate); line-height: 1; padding: 0; }
+.ci-ti { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid rgba(15,23,42,0.06); border-radius: var(--radius); background: var(--slate-10); margin-bottom: 8px; }
+.ci-ti-info { flex: 1; font-size: 13px; }
+.ci-ti-tipo { font-weight: 700; font-size: 12px; }
+.ci-ti-tipo.lav { color: var(--green); }
+.ci-ti-tipo.ass { color: var(--red); }
+.ci-ti-orari { color: var(--slate); font-size: 12px; }
+.ci-tb2 { padding: 4px 10px; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; border: 1px solid; font-weight: 600; font-family: var(--font); transition: all var(--transition); }
+.ci-tb2-e { border-color: var(--blue); color: var(--blue); background: var(--white); }
+.ci-tb2-d { border-color: var(--red); color: var(--red); background: var(--white); }
+.ci-af { border: 1px solid rgba(15,23,42,0.08); border-radius: var(--radius); padding: 14px; margin-top: 10px; background: var(--slate-10); }
+.ci-af label { font-size: 12px; font-weight: 600; color: var(--ink-60); display: block; margin-bottom: 4px; text-transform: none; letter-spacing: 0; }
+.ci-af input, .ci-af select { width: 100%; padding: 7px 10px; border: 1.5px solid var(--slate-30); border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 10px; box-sizing: border-box; }
+.ci-sv { background: var(--green); color: white; border: none; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 4px; font-family: var(--font); transition: all var(--transition); }
+.ci-sv:hover { opacity: 0.88; }
+.ci-cv { background: var(--slate-10); color: var(--ink-60); border: none; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 6px; font-family: var(--font); }
+.ci-add { background: var(--amber); color: var(--ink-80); border: none; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; width: 100%; cursor: pointer; font-weight: 700; margin-top: 4px; font-family: var(--font); transition: all var(--transition); }
+.ci-add:hover { background: var(--amber-d); }
+.ci-warn { background: var(--amber-l); border: 1px solid var(--amber); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; }
+
+/* ── MOBILE ── */
+@media (max-width: 640px) {
+  .admin-header { flex-direction: column; align-items: flex-start !important; gap: 10px; padding: 12px 14px !important; }
+  .admin-header-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .admin-header-actions select, .admin-header-actions button { font-size: 12px !important; padding: 7px 10px !important; }
+  .macro-tabs { flex-wrap: nowrap !important; }
+  .sub-tabs { flex-wrap: nowrap !important; padding-bottom: 2px; }
+  .admin-content { padding: 14px !important; overflow-x: auto; }
+  .table-scroll table { min-width: 1350px; }
+  .grid-auto { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .grid-auto.stack-mobile { grid-template-columns: 1fr !important; }
+  .btn { padding: 11px 18px !important; font-size: 14px !important; min-height: 44px; }
+  .btn-sm { padding: 8px 12px !important; font-size: 13px !important; min-height: 38px; }
+  input, select { padding: 11px 12px !important; font-size: 15px !important; min-height: 44px; }
+  .row { padding: 10px 12px !important; gap: 8px !important; }
+  .modal { padding: 20px !important; border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important; }
+  .modal-bg { align-items: flex-end !important; padding: 0 !important; }
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+  .filtri-wrap { flex-wrap: nowrap !important; }
+  .bancaore-cards { grid-template-columns: 1fr !important; }
+  .scheda-info { flex-direction: column !important; }
+  .scheda-table td:nth-child(4), .scheda-table th:nth-child(4),
+  .scheda-table td:nth-child(5), .scheda-table th:nth-child(5) { display: none; }
+  .ci-cal-day { min-height: 44px; padding: 2px 3px; }
+  .ci-dbs { display: none; }
+  #big-clock { font-size: 40px !important; }
+}
+@media (max-width: 380px) {
+  .grid-auto { grid-template-columns: 1fr !important; }
+}
 .btn { border: none; border-radius: 8px; padding: 9px 18px; font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s; }
 .btn:hover { opacity: 0.85; }
 .btn-primary { background: #f59e0b; color: white; }
@@ -207,6 +631,93 @@ const MAGGIORAZIONI = {
   domenica: 0.10,
   festivo: 0.20,
 };
+
+// ── CCNL TURISMO/RISTORAZIONE — TABELLE NORMATIVE ──────────────────────────
+// Scatti di anzianità: 6 scatti ogni 2 anni — importo fisso mensile per livello
+// Fonti: CCNL Turismo 2019-2021, tabelle aggiornate
+const SCATTI_ANZIANITA = {
+  // Livello → importo in € per ogni scatto maturato
+  "QS":  25.82, "Q": 22.21,
+  "A":   22.21, "1": 20.66, "2": 19.63,
+  "3":   18.08, "4": 16.53, "5": 14.98,
+  "6":   13.43, "7": 11.88, "8": 10.33,
+  "default": 16.53 // livello 4 come default
+};
+
+// Quattordicesima: erogata a luglio — base mensile (1/12 della retribuzione)
+// Tredicesima: erogata a dicembre — base mensile (1/12 della retribuzione)
+// TFR: accantonamento = retribuzione annua / 13.5 (art. 2120 c.c.)
+
+// ROL maturazione annua per contratto (ore)
+const ROL_ANNUO = {
+  "Full Time": 32,      // ~4 giorni
+  "Part Time": 16,      // proporzionale
+  "Intermittente": 0,   // no ROL fisso
+  "default": 32
+};
+
+// Helper: calcola anni di anzianità da una data assunzione
+function anniAnzianita(dataAssunzione) {
+  if(!dataAssunzione) return 0;
+  const oggi_d = new Date();
+  const ass = new Date(dataAssunzione);
+  if(isNaN(ass)) return 0;
+  const anni = (oggi_d - ass) / (1000 * 60 * 60 * 24 * 365.25);
+  return Math.floor(anni);
+}
+
+// Helper: scatti maturati (1 ogni 2 anni, max 6)
+function scattiMaturati(dataAssunzione) {
+  const anni = anniAnzianita(dataAssunzione);
+  return Math.min(6, Math.floor(anni / 2));
+}
+
+// Helper: importo scatto mensile per livello
+function importoScattoMensile(livello) {
+  return SCATTI_ANZIANITA[livello] || SCATTI_ANZIANITA["default"];
+}
+
+// Calcola competenze mensili per un dipendente
+// Restituisce: { scatti, tredicesima, quattordicesima, tfr, rol }
+function calcolaCompetenzeMensili(dip, retribuzioneLorda) {
+  if(!dip) return null;
+  const ret = retribuzioneLorda;
+  if(!ret) return null;
+
+  // Scatti anzianità
+  const nScatti = scattiMaturati(dip.dataAssunzione);
+  const importoScatto = importoScattoMensile(dip.livello || "default");
+  const scattiMensili = nScatti * importoScatto;
+
+  // 13ª: accantonamento mensile = ret / 12
+  const tredicesima = ret / 12;
+
+  // 14ª: accantonamento mensile = ret / 12
+  const quattordicesima = ret / 12;
+
+  // TFR: (ret + scattiMensili) / 13.5 mensile
+  const retTFR = ret + scattiMensili;
+  const tfr = retTFR / 13.5;
+
+  // ROL maturato nel mese: (ROL_ANNUO / 12) ore
+  const rolAnnuo = ROL_ANNUO[dip.tipo] ?? ROL_ANNUO["default"];
+  const rolMensile = parseFloat((rolAnnuo / 12).toFixed(2));
+
+  const totaleMensile = ret + scattiMensili + tredicesima + quattordicesima + tfr;
+
+  return {
+    retribuzioneBase: ret,
+    nScatti,
+    importoScatto,
+    scattiMensili,
+    tredicesima,
+    quattordicesima,
+    tfr,
+    rolMensile,
+    totaleMensile,
+    costoDatoriale: totaleMensile * 1.30 // stima contributi ~30%
+  };
+}
 
 function getPassqua(anno) {
   const a=anno%19, b=Math.floor(anno/100), c=anno%100;
@@ -903,7 +1414,9 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const email = document.getElementById("md-email")?.value?.trim()||null;
     const telefono = document.getElementById("md-telefono")?.value?.trim()||null;
     const supervisore=document.getElementById("md-supervisore")?.checked||false;
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie:monteFerieManuale||null,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,supervisore,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null};
+    const dataAssunzione=document.getElementById("md-data-assunzione")?.value||null;
+    const livello=document.getElementById("md-livello")?.value||null;
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie:monteFerieManuale||null,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,supervisore,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null,dataAssunzione:dataAssunzione||null,livello:livello||null};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -932,30 +1445,39 @@ function renderLogin() {
     ? dipAttivi.filter(d=>d.nome.toLowerCase().includes(cerca.toLowerCase()))
     : dipAttivi;
   return `
-    <div style="background:#f59e0b;color:white;padding:14px 20px;text-align:center">
-      <h1 style="font-size:20px;font-weight:700">🍽️ Timbrature Ristorante</h1>
+    <div style="background:var(--ink);color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;background:var(--amber);opacity:0.10;border-radius:50%"></div>
+      <div style="position:absolute;bottom:-20px;left:40%;width:100px;height:100px;background:var(--amber);opacity:0.06;border-radius:50%"></div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px">Gestione presenze</div>
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-0.5px">TimbròApp 🍽️</h1>
+      </div>
     </div>
     <div class="login-wrap"><div class="login-card">
-      <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Chi sei?</h2>
-      <p style="color:#6b7280;font-size:14px;margin-bottom:14px">Seleziona il tuo nome per timbrare</p>
+      <div style="width:56px;height:56px;background:var(--amber-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:24px">👤</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px">Seleziona il tuo nome</h2>
+      <p style="color:var(--slate);font-size:14px;margin-bottom:20px">Tocca il nome per timbrare</p>
       <div style="position:relative;margin-bottom:16px">
-        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:16px">🔍</span>
-        <input type="text" placeholder="Cerca il tuo nome..." value="${cerca}"
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--slate);font-size:16px">🔍</span>
+        <input type="text" placeholder="Cerca..." value="${cerca}"
           oninput="window._loginCerca=this.value;renderLoginList()"
-          style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:10px;font-size:15px;box-sizing:border-box;outline:none"
-          autofocus>
+          style="padding-left:38px;border-radius:var(--radius-lg)">
       </div>
       <div id="login-list">
         ${filtrati.map(d=>`
-        <div class="login-item" data-login-dip="${d.id}">
-          <div style="font-weight:600">${d.nome}</div>
-          <span style="color:#f59e0b;font-size:20px">${d.pin?"🔒":"→"}</span>
-        </div>`).join("")}
-        ${filtrati.length===0?`<div style="text-align:center;color:#9ca3af;padding:20px;font-size:14px">Nessun dipendente trovato</div>`:""}
+          <div class="login-item" data-login-dip="${d.id}">
+            <div>
+              <div style="font-weight:600">${d.nome}</div>
+              <div style="font-size:11px;color:var(--slate);margin-top:1px">${d.tipo}</div>
+            </div>
+            <span style="color:var(--amber);font-size:20px">${d.pin?"🔒":"→"}</span>
+          </div>`).join("")}
+        ${filtrati.length===0?`<div style="text-align:center;color:var(--slate);padding:24px;font-size:14px">Nessun dipendente trovato</div>`:""}
       </div>
-      <div data-login-admin style="background:#1e293b;color:white;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px">
-        <span style="font-size:20px">🔐</span>
-        <div style="text-align:left"><div style="font-weight:700;font-size:14px">Area Admin</div><div style="font-size:11px;opacity:0.7">Solo per il titolare</div></div>
+      <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--slate-10)">
+        <button data-login-admin style="width:100%;padding:12px;background:var(--ink);color:white;border:none;border-radius:var(--radius-lg);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
+          🔐 Accesso Admin
+        </button>
       </div>
     </div></div>`;
 }
@@ -1202,16 +1724,19 @@ function renderDipendente() {
   }
   else content=renderDipStorico(dip);
   return `
-    <div style="background:#f59e0b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <div><h1 style="font-size:18px;font-weight:700">👋 Ciao, ${dip.nome.split(" ")[0]}!</h1>
-      <p style="font-size:12px;opacity:0.85">${dip.tipo} • <span id="clock">${oraNow()}</span></p></div>
+    <div class="dip-header">
+      <div style="position:relative;z-index:1">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;opacity:0.6;text-transform:uppercase;margin-bottom:3px">${dip.tipo}</div>
+        <h1 style="font-size:20px;font-weight:700;letter-spacing:-0.3px">👋 Ciao, ${dip.nome.split(" ")[0]}!</h1>
+        <p style="font-size:12px;opacity:0.7;margin-top:2px">Ore: <span id="clock">${oraNow()}</span></p>
+      </div>
       <button class="btn btn-white btn-sm" data-logout>Esci</button>
     </div>
     <div style="max-width:600px;margin:0 auto;padding:16px">
-      <div style="display:flex;gap:4px;border-bottom:2px solid #e5e7eb">
-        ${tabs.map(([k,l])=>`<button data-dip-tab="${k}" style="padding:8px 14px;font-size:13px;font-weight:600;border:none;background:${state.dipTab===k?"white":"transparent"};color:${state.dipTab===k?"#d97706":"#6b7280"};cursor:pointer;border-radius:8px 8px 0 0;border-bottom:${state.dipTab===k?"2px solid white":"none"};margin-bottom:${state.dipTab===k?"-2px":"0"}">${l}</button>`).join("")}
+      <div class="dip-tab-bar" style="background:var(--white);border-radius:var(--radius-lg) var(--radius-lg) 0 0;border:1px solid rgba(15,23,42,0.06);border-bottom:none;padding:8px 8px 0;box-shadow:var(--shadow-sm);overflow:hidden">
+        ${tabs.map(([k,l])=>`<button data-dip-tab="${k}" class="dip-tab ${state.dipTab===k?"active":"inactive"}">${l}</button>`).join("")}
       </div>
-      <div style="background:white;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">${content}</div>
+      <div style="background:var(--white);border:1px solid rgba(15,23,42,0.06);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm)">${content}</div>
     </div>`;
 }
 
@@ -1437,6 +1962,7 @@ function renderAdmin() {
   else if(sub==="costi") content=renderAdminCosti();
   else if(sub==="maggiorazioni") content=renderAdminMaggiorazioni();
   else if(sub==="bancaore") content=renderAdminBancaOre();
+  else if(sub==="competenze") content=renderAdminCompetenze();
   else if(sub==="ferie") content=renderAdminFerie();
   else if(sub==="giornaliero") content=renderAdminGiornaliero();
   else if(sub==="impostazioni") content=renderAdminImpostazioni();
@@ -1446,52 +1972,36 @@ function renderAdmin() {
   const macros=[
     {key:"oggi", label:"📅 Oggi", subs:[["dashboard","🏠 Dashboard"],["presenze",`👁️ Presenze${getAlertUsciteMancanti&&getAlertUsciteMancanti().length>0?` <span style="background:#ef4444;color:white;border-radius:10px;padding:0 5px;font-size:10px">${getAlertUsciteMancanti().length}</span>`:""}`],["inserisci","✏️ Inserisci"]]},
     {key:"periodo", label:"📊 Periodo", subs:[["report","📊 Report"],["settimane","📆 Settimane"],["scheda","👤 Scheda"],["giornaliero","📅 Giornaliero"]]},
-    {key:"economia", label:"💶 Economia", subs:[["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["bancaore","🏦 Banca Ore"]]},
+    {key:"economia", label:"💶 Economia", subs:[["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["bancaore","🏦 Banca Ore"],["competenze","📑 Competenze CCNL"]]},
     {key:"gestione", label:"⚙️ Gestione", subs:[["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"],["impostazioni","⚙️ Impostazioni"]]},
   ];
   const macroCorrente = macros.find(m=>m.subs.some(s=>s[0]===sub))?.key || state.adminTab;
   const subCorrente = macros.find(m=>m.key===macroCorrente)?.subs || [];
   return `
-    <div class="admin-header" style="background:#1e293b;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <div><h1 style="font-size:18px;font-weight:700">🔐 Area Admin</h1>
-      <p style="font-size:12px;opacity:0.7">Presenze in tempo reale</p></div>
+    <div class="admin-header">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:0.5;text-transform:uppercase;margin-bottom:3px">Pannello di controllo</div>
+        <h1 style="font-size:19px;font-weight:700;letter-spacing:-0.3px">🔐 TimbròApp Admin</h1>
+      </div>
       <div class="admin-header-actions" style="display:flex;gap:8px;align-items:center">
-        <select id="admin-filtro-sede" onchange="aggiornaSede()" style="border-radius:8px;padding:6px 10px;font-size:12px;border:1px solid #475569;background:#334155;color:white">
+        <select id="admin-filtro-sede" onchange="aggiornaSede()" style="border-radius:var(--radius);padding:7px 10px;font-size:12px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-family:var(--font)">
           <option value="">Tutte le sedi</option>
           ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
         </select>
-        <button class="btn btn-sm btn-primary" data-export-csv>⬇️ CSV</button>
-        <button class="btn btn-sm btn-primary" data-export-excel>⬇️ Excel</button>
+        <button class="btn btn-sm" style="background:rgba(245,158,11,0.9);color:var(--ink-80)" data-export-csv>⬇️ CSV</button>
+        <button class="btn btn-sm" style="background:rgba(245,158,11,0.9);color:var(--ink-80)" data-export-excel>⬇️ Excel</button>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
     </div>
     <div style="max-width:960px;margin:0 auto;padding:16px">
-
-      <!-- MACRO TAB (livello 1) -->
-      <div class="macro-tabs" style="display:flex;gap:4px;margin-bottom:0;flex-wrap:wrap">
-        ${macros.map(m=>{
-          const isActive = m.key===macroCorrente;
-          return `<button data-admin-macro="${m.key}" style="padding:9px 18px;font-size:13px;font-weight:700;border:none;border-radius:10px 10px 0 0;cursor:pointer;transition:all 0.15s;
-            background:${isActive?"#1e293b":"#f1f5f9"};color:${isActive?"white":"#475569"};
-            border-bottom:${isActive?"2px solid #1e293b":"2px solid transparent"}">${m.label}</button>`;
-        }).join("")}
+      <div style="background:var(--ink-80);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:10px 12px 0;display:flex;gap:3px;overflow-x:auto;scrollbar-width:none" class="macro-tabs">
+        ${macros.map(m=>`<button data-admin-macro="${m.key}" class="macro-tab ${m.key===macroCorrente?"active":"inactive"}">${m.label}</button>`).join("")}
       </div>
-
-      <!-- CONTENITORE principale -->
-      <div style="background:white;border:1px solid #e5e7eb;border-radius:0 12px 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
-
-        <!-- SUB-TAB (livello 2) -->
-        <div class="sub-tabs" style="display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid #f1f5f9;flex-wrap:wrap">
-          ${subCorrente.map(([k,l])=>{
-            const isActive=sub===k;
-            return `<button data-admin-sub="${k}" style="padding:6px 14px;font-size:12px;font-weight:600;border:none;border-radius:8px 8px 0 0;cursor:pointer;
-              background:${isActive?"white":"transparent"};color:${isActive?"#d97706":"#9ca3af"};
-              border-bottom:${isActive?"2px solid #d97706":"2px solid transparent"};margin-bottom:${isActive?"-1px":"0"}">${l}</button>`;
-          }).join("")}
+      <div style="background:var(--white);border:1px solid rgba(15,23,42,0.06);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);box-shadow:var(--shadow)">
+        <div class="sub-tabs" style="padding:10px 14px 0;border-bottom:1px solid var(--slate-10)">
+          ${subCorrente.map(([k,l])=>`<button data-admin-sub="${k}" class="sub-tab ${sub===k?"active":"inactive"}">${l}</button>`).join("")}
         </div>
-
-        <!-- CONTENUTO -->
-        <div class="admin-content" style="padding:20px">${content}</div>
+        <div class="admin-content">${content}</div>
       </div>
     </div>`;
 }
@@ -2178,7 +2688,7 @@ function renderTabellaCostitHTML(dipendenti, fnCosto, fnAssenze) {
 
 function renderAdminCosti() {
   const costiTab = state.costiTab || 'mensile';
-  const tabStyle = t => `padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:${costiTab===t?'#374151':'#f3f4f6'};color:${costiTab===t?'#fff':'#6b7280'}`;
+  const tabStyle = t => `padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);background:${costiTab===t?'var(--ink-60)':'var(--slate-10)'};color:${costiTab===t?'#fff':'var(--slate)'}`;
 
   let contenuto = '';
   if(costiTab === 'mensile') {
@@ -2201,70 +2711,70 @@ function renderAdminCosti() {
     }
   }
 
+  // Calcola totale generale
+  const totTot = costiTab === 'mensile'
+    ? state.dipendenti.reduce((s,d) => {
+        const r = calcolaCostoMensile(d.id);
+        const a = calcolaCostoAssenzeMensili(d.id);
+        return s + (r?.totale||0) + (a?.totaleCosto||0);
+      }, 0)
+    : 0;
+
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;gap:6px;align-items:center">
-        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">💶 Costo del lavoro</h2>
-        <div style="display:flex;gap:4px;background:#f3f4f6;border-radius:10px;padding:3px">
+        <h2 style="font-size:15px;font-weight:700;color:var(--ink);margin:0">💶 Costo del lavoro</h2>
+        <div style="display:flex;gap:3px;background:var(--slate-10);border-radius:var(--radius);padding:3px">
           <button style="${tabStyle('mensile')}" onclick="window.state.costiTab='mensile';window.render()">Mensile</button>
           <button style="${tabStyle('annuale')}" onclick="window.state.costiTab='annuale';window.render()">Annuale</button>
         </div>
       </div>
-      ${costiTab==='mensile' ? filtriHTML() : `<select onchange="window.state.filtroAnno=+this.value;window.render()" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px">${[2024,2025,2026,2027,2028].map(y=>`<option${y===state.filtroAnno?' selected':''}>${y}</option>`).join('')}</select>`}
+      ${costiTab==='mensile' ? filtriHTML() : `<select onchange="window.state.filtroAnno=+this.value;window.render()" style="border:1px solid var(--slate-30);border-radius:var(--radius);padding:6px 10px;font-size:13px">${[2024,2025,2026,2027,2028].map(y=>`<option${y===state.filtroAnno?' selected':''}>${y}</option>`).join('')}</select>`}
     </div>
+
+    ${totTot > 0 ? `<div style="background:var(--ink);color:white;border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px">Costo totale ${MESI[state.filtroMese]} ${state.filtroAnno}</div>
+        <div style="font-size:24px;font-weight:700;font-family:var(--mono)">${euro(totTot)}</div>
+      </div>
+      <div style="font-size:11px;opacity:0.5">Tutti i dipendenti · ore lavorate + assenze</div>
+    </div>` : ''}
+
     ${contenuto}
-    <div class="info-box" style="margin-top:16px;background:#eff6ff;border-color:#bfdbfe">
-      <p><strong>🏥 Malattia (CCNL Turismo + integrazione INPS):</strong></p>
-      <p>• Giorni 1–3 (carenza): 100% a carico azienda</p>
-      <p>• Giorni 4–20: 50% a carico azienda (INPS copre 50%)</p>
-      <p>• Giorni 21+: 33% a carico azienda (INPS copre 67%)</p>
-      <p style="font-size:11px;color:#6b7280">* Giorni consecutivi (con gap ≤3gg) contano come stesso episodio</p>
-      <p style="margin-top:6px"><strong>👶 Congedo Parentale:</strong> costo aziendale 0% — INPS eroga il 30% direttamente al dipendente</p>
-      <p style="margin-top:4px"><strong>😴 Riposo Compensativo:</strong> costo aziendale 0% — già contabilizzato nel giorno lavorato extra</p>
-    </div>
-    <div class="info-box" style="margin-top:16px">
-      <p><strong>📋 Maggiorazioni applicate:</strong></p>
-      <p>• Straordinario diurno: +${MAGGIORAZIONI.strDiurno*100}% sulla tariffa base</p>
-      <p>• Straordinario notturno: +${MAGGIORAZIONI.strNotturno*100}% sulla tariffa base</p>
-      <p>• Ordinario notturno: +${MAGGIORAZIONI.ordinarioNotturno*100}% sulla tariffa base</p>
-      <p>• Domenica: +${MAGGIORAZIONI.domenica*100}% sulle ore ordinarie</p>
-      <p>• Festivo: +${MAGGIORAZIONI.festivo*100}% sulle ore ordinarie</p>
-      <p>• ✂️ Turni spezzati: gli straordinari sono calcolati sul totale giornaliero aggregato</p>
+    <div class="info-box" style="margin-top:16px;background:#eff6ff;border-color:var(--blue-l)">
+      <p><strong>🏥 Malattia CCNL Turismo:</strong> gg 1–3 → 100% azienda · gg 4–20 → 50% (INPS copre 50%) · gg 21+ → 33%</p>
+      <p style="margin-top:4px"><strong>👶 Congedo Parentale:</strong> costo azienda 0% — INPS eroga direttamente</p>
+      <p style="margin-top:4px"><strong>😴 Riposo Compensativo:</strong> costo 0 — già contabilizzato nel turno extra</p>
+      <p style="margin-top:6px;font-size:11px;color:var(--slate)">💡 La tariffa oraria dovrebbe includere lordo + contributi INPS azienda (~28%) + INAIL + EBTT. Chiedi al tuo consulente il costo orario esatto.</p>
     </div>`;
 }
 
 function renderAdminMaggiorazioni() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-      <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📈 Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
+      <h2 style="font-size:15px;font-weight:700;color:var(--ink);margin:0">📈 Dettaglio maggiorazioni per dipendente</h2>${filtriHTML()}
     </div>
     ${state.dipendenti.map(dip=>{
       const r=calcolaCostoMensile(dip.id);
-      if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:#9ca3af;font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
-      const turni=getTimbMese().filter(t=>t.dipendenteId===dip.id&&t.tipo==="lavoro"&&t.uscita);
-      const festivi=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="festivo").map(t=>t.data))];
-      const domeniche=[...new Set(turni.filter(t=>getTipoGiorno(t.data)==="domenica").map(t=>t.data))];
+      if(!r) return `<div class="cost-card"><div style="font-weight:700;margin-bottom:8px">${dip.nome}</div><p style="color:var(--slate);font-size:13px">Nessuna tariffa impostata nella scheda Dipendenti.</p></div>`;
       const ra=calcolaCostoAssenzeMensili(dip.id);
       return `<div class="cost-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-weight:700;font-size:14px">${dip.nome} <span style="font-weight:400;color:#6b7280;font-size:12px">${dip.tipo} • € ${dip.tariffaOraria}/h</span></div>
-            <div style="font-size:18px;font-weight:700;color:#059669">${euro(r.totale)}</div>
+            <div style="font-weight:700;font-size:14px">${dip.nome} <span style="font-weight:400;color:var(--slate);font-size:12px">${dip.tipo} · €${dip.tariffaOraria}/h</span></div>
+            <div style="font-size:18px;font-weight:700;color:var(--green)">${euro(r.totale+(ra?.totaleCosto||0))}</div>
           </div>
           <div class="cost-row"><span>Ore ordinarie diurne (${r.totOrdDiurne.toFixed(2)}h × €${dip.tariffaOraria})</span><span>${euro(r.costoOrdDiurno)}</span></div>
-          <div class="cost-row"><span style="color:#4f46e5">Ore ordinarie notturne +${MAGGIORAZIONI.ordinarioNotturno*100}% (${r.totOrdNott.toFixed(2)}h)</span><span style="color:#4f46e5">${euro(r.costoOrdNott)}</span></div>
-          <div class="cost-row"><span style="color:#ea580c">Straordinari diurni +${MAGGIORAZIONI.strDiurno*100}% (${r.totStrDiurni.toFixed(2)}h)</span><span style="color:#ea580c">${euro(r.costoStrDiurno)}</span></div>
-          <div class="cost-row"><span style="color:#dc2626">Straordinari notturni +${MAGGIORAZIONI.strNotturno*100}% (${r.totStrNott.toFixed(2)}h)</span><span style="color:#dc2626">${euro(r.costoStrNott)}</span></div>
-          ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:#7c3aed">Magg. domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica}g)</span><span style="color:#7c3aed">${euro(r.costoMaggDom)}</span></div>`:""}
+          <div class="cost-row"><span style="color:var(--purple)">Ore ordinarie notturne +${MAGGIORAZIONI.ordinarioNotturno*100}% (${r.totOrdNott.toFixed(2)}h)</span><span style="color:var(--purple)">${euro(r.costoOrdNott)}</span></div>
+          <div class="cost-row"><span style="color:var(--orange)">Straordinari diurni +${MAGGIORAZIONI.strDiurno*100}% (${r.totStrDiurni.toFixed(2)}h)</span><span style="color:var(--orange)">${euro(r.costoStrDiurno)}</span></div>
+          <div class="cost-row"><span style="color:var(--red)">Straordinari notturni +${MAGGIORAZIONI.strNotturno*100}% (${r.totStrNott.toFixed(2)}h)</span><span style="color:var(--red)">${euro(r.costoStrNott)}</span></div>
+          ${r.giorniDomenica>0?`<div class="cost-row"><span style="color:var(--blue)">Magg. domenica +${MAGGIORAZIONI.domenica*100}% (${r.giorniDomenica}g)</span><span style="color:var(--blue)">${euro(r.costoMaggDom)}</span></div>`:""}
           ${r.giorniFestivi>0?`<div class="cost-row"><span style="color:#b45309">Magg. festivo +${MAGGIORAZIONI.festivo*100}% (${r.giorniFestivi}g)</span><span style="color:#b45309">${euro(r.costoMaggFest)}</span></div>`:""}
           ${ra&&ra.totaleCosto>0?Object.entries(ra.dettaglio).filter(([v,det])=>det.giorni>0).map(([v,det])=>{
-            if(v==="Congedo Parentale") return `<div class="cost-row"><span style="color:#6b7280">Congedo Parentale (${det.giorni}g — costo INPS, azienda 0)</span><span style="color:#6b7280">€ 0,00</span></div>`;
-            if(v==="Riposo Compensativo") return `<div class="cost-row"><span style="color:#6b7280">Riposo Compensativo (${det.giorni}g — costo 0)</span><span style="color:#6b7280">€ 0,00</span></div>`;
-            return `<div class="cost-row"><span style="color:#3b82f6">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:#3b82f6">${euro(det.costo)}</span></div>`;
+            if(v==="Congedo Parentale") return `<div class="cost-row"><span style="color:var(--slate)">Congedo Parentale (${det.giorni}g — INPS, azienda 0)</span><span style="color:var(--slate)">€ 0,00</span></div>`;
+            if(v==="Riposo Compensativo") return `<div class="cost-row"><span style="color:var(--slate)">Riposo Compensativo (${det.giorni}g — costo 0)</span><span style="color:var(--slate)">€ 0,00</span></div>`;
+            return `<div class="cost-row"><span style="color:var(--blue)">${v} (${det.giorni}g × ${ra.oreDip.toFixed(2)}h × €${ra.tariffa})</span><span style="color:var(--blue)">${euro(det.costo)}</span></div>`;
           }).join(""):""}
-          <div class="cost-total">
-            <span>Totale ${MESI[state.filtroMese]}</span>
-            <span style="color:#059669">${euro(r.totale+(ra?.totaleCosto||0))}</span>
-          </div>
+          <div class="cost-total"><span>Totale ${MESI[state.filtroMese]}</span><span style="color:var(--green)">${euro(r.totale+(ra?.totaleCosto||0))}</span></div>
         </div>`;
     }).join("")}
   `;
@@ -2810,6 +3320,132 @@ function renderAdminImpostazioni() {
   `;
 }
 
+// ── COMPETENZE CCNL ───────────────────────────────────────────
+function renderAdminCompetenze() {
+  const dipAttivi = getDipendentiAttivi().filter(d => d.tariffaOraria);
+  if(!dipAttivi.length) return `<div class="empty">Nessun dipendente con tariffa oraria impostata.<br>Vai in Gestione → Dipendenti per aggiungere la tariffa.</div>`;
+
+  const cards = dipAttivi.map(dip => {
+    const rMensile = calcolaCostoMensile(dip.id);
+    const rAssenze = calcolaCostoAssenzeMensili(dip.id);
+    const retLorda = (rMensile?.totale||0) + (rAssenze?.totaleCosto||0);
+    const oreMensiliTeoriche = (sogliaMinutiDip(dip)/60) * 22;
+    const retTeor = dip.tariffaOraria * oreMensiliTeoriche;
+    const retBase = retLorda > 0 ? retLorda : retTeor;
+
+    const comp = calcolaCompetenzeMensili(dip, retBase);
+    if(!comp) return "";
+
+    const anni = anniAnzianita(dip.dataAssunzione);
+    const nScatti = scattiMaturati(dip.dataAssunzione);
+    const rolAnnuo = ROL_ANNUO[dip.tipo] ?? ROL_ANNUO["default"];
+    const rolUsato = getTimbMese().filter(t => t.dipendenteId===dip.id && t.tipo==="assenza" && t.assenza==="Permesso").length * (sogliaMinutiDip(dip)/60);
+    const rolResiduo = Math.max(0, rolAnnuo - rolUsato);
+    const anniMod2 = anni % 2;
+    const anniAlProssimo = 2 - anniMod2;
+
+    return `<div class="cost-card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div>
+          <div style="font-weight:700;font-size:14px">${dip.nome}</div>
+          <div style="font-size:12px;color:#6b7280">${dip.tipo} • Livello ${dip.livello||"n.d."} • €${dip.tariffaOraria}/h</div>
+          ${dip.dataAssunzione
+            ? `<div style="font-size:11px;color:#6b7280">Assunto: ${dip.dataAssunzione} — Anzianità: ${anni} ann${anni===1?"o":"i"}</div>`
+            : `<div style="font-size:11px;color:#dc2626">⚠️ Data assunzione mancante — aggiungila in Gestione → Dipendenti per gli scatti</div>`}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;color:#059669">${euro(comp.totaleMensile)}</div>
+          <div style="font-size:11px;color:#6b7280">Costo totale mensile</div>
+          <div style="font-size:11px;color:#9ca3af">~${euro(comp.costoDatoriale)} con contributi (~+30%)</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#059669">${euro(comp.retribuzioneBase)}</div>
+          <div style="font-size:11px;color:#6b7280">💼 Retribuzione base</div>
+        </div>
+        <div style="background:${nScatti>0?"#eff6ff":"#f9fafb"};border:1px solid ${nScatti>0?"#bfdbfe":"#e5e7eb"};border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:${nScatti>0?"#2563eb":"#9ca3af"}">${euro(comp.scattiMensili)}</div>
+          <div style="font-size:11px;color:#6b7280">⬆️ Scatti anzianità (${nScatti}/6)</div>
+          ${nScatti>0?`<div style="font-size:10px;color:#9ca3af">${nScatti} × €${comp.importoScatto}/mese</div>`:""}
+        </div>
+        <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#d97706">${euro(comp.tredicesima)}</div>
+          <div style="font-size:11px;color:#6b7280">🎄 Acc. 13ª mensilità</div>
+          <div style="font-size:10px;color:#9ca3af">Erogata a Dicembre</div>
+        </div>
+        <div style="background:#fef9f0;border:1px solid #fed7aa;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#ea580c">${euro(comp.quattordicesima)}</div>
+          <div style="font-size:11px;color:#6b7280">☀️ Acc. 14ª mensilità</div>
+          <div style="font-size:10px;color:#9ca3af">Erogata a Luglio</div>
+        </div>
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#7c3aed">${euro(comp.tfr)}</div>
+          <div style="font-size:11px;color:#6b7280">🏦 Acc. TFR mensile</div>
+          <div style="font-size:10px;color:#9ca3af">(ret+scatti)/13.5</div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#059669">${comp.rolMensile.toFixed(1)}h</div>
+          <div style="font-size:11px;color:#6b7280">⏱ ROL maturato/mese</div>
+          <div style="font-size:10px;color:#9ca3af">Residuo anno: ${rolResiduo.toFixed(1)}h di ${rolAnnuo}h</div>
+        </div>
+      </div>
+      ${dip.dataAssunzione ? `
+      <div style="background:#f9fafb;border-radius:8px;padding:10px;font-size:12px">
+        <div style="font-weight:600;color:#374151;margin-bottom:6px">📈 Progressione scatti (${nScatti}/6 maturati)</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+          ${[1,2,3,4,5,6].map(s => {
+            const anniReq = s*2;
+            const mat = anni >= anniReq;
+            const pros = !mat && anni >= (s-1)*2;
+            return `<div style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:${mat?"#059669":pros?"#f59e0b":"#e5e7eb"};color:${mat||pros?"white":"#9ca3af"}">${s}° scatto${mat?" ✓":""}</div>`;
+          }).join("")}
+        </div>
+        ${nScatti<6
+          ? `<div style="font-size:11px;color:#6b7280">Prossimo scatto fra <strong>${anniAlProssimo} ann${anniAlProssimo===1?"o":"i"}</strong></div>`
+          : `<div style="font-size:11px;color:#059669;font-weight:600">✅ Tutti e 6 gli scatti maturati</div>`}
+      </div>` : ""}
+    </div>`;
+  }).join("");
+
+  const totComp = dipAttivi.reduce((s, dip) => {
+    const r = calcolaCostoMensile(dip.id);
+    const ra = calcolaCostoAssenzeMensili(dip.id);
+    const ret = ((r?.totale||0)+(ra?.totaleCosto||0)) || dip.tariffaOraria*(sogliaMinutiDip(dip)/60)*22;
+    const c = calcolaCompetenzeMensili(dip, ret);
+    return s + (c?.totaleMensile||0);
+  }, 0);
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div>
+        <h2 style="font-size:15px;font-weight:700;color:#374151;margin:0">📑 Competenze CCNL Turismo</h2>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">13ª · 14ª · TFR · Scatti anzianità · ROL — ${MESI[state.filtroMese]} ${state.filtroAnno}</div>
+      </div>
+      ${filtriHTML()}
+    </div>
+    <div style="background:#1e293b;color:white;border-radius:12px;padding:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:11px;opacity:0.7;margin-bottom:2px">Totale competenze mensili (tutti i dipendenti)</div>
+        <div style="font-size:24px;font-weight:700">${euro(totComp)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;opacity:0.7;margin-bottom:2px">Stima costo datoriale totale (~+30% contributi)</div>
+        <div style="font-size:20px;font-weight:700;color:#fbbf24">${euro(totComp*1.30)}</div>
+      </div>
+    </div>
+    ${cards}
+    <div class="info-box" style="background:#eff6ff;border-color:#bfdbfe;margin-top:16px">
+      <p><strong>📋 Note CCNL Turismo/Ristorazione:</strong></p>
+      <p>• <strong>Scatti anzianità</strong>: 1 ogni 2 anni di servizio, max 6. Importo fisso mensile per livello contrattuale</p>
+      <p>• <strong>13ª</strong>: erogata entro il 22 dicembre — accantonamento = retribuzione ÷ 12</p>
+      <p>• <strong>14ª</strong>: erogata entro il 10 luglio — accantonamento = retribuzione ÷ 12</p>
+      <p>• <strong>TFR</strong>: accantonamento = (retribuzione + scatti) ÷ 13,5 (art. 2120 c.c.)</p>
+      <p>• <strong>ROL</strong>: permessi ex festività — Full Time 32h/anno, Part Time proporzionale</p>
+      <p style="margin-top:6px;font-size:11px;color:#6b7280">⚠️ Inserisci <strong>data assunzione</strong> e <strong>livello</strong> in Gestione → Dipendenti per abilitare il calcolo degli scatti di anzianità</p>
+    </div>`;
+}
+
 function renderAdminDipendenti() {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -2832,11 +3468,14 @@ function renderAdminDipendenti() {
             ${!isAttivo?`<span class="badge" style="background:#fee2e2;color:#dc2626">⏸ Inattivo</span>`:""}
             <span class="badge ${d.tipo==="Full Time"?"badge-green":d.tipo==="Part Time"?"badge-blue":"badge-purple"}">${d.tipo}</span>
             <span style="color:#6b7280;font-size:12px">Str. dopo ${d.sogliaOre||6.67}h</span>
-            ${d.tariffaOraria?`<span style="color:#059669;font-size:12px">€${d.tariffaOraria}/h</span>`:""}
+            ${d.tariffaOraria?`<span style="color:var(--green);font-size:12px">€${d.tariffaOraria}/h</span>`:""}
+
             ${d.pin?`<span class="badge badge-green">🔒 PIN</span>`:""}
-            ${d.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">📍 ${d.sede}</span>`:`<span class="badge" style="background:#fef9c3;color:#92400e">📍 sede n/d</span>`}
-            ${d.email?`<span style="font-size:11px;color:#6b7280">✉️ ${d.email}</span>`:""}
-            ${d.fineContratto?`<span style="color:#9ca3af;font-size:11px">Fine: ${d.fineContratto}</span>`:""}
+            ${d.sede?`<span class="badge" style="background:#e0f2fe;color:#0369a1">📍 ${d.sede}</span>`:`<span class="badge" style="background:var(--amber-l);color:#92400e">📍 sede n/d</span>`}
+            ${d.livello?`<span class="badge" style="background:var(--purple-l);color:var(--purple)">Liv. ${d.livello}</span>`:""}
+            ${d.dataAssunzione?`<span style="font-size:11px;color:var(--slate)">📅 ${d.dataAssunzione} (${anniAnzianita(d.dataAssunzione)}a, ${scattiMaturati(d.dataAssunzione)}/6 scatti)</span>`:`<span style="font-size:11px;color:var(--amber-d)">⚠️ data ass. mancante</span>`}
+            ${d.email?`<span style="font-size:11px;color:var(--slate)">✉️ ${d.email}</span>`:""}
+            ${d.fineContratto?`<span style="color:var(--slate);font-size:11px">Fine: ${d.fineContratto}</span>`:""}
           </div>
           <div style="display:flex;gap:6px;align-items:center">
             <select onchange="window.aggiornaSedeDip('${d.id}', this.value)"
@@ -2877,7 +3516,12 @@ function renderModaleDip() {
           <div><label>Contratto</label>
             <select id="md-tipo">${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}</select>
           </div>
-          <div><label>Tariffa €/h</label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 9.50" value="${d.tariffaOraria||""}"></div>
+          <div><label>
+            <span class="tooltip-wrap">Costo orario azienda (€/h)
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-text">Inserisci il costo orario reale per l'azienda: lordo + contributi INPS (~28%) + INAIL + EBTT. Es: se il lordo è €10/h, il costo azienda è ~€13-14/h. Chiedi al tuo consulente del lavoro il costo orario esatto.</span>
+            </span>
+          </label><input id="md-tariffa" type="number" step="0.1" placeholder="Es. 13.50" value="${d.tariffaOraria||""}"></div>
           <div><label>Soglia straordinario (h/g)</label><input id="md-soglia" type="number" step="0.1" placeholder="Es. 6.67" value="${d.sogliaOre||6.67}"></div>
           <div><label>Ore settimanali contratto</label><input id="md-ore-sett" type="number" step="0.5" placeholder="Es. 40" value="${d.oreSett||40}"></div>
           <div><label>Monte ferie annuo (ore) <span style="font-weight:400;color:#9ca3af;font-size:11px">— lascia vuoto per calcolo automatico</span></label><input id="md-ferie" type="number" step="1" placeholder="Auto (da ore sett.)" value="${d.monteFerie||''}"></div>
@@ -2888,6 +3532,12 @@ function renderModaleDip() {
           <div><label>Data fine contratto</label><input id="md-fine-contratto" type="date" value="${d.fineContratto||""}"></div>
           <div><label>Email</label><input id="md-email" type="email" placeholder="mario.rossi@email.com" value="${d.email||""}"></div>
           <div><label>Telefono</label><input id="md-telefono" type="tel" placeholder="+39 333 1234567" value="${d.telefono||""}"></div>
+          <div><label>Data assunzione <span style="font-weight:400;color:#9ca3af;font-size:11px">— per scatti anzianità</span></label><input id="md-data-assunzione" type="date" value="${d.dataAssunzione||""}"></div>
+          <div><label>Livello contrattuale <span style="font-weight:400;color:#9ca3af;font-size:11px">— per scatti anzianità</span></label>
+            <select id="md-livello">
+              ${["","QS","Q","A","1","2","3","4","5","6","7","8"].map(l=>`<option value="${l}"${(d.livello||"")=== l?" selected":""}>${l||"— non specificato —"}</option>`).join("")}
+            </select>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f3f4f6;margin-top:4px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:#374151;margin:0">

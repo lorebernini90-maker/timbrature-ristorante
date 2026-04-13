@@ -611,6 +611,169 @@ tr:hover td { background: #fffbeb; }
   .ci-add{background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;width:100%;cursor:pointer;font-weight:600;margin-top:4px;}
   .ci-warn{background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:10px;}
   @media(max-width:600px){.ci-cal-day{min-height:44px;padding:2px 3px;}.ci-dbs{display:none;}}
+
+/* ══════════════════════════════════════════
+   DESKTOP LAYOUT — sidebar fissa + main
+   Solo su schermi >= 900px
+══════════════════════════════════════════ */
+@media (min-width: 900px) {
+
+  /* Wrapper principale */
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: 56px 1fr;
+    min-height: 100vh;
+  }
+
+  /* Topbar: occupa tutta la riga */
+  .admin-topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    background: var(--ink);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  /* Sidebar */
+  .admin-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    background: var(--ink-80);
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 12px 8px;
+  }
+  .admin-sidebar::-webkit-scrollbar { display: none; }
+
+  /* Main */
+  .admin-main {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 24px 28px;
+    background: var(--slate-10);
+    min-height: calc(100vh - 56px);
+    overflow-x: auto;
+  }
+
+  /* Nasconde il vecchio layout mobile */
+  .admin-mobile { display: none !important; }
+
+  /* Sidebar items */
+  .sb-section {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+    padding: 14px 10px 5px;
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    transition: all var(--transition);
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font);
+    margin-bottom: 1px;
+    white-space: nowrap;
+  }
+  .sb-item:hover {
+    background: rgba(255,255,255,0.07);
+    color: white;
+  }
+  .sb-item.active {
+    background: rgba(245,158,11,0.18);
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .sb-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 20px;
+  }
+  .sb-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+  /* Sub-tabs orizzontali nel main */
+  .admin-subtabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 2px solid var(--slate-30);
+    margin-bottom: 22px;
+  }
+  .admin-subtab {
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font);
+    color: var(--slate);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all var(--transition);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .admin-subtab:hover { color: var(--ink); background: rgba(15,23,42,0.04); }
+  .admin-subtab.active {
+    color: var(--amber-d);
+    border-bottom-color: var(--amber);
+    background: var(--white);
+  }
+
+  /* Filtri sidebar */
+  .sb-filtri {
+    padding: 8px 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 4px;
+  }
+  .sb-filtri select {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  .sb-filtri select:focus {
+    border-color: var(--amber);
+    box-shadow: none;
+  }
+}
+
+/* Mobile: nasconde sidebar e main desktop */
+@media (max-width: 899px) {
+  .admin-sidebar, .admin-main, .admin-topbar { display: none !important; }
+  .admin-shell { display: block !important; }
+}
+
 </style>
 </head>
 <body>
@@ -1218,14 +1381,17 @@ document.addEventListener("click", async function(e) {
     state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; state.adminTab="oggi"; state.adminSubTab="dashboard"; state.supDipSelezionato=null; render();
   }
   else if(t.dataset.dipTab) { state.dipTab=t.dataset.dipTab; render(); }
-  else if(t.dataset.adminMacro) {
+  else if(t.dataset.adminMacro && !t.dataset.adminSub) {
     state.adminTab=t.dataset.adminMacro;
-    // Sub-tab di default per ogni macro
     const defaults={oggi:"dashboard",periodo:"report",economia:"costi",gestione:"ferie"};
     state.adminSubTab=defaults[t.dataset.adminMacro]||"dashboard";
     render();
   }
-  else if(t.dataset.adminSub) { state.adminSubTab=t.dataset.adminSub; render(); }
+  else if(t.dataset.adminSub) {
+    state.adminSubTab=t.dataset.adminSub;
+    if(t.dataset.adminMacro) state.adminTab=t.dataset.adminMacro;
+    render();
+  }
   else if(t.dataset.adminTab) { state.adminTab=t.dataset.adminTab; render(); }
   else if(t.dataset.timbraEntrata!==undefined) {
     const dip=state.utenteCorrente;
@@ -1945,12 +2111,11 @@ function renderDipStorico(dip) {
 }
 
 function renderAdmin() {
-  // Precarica timbrature mese corrente per i calendari colorati
   const mc = `${state.filtroAnno}-${String(state.filtroMese+1).padStart(2,"0")}`;
   caricaTimbratureMese(mc);
-  // Routing sub-tab
-  let content="";
-  const sub=state.adminSubTab;
+
+  const sub = state.adminSubTab;
+  let content = "";
   if(sub==="dashboard") content=renderAdminDashboard();
   else if(sub==="presenze") content=renderAdminPresenze();
   else if(sub==="inserisci") content=renderAdminInserisci();
@@ -1966,41 +2131,135 @@ function renderAdmin() {
   else if(sub==="impostazioni") content=renderAdminImpostazioni();
   else content=renderAdminDipendenti();
 
-  // Macro-tab config
-  const macros=[
-    {key:"oggi", label:"📅 Oggi", subs:[["dashboard","🏠 Dashboard"],["presenze",`👁️ Presenze${getAlertUsciteMancanti&&getAlertUsciteMancanti().length>0?` <span style="background:#ef4444;color:white;border-radius:10px;padding:0 5px;font-size:10px">${getAlertUsciteMancanti().length}</span>`:""}`],["inserisci","✏️ Inserisci"]]},
-    {key:"periodo", label:"📊 Periodo", subs:[["report","📊 Report"],["settimane","📆 Settimane"],["scheda","👤 Scheda"],["giornaliero","📅 Giornaliero"]]},
-    {key:"economia", label:"💶 Economia", subs:[["costi","💶 Costi"],["maggiorazioni","📈 Maggiorazioni"],["bancaore","🏦 Banca Ore"],["competenze","📑 Competenze CCNL"]]},
-    {key:"gestione", label:"⚙️ Gestione", subs:[["ferie","🏖️ Ferie"],["dipendenti","👥 Dipendenti"],["impostazioni","⚙️ Impostazioni"]]},
+  const alerts = getAlertUsciteMancanti ? getAlertUsciteMancanti().length : 0;
+
+  // Struttura navigazione unica — usata sia da sidebar che da mobile tabs
+  const navGroups = [
+    { key:"oggi",     label:"Oggi",      subs:[
+        {k:"dashboard", icon:"🏠", label:"Dashboard"},
+        {k:"presenze",  icon:"👁️", label:"Presenze", badge: alerts},
+        {k:"inserisci", icon:"✏️", label:"Inserisci"},
+    ]},
+    { key:"periodo",  label:"Periodo",   subs:[
+        {k:"report",      icon:"📊", label:"Report"},
+        {k:"settimane",   icon:"📆", label:"Settimane"},
+        {k:"scheda",      icon:"👤", label:"Scheda"},
+        {k:"giornaliero", icon:"📅", label:"Giornaliero"},
+    ]},
+    { key:"economia", label:"Economia",  subs:[
+        {k:"costi",         icon:"💶", label:"Costi"},
+        {k:"maggiorazioni", icon:"📈", label:"Maggiorazioni"},
+        {k:"bancaore",      icon:"🏦", label:"Banca ore"},
+        {k:"competenze",    icon:"📑", label:"Competenze CCNL"},
+    ]},
+    { key:"gestione", label:"Gestione",  subs:[
+        {k:"ferie",        icon:"🏖️", label:"Ferie"},
+        {k:"dipendenti",   icon:"👥", label:"Dipendenti"},
+        {k:"impostazioni", icon:"⚙️", label:"Impostazioni"},
+    ]},
   ];
-  const macroCorrente = macros.find(m=>m.subs.some(s=>s[0]===sub))?.key || state.adminTab;
-  const subCorrente = macros.find(m=>m.key===macroCorrente)?.subs || [];
-  return `
-    <div class="admin-header">
-      <div>
-        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:0.5;text-transform:uppercase;margin-bottom:3px">Pannello di controllo</div>
-        <h1 style="font-size:19px;font-weight:700;letter-spacing:-0.3px">🔐 TimbròApp Admin</h1>
-      </div>
-      <div class="admin-header-actions" style="display:flex;gap:8px;align-items:center">
-        <select id="admin-filtro-sede" onchange="aggiornaSede()" style="border-radius:var(--radius);padding:7px 10px;font-size:12px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-family:var(--font)">
-          <option value="">Tutte le sedi</option>
-          ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
-        </select>
-        <button class="btn btn-sm" style="background:rgba(245,158,11,0.9);color:var(--ink-80)" data-export-csv>⬇️ CSV</button>
-        <button class="btn btn-sm" style="background:rgba(245,158,11,0.9);color:var(--ink-80)" data-export-excel>⬇️ Excel</button>
-        <button class="btn btn-white btn-sm" data-logout>Esci</button>
-      </div>
-    </div>
-    <div style="max-width:960px;margin:0 auto;padding:16px">
-      <div style="background:var(--ink-80);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:10px 12px 0;display:flex;gap:3px;overflow-x:auto;scrollbar-width:none" class="macro-tabs">
-        ${macros.map(m=>`<button data-admin-macro="${m.key}" class="macro-tab ${m.key===macroCorrente?"active":"inactive"}">${m.label}</button>`).join("")}
-      </div>
-      <div style="background:var(--white);border:1px solid rgba(15,23,42,0.06);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);box-shadow:var(--shadow)">
-        <div class="sub-tabs" style="padding:10px 14px 0;border-bottom:1px solid var(--slate-10)">
-          ${subCorrente.map(([k,l])=>`<button data-admin-sub="${k}" class="sub-tab ${sub===k?"active":"inactive"}">${l}</button>`).join("")}
+
+  const macroCorrente = navGroups.find(g=>g.subs.some(s=>s.k===sub))?.key || "oggi";
+  const subCorrente   = navGroups.find(g=>g.key===macroCorrente)?.subs || [];
+
+  // ── Sidebar desktop ──
+  const sidebar = navGroups.map(g => `
+    <div class="sb-section">${g.label}</div>
+    ${g.subs.map(s => `
+      <button class="sb-item ${s.k===sub?"active":""}"
+              data-admin-sub="${s.k}" data-admin-macro="${g.key}">
+        <span class="sb-icon">${s.icon}</span>
+        ${s.label}
+        ${s.badge ? `<span class="sb-badge">${s.badge}</span>` : ""}
+      </button>`).join("")}
+  `).join("");
+
+  // ── Sub-tabs desktop (riga orizzontale sopra il contenuto) ──
+  const desktopSubtabs = subCorrente.length > 1 ? `
+    <div class="admin-subtabs">
+      ${subCorrente.map(s=>`
+        <button class="admin-subtab ${s.k===sub?"active":""}"
+                data-admin-sub="${s.k}" data-admin-macro="${macroCorrente}">
+          ${s.icon} ${s.label}
+        </button>`).join("")}
+    </div>` : "";
+
+  // ── Tab mobile (macro + sub, visibili solo su mobile) ──
+  const mobileTabs = `
+    <div class="admin-mobile">
+      <div style="background:var(--ink);color:white;padding:12px 14px;display:flex;justify-content:space-between;align-items:center" class="admin-header">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:0.5;text-transform:uppercase;margin-bottom:2px">Pannello</div>
+          <h1 style="font-size:18px;font-weight:700">TimbròApp Admin</h1>
         </div>
-        <div class="admin-content">${content}</div>
+        <div class="admin-header-actions" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <select id="admin-filtro-sede-m" onchange="state.filtroSede=this.value;render()"
+            style="border-radius:var(--radius);padding:6px 8px;font-size:12px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-family:var(--font)">
+            <option value="">Tutte le sedi</option>
+            ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
+          </select>
+          <button class="btn btn-sm" style="background:rgba(245,158,11,0.9);color:var(--ink-80)" data-export-csv>⬇️</button>
+          <button class="btn btn-sm" style="background:rgba(245,158,11,0.9);color:var(--ink-80)" data-export-excel>Excel</button>
+          <button class="btn btn-white btn-sm" data-logout>Esci</button>
+        </div>
       </div>
+      <div style="max-width:960px;margin:0 auto;padding:16px">
+        <div style="background:var(--ink-80);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:10px 12px 0;display:flex;gap:3px;overflow-x:auto;scrollbar-width:none" class="macro-tabs">
+          ${navGroups.map(g=>`<button data-admin-macro="${g.key}" class="macro-tab ${g.key===macroCorrente?"active":"inactive"}">${g.label}</button>`).join("")}
+        </div>
+        <div style="background:var(--white);border:1px solid rgba(15,23,42,0.06);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);box-shadow:var(--shadow)">
+          <div class="sub-tabs" style="padding:10px 14px 0;border-bottom:1px solid var(--slate-10)">
+            ${subCorrente.map(s=>`<button data-admin-sub="${s.k}" data-admin-macro="${macroCorrente}" class="sub-tab ${s.k===sub?"active":"inactive"}">${s.icon} ${s.label}</button>`).join("")}
+          </div>
+          <div class="admin-content">${content}</div>
+        </div>
+      </div>
+    </div>`;
+
+  return `
+    <div class="admin-shell">
+
+      <!-- TOPBAR desktop -->
+      <div class="admin-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:17px;font-weight:700;color:white;font-family:var(--font)">TimbròApp <span style="color:var(--amber)">●</span></span>
+          <span style="width:1px;height:18px;background:rgba(255,255,255,0.1)"></span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:500">Controllo costi interno</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="admin-filtro-sede" onchange="aggiornaSede()"
+            style="border-radius:var(--radius);padding:6px 10px;font-size:12px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:white;font-family:var(--font)">
+            <option value="">Tutte le sedi</option>
+            ${SEDI.map(s=>`<option value="${s}"${state.filtroSede===s?" selected":""}>${s}</option>`).join("")}
+          </select>
+          <button class="btn btn-sm" style="background:rgba(245,158,11,0.85);color:var(--ink)" data-export-csv>⬇️ CSV</button>
+          <button class="btn btn-sm" style="background:rgba(245,158,11,0.85);color:var(--ink)" data-export-excel>⬇️ Excel</button>
+          <button class="btn btn-white btn-sm" data-logout>Esci</button>
+        </div>
+      </div>
+
+      <!-- SIDEBAR desktop -->
+      <aside class="admin-sidebar">
+        <div class="sb-filtri">
+          <select data-filtro-mese style="">
+            ${MESI.map((m,i)=>`<option value="${i}"${i===state.filtroMese?" selected":""}>${m}</option>`).join("")}
+          </select>
+          <select data-filtro-anno style="">
+            ${[2024,2025,2026,2027,2028].map(y=>`<option value="${y}"${y===state.filtroAnno?" selected":""}>${y}</option>`).join("")}
+          </select>
+        </div>
+        ${sidebar}
+      </aside>
+
+      <!-- MAIN desktop -->
+      <main class="admin-main">
+        ${desktopSubtabs}
+        ${content}
+      </main>
+
+      <!-- MOBILE (tab orizzontali, nascosto su desktop) -->
+      ${mobileTabs}
+
     </div>`;
 }
 

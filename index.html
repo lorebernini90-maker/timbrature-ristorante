@@ -2174,15 +2174,8 @@ function renderAdmin() {
       </button>`).join("")}
   `).join("");
 
-  // ── Sub-tabs desktop (riga orizzontale sopra il contenuto) ──
-  const desktopSubtabs = subCorrente.length > 1 ? `
-    <div class="admin-subtabs">
-      ${subCorrente.map(s=>`
-        <button class="admin-subtab ${s.k===sub?"active":""}"
-                data-admin-sub="${s.k}" data-admin-macro="${macroCorrente}">
-          ${s.icon} ${s.label}
-        </button>`).join("")}
-    </div>` : "";
+  // ── Sub-tabs desktop: RIMOSSI — navigazione solo dalla sidebar ──
+  const desktopSubtabs = "";
 
   // ── Tab mobile (macro + sub, visibili solo su mobile) ──
   const mobileTabs = `

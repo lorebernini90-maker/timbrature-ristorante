@@ -1848,22 +1848,7 @@ window.supCambiaMese = async function(meseStr) {
   render();
 };
 
-window.supervisoreAggiungiTurno = async function(dipId) {
-  const data = document.getElementById("sup-add-data")?.value;
-  const entrata = document.getElementById("sup-add-entrata")?.value;
-  const uscita = document.getElementById("sup-add-uscita")?.value;
-  const pausa = parseInt(document.getElementById("sup-add-pausa")?.value)||0;
-  if(!data||!entrata||!uscita) { alert("Compila tutti i campi"); return; }
-  const dip = state.dipendenti.find(d=>d.id===dipId);
-  if(!dip) return;
-  const calcolo = calcolaTurno(entrata, uscita, pausa, sogliaMinutiDip(dip));
-  const _newTimb1145 = await addDoc(collection(db,"timbrature"),{
-    dipendenteId:dipId, data, tipo:"lavoro",
-    entrata, uscita, pausa, calcolo, sede: dip.sede||SEDI[0]
-  });
-  state.timbrature.push({id:_newTimb1145.id,dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa,calcolo,sede:dip.sede||SEDI[0]});
-  render();
-};
+window.supervisoreAggiungiTurno = async function(dipId) { if(window._supSaving) return; window._supSaving=true; try { const data = document.getElementById("sup-add-data")?.value; const entrata = document.getElementById("sup-add-entrata")?.value; const uscita = document.getElementById("sup-add-uscita")?.value; const pausa = parseInt(document.getElementById("sup-add-pausa")?.value)||0; if(!data||!entrata||!uscita) { alert("Compila tutti i campi"); return; } const dip = state.dipendenti.find(d=>d.id===dipId); if(!dip) return; const calcolo = calcolaTurno(entrata, uscita, pausa, sogliaMinutiDip(dip)); const _newTimb1145 = await addDoc(collection(db,"timbrature"),{ dipendenteId:dipId, data, tipo:"lavoro", entrata, uscita, pausa, calcolo, sede: dip.sede||SEDI[0] }); state.timbrature.push({id:_newTimb1145.id,dipendenteId:dipId,data,tipo:"lavoro",entrata,uscita,pausa,calcolo,sede:dip.sede||SEDI[0]}); render(); } finally { window._supSaving=false; } };
 
 
 function renderDipendente() {

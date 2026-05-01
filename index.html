@@ -4384,7 +4384,7 @@ function getTimbrMeseCalendario(meseStr, dipId) {
     return dipId ? state.timbrature.filter(t=>t.dipendenteId===dipId) : state.timbrature;
   }
   // Altrimenti usa la cache
-  const cached = window._cacheTimbrMese[meseStr] || [];
+  const cached = (window._cacheTimbrMese||{})[meseStr] || [];
   return dipId ? cached.filter(t=>t.dipendenteId===dipId) : cached;
 }
 

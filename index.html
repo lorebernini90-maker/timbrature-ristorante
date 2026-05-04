@@ -965,6 +965,70 @@ function calcolaTurno(entrata, uscita, pausa, sogliaMinuti) {
   return {totaleMin:tot,diurneMin:diur,notturneMin:nott,straordinariMin:str,strDiurniMin:strD,strNotturniMin:strN,ordNottMin:ordNott};
 }
 
+ window.popolaMatricoleSedi = async function() {
+    // Dataset costruito dai PDF di paghe (azienda 1551 = Vivandaio, azienda 1552 = Rione Certosa).
+    // Match per cognome+nome con normalizzazione (uppercase, spazi multipli, accenti).
+    // Aggiorna solo i campi matricola e sede; non tocca altro.
+    const norm = (s) => (s||"").toString().toUpperCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/[^A-Z0-9' ]/g," ").replace(/\s+/g," ").trim();
+    const SEDE_VIV = "Vivandaio", SEDE_CER = "Rione Certosa";
+    const ANAG = [
+      // Azienda 1551 → Vivandaio
+      [1,"BERNINI LORENZO",SEDE_VIV],[2,"MAZZOCCHI FRANCESCO",SEDE_VIV],
+      [11,"AVIGLIANO COSIMO",SEDE_VIV],[19,"MAURANTONIO NICCOLO",SEDE_VIV],
+      [20,"LAURETTI MAURICIO",SEDE_VIV],[21,"ISLAM SHAIFUL",SEDE_VIV],
+      [23,"MOREM BERTINI PEDRO",SEDE_VIV],[25,"ATIGODA ACHARIGE ROSHAN NISHANTHA",SEDE_VIV],
+      [26,"DONNINI MARCO",SEDE_VIV],[27,"PIRRO GIUSEPPE",SEDE_VIV],
+      [28,"OPOKU PETER",SEDE_VIV],[29,"YAMBA DANIEL KAY",SEDE_VIV],
+      [31,"DONYINA STEPHEN",SEDE_VIV],[32,"NAVEED AMIR",SEDE_VIV],
+      [33,"DARUMURA HETTIGE THILAK SUNIMAL",SEDE_VIV],[34,"BARTOLOZZI NICOLETTA",SEDE_VIV],
+      [47,"GLUSHAKOVA VIRA",SEDE_VIV],[67,"PEPI MATTEO",SEDE_VIV],
+      [84,"BROGELLI BEATRICE",SEDE_VIV],[92,"SHUMI BINIYAM AKLILU",SEDE_VIV],
+      [99,"AGOSTI MATTEO",SEDE_VIV],[157,"KILIC SEYMA",SEDE_VIV],
+      [203,"ATIGODA ACHARIGE HIMANSA NETHMINA",SEDE_VIV],[223,"PLAKA AMANDA",SEDE_VIV],
+      [226,"AMENDOLA ANDREA",SEDE_VIV],[228,"SCHIRRIPA LAVINIA DILETTA",SEDE_VIV],
+      [231,"HAIDER SHAMRAIZ",SEDE_VIV],[234,"FRANCIONI ALESSANDRO",SEDE_VIV],
+      [245,"ARROYO NICOLE",SEDE_VIV],[246,"BAROZZI GIOVANNI",SEDE_VIV],
+      [247,"BIFFOLI ALESSIA",SEDE_VIV],[248,"PUTZOLU ALESSANDRO",SEDE_VIV],
+      [249,"NAVEED SHAHID",SEDE_VIV],[251,"PASSERINI GIOIA",SEDE_VIV],
+      // Azienda 1552 → Rione Certosa
+      [236,"SALVI MATTEO",SEDE_CER],[237,"ACHIMENCO ALEXANDRIN",SEDE_CER],
+      [242,"IANNONE NOEMI ALESSANDRA",SEDE_CER],[243,"TENORE GIUSEPPE",SEDE_CER],
+      [244,"ASSAR MOHAMED ABOU EL FETO",SEDE_CER],[250,"PEPE VALERIO",SEDE_CER],
+    ];
+    const aliasMap = new Map(ANAG.map(([m,n,s])=>[norm(n),{matricola:m,sede:s,nomeAnag:n}]));
+    let aggiornati=0, giaOk=0, nonTrovatiInApp=[], nonTrovatiInPDF=[];
+    const trovatiAppNorm = new Set();
+    for(const dip of state.dipendenti) {
+      const k = norm(dip.nome);
+      const ref = aliasMap.get(k);
+      if(!ref){ nonTrovatiInPDF.push(dip.nome); continue; }
+      trovatiAppNorm.add(k);
+      const updates={};
+      if(dip.matricola !== ref.matricola) updates.matricola = ref.matricola;
+      if(dip.sede !== ref.sede) updates.sede = ref.sede;
+      if(Object.keys(updates).length===0){ giaOk++; continue; }
+      try {
+        await updateDoc(doc(db,"dipendenti",dip.id), updates);
+        Object.assign(dip, updates);
+        aggiornati++;
+      } catch(e) {
+        console.error("Errore update", dip.nome, e);
+      }
+    }
+    for(const [k,ref] of aliasMap.entries()) {
+      if(!trovatiAppNorm.has(k)) nonTrovatiInApp.push(`${ref.matricola} ${ref.nomeAnag}`);
+    }
+    console.log("=== popolaMatricoleSedi ===");
+    console.log(`✅ Aggiornati: ${aggiornati}`);
+    console.log(`✓ Già corretti: ${giaOk}`);
+    console.log(`⚠️ Nei PDF ma non trovati nell'app (${nonTrovatiInApp.length}):`, nonTrovatiInApp);
+    console.log(`ℹ️ Nell'app ma non nei PDF/non riconosciuti (${nonTrovatiInPDF.length}):`, nonTrovatiInPDF);
+    alert(`Popolamento completato:\n✅ ${aggiornati} aggiornati\n✓ ${giaOk} già corretti\n⚠️ ${nonTrovatiInApp.length} nei PDF non trovati nell'app\nℹ️ ${nonTrovatiInPDF.length} nell'app non riconosciuti dai PDF\n(Vedi console per dettagli)`);
+    render();
+};
+
  window.ricalcolaNotturni = async function() {
     const turni = state.timbrature.filter(t => t.tipo==="lavoro" && t.entrata && t.uscita && (t.entrata<"06:00"||t.uscita<t.entrata||(t.calcolo&&(t.calcolo.notturneMin>0||t.calcolo.straordinariMin>0))));
     let ok=0, err=0;
@@ -1582,7 +1646,10 @@ Vuoi inserire comunque (i turni esistenti restano)?`)) return;
     const supervisore=document.getElementById("md-supervisore")?.checked||false;
     const dataAssunzione=document.getElementById("md-data-assunzione")?.value||null;
     const livello=document.getElementById("md-livello")?.value||null;
-    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie:monteFerieManuale||null,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,supervisore,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null,dataAssunzione:dataAssunzione||null,livello:livello||null};
+    const matricolaRaw=document.getElementById("md-matricola")?.value;
+    const matricola=matricolaRaw!==undefined&&matricolaRaw!==""?parseInt(matricolaRaw,10)||null:null;
+    const sede=document.getElementById("md-sede")?.value||null;
+    const dati={nome,tipo,tariffaOraria:tariffa,sogliaOre:soglia,monteFerie:monteFerieManuale||null,feriePregresse,montePermessi,oreSett,pin:pinFinale,attivo,supervisore,fineContratto:fineContratto||null,email:email||null,telefono:telefono||null,dataAssunzione:dataAssunzione||null,livello:livello||null,matricola,sede};
     if(state.modaleDip.mode==="modifica"){
       const id=state.modaleDip.dip.id;
       await updateDoc(doc(db,"dipendenti",id),dati);
@@ -3757,6 +3824,10 @@ function renderModaleDip() {
           <div><label>Contratto</label>
             <select id="md-tipo">${["Full Time","Part Time","Intermittente"].map(t=>`<option${d.tipo===t?" selected":""}>${t}</option>`).join("")}</select>
           </div>
+          <div><label>Matricola <span style="font-weight:400;color:#9ca3af;font-size:11px">— numero da paghe</span></label><input id="md-matricola" type="number" min="1" step="1" placeholder="Es. 1" value="${d.matricola||""}"></div>
+          <div><label>Sede</label>
+            <select id="md-sede">${["",...SEDI].map(s=>`<option value="${s}"${(d.sede||"")===s?" selected":""}>${s||"— non assegnata —"}</option>`).join("")}</select>
+          </div>
           <div><label>
             <span class="tooltip-wrap">Costo orario azienda (€/h)
               <span class="tooltip-icon">?</span>
@@ -3923,6 +3994,18 @@ function renderAdminScheda() {
 
 function esportaCSV() {
   const tm=getTimbMese();
+  // Helper di ordinamento (replica di quello in esportaExcel): sede → matricola crescente, senza matricola in coda al gruppo.
+  const sedeIdxCsv = (s) => { const i = SEDI.indexOf(s); return i >= 0 ? i : 999; };
+  const ordinaDipCsv = (lista) => [...lista].sort((a, b) => {
+    const sa = sedeIdxCsv(a.sede), sb = sedeIdxCsv(b.sede);
+    if (sa !== sb) return sa - sb;
+    const ma = (a.matricola != null && a.matricola !== "") ? Number(a.matricola) : null;
+    const mb = (b.matricola != null && b.matricola !== "") ? Number(b.matricola) : null;
+    if (ma != null && mb != null) return ma - mb;
+    if (ma != null) return -1;
+    if (mb != null) return 1;
+    return (a.nome || "").localeCompare(b.nome || "");
+  });
   const righe=[["Dipendente","Tipo","Data","Giorno","Entrata","Uscita","Pausa","Ore Tot.","Diurne","Notturne","Str.Diurni","Str.Nott.","Assenza","Costo Totale","Spezzato"]];
   // Aggrega per dipendente+data
   const perDipData={};
@@ -3931,6 +4014,8 @@ function esportaCSV() {
     if(!perDipData[k]) perDipData[k]={dip:state.dipendenti.find(d=>d.id===t.dipendenteId),data:t.data,turni:[]};
     perDipData[k].turni.push(t);
   });
+  // Raggruppa righe per dipendente in modo da poter ordinare per sede→matricola
+  const righePerDip = new Map(); // dipId -> { dip, righe: [] }
   Object.values(perDipData).forEach(({dip,data,turni})=>{
     if(!dip) return;
     const agg=aggregaTurniGiorno(turni,dip);
@@ -3939,14 +4024,29 @@ function esportaCSV() {
     const costo=calcolaCostoAggregato(c,data,dip);
     const isSpezzato=turni.length>1;
     const orari=isSpezzato?turni.map(t=>`${t.entrata}→${t.uscita}`).join(" + "):`${turni[0].entrata||""}→${turni[0].uscita||""}`;
-    righe.push([dip.nome,dip.tipo,data,tipo,orari,"",isSpezzato?turni.reduce((s,t)=>s+(t.pausa||0),0):"",
+    if(!righePerDip.has(dip.id)) righePerDip.set(dip.id,{dip,righe:[]});
+    righePerDip.get(dip.id).righe.push([dip.nome,dip.tipo,data,tipo,orari,"",isSpezzato?turni.reduce((s,t)=>s+(t.pausa||0),0):"",
       minToHHMM(c.totaleMin),minToHHMM(c.diurneMin),minToHHMM(c.notturneMin),
       minToHHMM(c.strDiurniMin),minToHHMM(c.strNotturniMin),"",
       costo?costo.totale.toFixed(2):"",isSpezzato?"Sì":"No"]);
   });
   tm.filter(t=>t.tipo==="assenza").forEach(t=>{
     const dip=state.dipendenti.find(x=>x.id===t.dipendenteId);
-    righe.push([dip?.nome||"",dip?.tipo||"",t.data,getTipoGiorno(t.data),"","","","","","","","",t.assenza||"","","No"]);
+    if(!dip){
+      righe.push(["","",t.data,getTipoGiorno(t.data),"","","","","","","","",t.assenza||"","","No"]);
+      return;
+    }
+    if(!righePerDip.has(dip.id)) righePerDip.set(dip.id,{dip,righe:[]});
+    righePerDip.get(dip.id).righe.push([dip.nome,dip.tipo,t.data,getTipoGiorno(t.data),"","","","","","","","",t.assenza||"","","No"]);
+  });
+  // Ordina i dipendenti e flatten
+  const dipOrdinati = ordinaDipCsv([...righePerDip.values()].map(x=>x.dip));
+  dipOrdinati.forEach(dip=>{
+    const blocco = righePerDip.get(dip.id);
+    if(!blocco) return;
+    // Ordina anche per data dentro lo stesso dipendente
+    blocco.righe.sort((a,b)=> (a[2]||"").localeCompare(b[2]||""));
+    blocco.righe.forEach(r=>righe.push(r));
   });
   const csv=righe.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n");
   const a=document.createElement("a");
@@ -3959,9 +4059,29 @@ function esportaExcel() {
   const wb=XLSX.utils.book_new();
   const _turniAperti=tm.filter(t=>t.tipo==="lavoro"&&t.aperto&&!t.uscita).length;
 
+  // ── Helper di ordinamento: per sede (ordine SEDI), poi matricola crescente,
+  //    dipendenti senza matricola in coda al loro gruppo (ordine alfabetico).
+  //    Dipendenti senza sede vanno in coda di tutto.
+  const ordinaDipendenti = (lista) => {
+    const sedeIdx = (s) => {
+      const i = SEDI.indexOf(s);
+      return i >= 0 ? i : 999;
+    };
+    return [...lista].sort((a, b) => {
+      const sa = sedeIdx(a.sede), sb = sedeIdx(b.sede);
+      if (sa !== sb) return sa - sb;
+      const ma = (a.matricola != null && a.matricola !== "") ? Number(a.matricola) : null;
+      const mb = (b.matricola != null && b.matricola !== "") ? Number(b.matricola) : null;
+      if (ma != null && mb != null) return ma - mb;
+      if (ma != null) return -1;     // a ha matricola, b no → a prima
+      if (mb != null) return 1;      // b ha matricola, a no → b prima
+      return (a.nome || "").localeCompare(b.nome || "");
+    });
+  };
+
   // ── FOGLIO 1: RIEPILOGO ──
   const righeRiepilogo=[["Dipendente","Contratto","Giorni Lav.","Ore Totali","Ore Diurne","Ore Notturne","Str.Diurni","Str.Notturni","Ferie (h)","Permessi (h)","Malattia (h)","Riposo Comp. (h)","Giorno Libero (h)"]];
-  state.dipendenti.forEach(dip=>{
+  ordinaDipendenti(state.dipendenti).forEach(dip=>{
     const r=getRiepilogo().find(x=>x.dip.id===dip.id);
     if(!r) return;
     const ass=tm.filter(t=>t.dipendenteId===dip.id&&t.tipo==="assenza");
@@ -3981,7 +4101,7 @@ function esportaExcel() {
   const anno = state.filtroAnno;
   const mese = state.filtroMese;
   const giorniDelMese = new Date(anno, mese+1, 0).getDate();
-  const dipAttivi = state.dipendenti.filter(d => tm.some(t => t.dipendenteId === d.id));
+  const dipAttivi = ordinaDipendenti(state.dipendenti.filter(d => tm.some(t => t.dipendenteId === d.id)));
   const giorniSettimana2 = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
   const abbrAssenza2 = {"Ferie":"FER","Permesso":"PER","Malattia":"MAL","Riposo Compensativo":"RIP","Congedo Parentale":"CON","Giorno Libero":"LIB"};
 

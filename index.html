@@ -1722,7 +1722,8 @@ function renderSupervisoreTab(dip) {
 
   // Vista lista dipendenti
   if(!dipSel) {
-    const dips = getDipendentiAttivi().filter(d=>d.id!==dip.id);
+    const supRicerca = (state.supRicerca||"").trim().toLowerCase();
+    const dips = getDipendentiAttivi().filter(d=>d.id!==dip.id).filter(d=>!supRicerca||d.nome.toLowerCase().includes(supRicerca));
     const html = dips.map(d=>{
       const timbrOggi = state.timbrature.filter(t=>t.dipendenteId===d.id&&t.data===oggi2);
       const haLavoro = timbrOggi.some(t=>t.tipo==="lavoro");
@@ -1768,7 +1769,10 @@ function renderSupervisoreTab(dip) {
         <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">
           Seleziona un dipendente per vedere le timbrature
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px">${html}</div>
+        <input type="text" id="sup-ricerca-dip" placeholder="🔍 Cerca dipendente..." value="${state.supRicerca||""}"
+          oninput="state.supRicerca=this.value;render();setTimeout(()=>{const el=document.getElementById('sup-ricerca-dip');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},0)"
+          style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box">
+        <div style="display:flex;flex-direction:column;gap:8px">${html || '<div style="text-align:center;color:#9ca3af;padding:16px;font-size:13px">Nessun dipendente trovato</div>'}</div>
       </div>`;
   }
 

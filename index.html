@@ -785,7 +785,46 @@ import { getFirestore, collection, addDoc, getDocs, getDocsFromServer, onSnapsho
 const ADMIN_PIN = "1234";
 const VOCI_ASSENZA = ["Ferie","Permesso","Malattia","Riposo Compensativo","Congedo Parentale","Giorno Libero"];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const SEDI = ["Vivandaio", "Rione Certosa"];
+// Elenco sedi: valore di default, sovrascritto da impostazioni/generale.sedi su Firestore
+let SEDI = ["Vivandaio", "Rione Certosa"];
+function setSedi(arr){ SEDI = (arr||[]).map(s=>String(s).trim()).filter(Boolean); window.SEDI = SEDI; }
+setSedi(SEDI);
+
+// ── SEDE DEL DISPOSITIVO ──────────────────────────────────────
+// Ogni tablet/telefono viene associato una volta al punto vendita in cui si trova.
+// Serve a non mostrare l'elenco di tutti i dipendenti del gruppo su ogni schermo.
+const LS_SEDE_DISPOSITIVO = "timbro_sede_dispositivo_v1";
+function getSedeDispositivo() {
+  try { const s = localStorage.getItem(LS_SEDE_DISPOSITIVO); return (s && SEDI.includes(s)) ? s : ""; }
+  catch(e) { return ""; }
+}
+function setSedeDispositivo(s) {
+  try { s ? localStorage.setItem(LS_SEDE_DISPOSITIVO, s) : localStorage.removeItem(LS_SEDE_DISPOSITIVO); }
+  catch(e) { console.warn("localStorage non disponibile:", e); }
+}
+// Dipendenti mostrati nella schermata di login: quelli della sede del dispositivo,
+// più quelli senza sede assegnata (così nessuno resta chiuso fuori).
+function dipendentiPerLogin() {
+  const sede = getSedeDispositivo();
+  const tutti = getDipendentiAttivi();
+  if(!sede || window._loginMostraTutti) return tutti;
+  return tutti.filter(d => !d.sede || d.sede === sede);
+}
+window.impostaSedeDispositivo = function(s) {
+  setSedeDispositivo(s);
+  window._loginMostraTutti = false;
+  window._loginCerca = "";
+  render();
+};
+// Sedi che un supervisore puo' vedere: sediGestite (multi-sede) oppure la propria sede.
+function sediGestiteDa(dip) {
+  if(Array.isArray(dip?.sediGestite) && dip.sediGestite.length) return dip.sediGestite.filter(s=>SEDI.includes(s));
+  return dip?.sede ? [dip.sede] : [];
+}
+window.toggleLoginTutti = function() {
+  window._loginMostraTutti = !window._loginMostraTutti;
+  render();
+};
 
 const MAGGIORAZIONI = {
   strDiurno: 0.30,
@@ -1363,6 +1402,7 @@ async function caricaImpostazioni() {
     if(snap.exists()) {
       const d = snap.data();
       if(d.pinObbligatorio !== undefined) window._pinObbligatorio = d.pinObbligatorio;
+      if(Array.isArray(d.sedi) && d.sedi.length) setSedi(d.sedi);
     }
   } catch(e) { console.warn('Errore caricamento impostazioni:', e); }
 }
@@ -1384,26 +1424,67 @@ async function caricaDipendenti() {
 }
 
 // Riferimento al listener attivo (per poterlo cancellare quando cambia anno)
-let _unsubTimbrature = null;
 
+// ── SOTTOSCRIZIONI TIMBRATURE ─────────────────────────────────
+// state.timbrature e' la ricomposizione di piu' "bucket", cosi' possiamo tenere
+// attive insieme query diverse (le mie timbrature + l'anno intero) senza che
+// l'una sovrascriva l'altra. Un dipendente normale carica solo i propri dati:
+// e' il caso che gira tutto il giorno sui tablet delle sedi.
+const _subsTimbrature = {};
+const _bucketTimbrature = {};
+
+function _ricomponiTimbrature() {
+  const map = new Map();
+  Object.keys(_bucketTimbrature).forEach(k=>{
+    (_bucketTimbrature[k]||[]).forEach(t=>map.set(t.id,t));
+  });
+  state.timbrature = Array.from(map.values());
+}
+
+function _sottoscriviTimbrature(chiave, q) {
+  if(_subsTimbrature[chiave]) return;
+  _subsTimbrature[chiave] = onSnapshot(q, snap=>{
+    _bucketTimbrature[chiave] = snap.docs.map(d=>({id:d.id,...d.data()}));
+    _ricomponiTimbrature();
+    if(state.vista!=="loading") render();
+  }, err=>console.warn("Listener timbrature", chiave, err));
+}
+
+function _annullaSottoscrizioni(filtro) {
+  Object.keys(_subsTimbrature).forEach(k=>{
+    if(!filtro || filtro(k)) {
+      try { _subsTimbrature[k](); } catch(e) {}
+      delete _subsTimbrature[k];
+      delete _bucketTimbrature[k];
+    }
+  });
+  _ricomponiTimbrature();
+}
+
+// Tutte le timbrature di un singolo dipendente (qualche centinaio di documenti).
+// Solo uguaglianza su un campo: nessun indice composto da creare su Firestore.
+function ascoltaTimbratureDipendente(dipId) {
+  if(!dipId) return;
+  _sottoscriviTimbrature("dip:"+dipId, query(collection(db,"timbrature"), where("dipendenteId","==",dipId)));
+}
+
+// Anno intero di tutte le sedi: serve ad admin e supervisori, che sono pochi.
 function ascoltaTimbrature(anno) {
   anno = anno || state.filtroAnno || new Date().getFullYear();
   const annoStr = String(anno);
-  // Cancella listener precedente se esiste
-  if(_unsubTimbrature) { _unsubTimbrature(); _unsubTimbrature = null; }
-  // Query filtrata: solo documenti con data che inizia per l'anno selezionato
-  const q = query(collection(db,"timbrature"), where("data",">=",annoStr+"-01-01"), where("data","<=",annoStr+"-12-31"));
-  _unsubTimbrature = onSnapshot(q, snap=>{
-    state.timbrature = snap.docs.map(d=>({id:d.id,...d.data()}));
-    if(state.vista!=="loading") render();
-  });
+  const chiave = "anno:"+annoStr;
+  if(_subsTimbrature[chiave]) return;
+  _annullaSottoscrizioni(k=>k.indexOf("anno:")===0);
+  _sottoscriviTimbrature(chiave, query(collection(db,"timbrature"),
+    where("data",">=",annoStr+"-01-01"), where("data","<=",annoStr+"-12-31")));
 }
 
 async function avvia() {
   try {
     await caricaImpostazioni();
   await caricaDipendenti();
-    ascoltaTimbrature();
+    // Nessun caricamento timbrature qui: si sottoscrive dopo il login,
+    // in base a chi entra (vedi gestione click login).
     state.vista="login"; render();
   } catch(e) {
     document.getElementById("app").innerHTML=`<div class="loading"><div style="color:#dc2626">❌ Errore Firebase: ${e.message}</div></div>`;
@@ -1435,13 +1516,20 @@ document.addEventListener("click", async function(e) {
       if(pin!==dip.pin){ alert("PIN errato!"); return; }
     }
     state.utenteCorrente=dip;
+    ascoltaTimbratureDipendente(dip.id);
+    // Il supervisore vede anche i colleghi: gli serve l'anno intero (banca ore,
+    // ferie, riepiloghi). I dipendenti normali no.
+    if(dip.supervisore) ascoltaTimbrature(state.filtroAnno);
     state.vista="dipendente"; render();
   }
   else if(t.dataset.loginAdmin!==undefined) {
     const pin=prompt("Inserisci il PIN admin:");
-    if(pin===ADMIN_PIN){state.vista="admin";render();} else if(pin!==null) alert("PIN errato!");
+    if(pin===ADMIN_PIN){ ascoltaTimbrature(state.filtroAnno); state.vista="admin"; render(); }
+    else if(pin!==null) alert("PIN errato!");
   }
   else if(t.dataset.logout!==undefined) {
+    _annullaSottoscrizioni();
+    window._cacheTimbrMese = {};
     state.vista="login"; state.utenteCorrente=null; state.dipTab="timbra"; state.adminTab="oggi"; state.adminSubTab="dashboard"; state.supDipSelezionato=null; render();
   }
   else if(t.dataset.dipTab) { state.dipTab=t.dataset.dipTab; render(); }
@@ -1671,8 +1759,27 @@ document.addEventListener("change", function(e) {
   if(t.dataset.filtroAnno!==undefined){ state.filtroAnno=parseInt(t.value); ascoltaTimbrature(state.filtroAnno); }
 });
 
+function renderSceltaSede() {
+  return `
+    <div style="background:var(--ink);color:white;padding:18px 24px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px">Configurazione dispositivo</div>
+      <h1 style="font-size:22px;font-weight:700;letter-spacing:-0.5px">TimbroApp</h1>
+    </div>
+    <div class="login-wrap"><div class="login-card">
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px">In quale punto vendita ti trovi?</h2>
+      <p style="color:var(--slate);font-size:14px;margin-bottom:20px">Si sceglie una volta sola su questo dispositivo. Poi comparir&agrave; solo il personale di questa sede.</p>
+      ${SEDI.map(s=>`
+        <div class="login-item" onclick="window.impostaSedeDispositivo('${s.replace(/'/g,"\\'")}')">
+          <div style="font-weight:600">${s}</div>
+          <span style="color:var(--amber);font-size:20px">&rarr;</span>
+        </div>`).join("")}
+    </div></div>`;
+}
+
 function renderLogin() {
-  const dipAttivi = getDipendentiAttivi();
+  if(SEDI.length>1 && !getSedeDispositivo()) return renderSceltaSede();
+  const sedeDisp = getSedeDispositivo();
+  const dipAttivi = dipendentiPerLogin();
   const cerca = window._loginCerca||"";
   const filtrati = cerca.trim()
     ? dipAttivi.filter(d=>d.nome.toLowerCase().includes(cerca.toLowerCase()))
@@ -1706,7 +1813,15 @@ function renderLogin() {
           </div>`).join("")}
         ${filtrati.length===0?`<div style="text-align:center;color:var(--slate);padding:24px;font-size:14px">Nessun dipendente trovato</div>`:""}
       </div>
-      <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--slate-10)">
+      ${sedeDisp?`<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--slate-10);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--slate)">
+        <span>&#128205; ${sedeDisp}</span>
+        <span>
+          <a onclick="window.toggleLoginTutti()" style="color:var(--amber);cursor:pointer;font-weight:600">${window._loginMostraTutti?"Solo questa sede":"Mostra tutti"}</a>
+          &nbsp;&middot;&nbsp;
+          <a onclick="window.impostaSedeDispositivo('')" style="color:var(--slate);cursor:pointer">Cambia sede</a>
+        </span>
+      </div>`:""}
+      <div style="margin-top:16px;padding-top:18px;border-top:1px solid var(--slate-10)">
         <button data-login-admin style="width:100%;padding:12px;background:var(--ink);color:white;border:none;border-radius:var(--radius-lg);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">
           🔐 Accesso Admin
         </button>
@@ -1723,7 +1838,11 @@ function renderSupervisoreTab(dip) {
   // Vista lista dipendenti
   if(!dipSel) {
     const supRicerca = (state.supRicerca||"").trim().toLowerCase();
-    const dips = getDipendentiAttivi().filter(d=>d.id!==dip.id).filter(d=>!supRicerca||d.nome.toLowerCase().includes(supRicerca));
+    const sediSup = sediGestiteDa(dip);
+    const dips = getDipendentiAttivi()
+      .filter(d=>d.id!==dip.id)
+      .filter(d=>!sediSup.length || !d.sede || sediSup.includes(d.sede))
+      .filter(d=>!supRicerca||d.nome.toLowerCase().includes(supRicerca));
     const html = dips.map(d=>{
       const timbrOggi = state.timbrature.filter(t=>t.dipendenteId===d.id&&t.data===oggi2);
       const haLavoro = timbrOggi.some(t=>t.tipo==="lavoro");
@@ -1758,6 +1877,7 @@ function renderSupervisoreTab(dip) {
       <div style="background:#7c3aed;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:14px;font-weight:700;color:white;margin-bottom:4px">👁 Vista Supervisore</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.75)">${sediSup.length?sediSup.join(" / "):"Tutte le sedi"}</div>
         </div>
         <button class="btn btn-white btn-sm" data-logout>Esci</button>
       </div>
@@ -2008,7 +2128,7 @@ function renderDipTimbra(dip) {
       <!-- NESSUN TURNO APERTO: mostra entrata -->
       ${!hasAssenzaOggi?`
       ${dip.sede?`<div style="font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:12px">📍 ${dip.sede}</div>`:""}
-      <input type="hidden" id="inp-sede-entrata" value="${dip.sede||SEDI[0]}">
+      <input type="hidden" id="inp-sede-entrata" value="${dip.sede||getSedeDispositivo()||SEDI[0]}">
       <div style="margin-bottom:14px">
         <label>Ora entrata <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">(modifica se hai dimenticato di timbrare)</span></label>
         <input type="time" id="inp-ora-entrata" value="${ora}">
@@ -2076,7 +2196,8 @@ function renderDipStorico(dip) {
     if(t.dipendenteId !== dip.id) return false;
     if(filtroData) return t.data === filtroData;
     if(filtroMese) return t.data.startsWith(filtroMese);
-    return true;
+    // Senza filtri: anno corrente (ora che il dipendente ha in memoria tutto il suo storico)
+    return t.data.startsWith(String(state.filtroAnno));
   }).sort((a,b)=>b.data.localeCompare(a.data));
 
   // Raggruppa per data
@@ -3621,6 +3742,38 @@ function renderAdminImpostazioni() {
     </div>
 
     <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px">🏪 Punti vendita</div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:12px">Aggiungi, rinomina o elimina le sedi. L'ordine qui determina l'ordine nell'export Excel.</div>
+      ${SEDI.map((s,i)=>{
+        const nDip = getDipendentiAttivi().filter(d=>d.sede===s).length;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${s}</div>
+            <div style="font-size:11px;color:#6b7280">${nDip} dipendenti attivi</div>
+          </div>
+          <button onclick="window.spostaSede(${i},-1)" ${i===0?'disabled':''} class="btn btn-sm" style="background:#e5e7eb;color:#374151;${i===0?'opacity:.4;cursor:default':''}">↑</button>
+          <button onclick="window.spostaSede(${i},1)" ${i===SEDI.length-1?'disabled':''} class="btn btn-sm" style="background:#e5e7eb;color:#374151;${i===SEDI.length-1?'opacity:.4;cursor:default':''}">↓</button>
+          <button onclick="window.rinominaSede(${i})" class="btn btn-sm" style="background:#e5e7eb;color:#374151">✏️</button>
+          <button onclick="window.eliminaSede(${i})" class="btn btn-sm" style="background:#fee2e2;color:#dc2626">🗑️</button>
+        </div>`;
+      }).join("")}
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px">Sede di questo dispositivo</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Nella schermata di login compare solo il personale di questa sede (piu' chi non ha sede assegnata).</div>
+        <select onchange="window.impostaSedeDispositivo(this.value)"
+          style="width:100%;padding:9px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;box-sizing:border-box">
+          <option value="">— nessuna: mostra tutti —</option>
+          ${SEDI.map(s=>`<option value="${s}"${getSedeDispositivo()===s?" selected":""}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="nuova-sede" placeholder="Nome nuovo punto vendita"
+          style="flex:1;padding:9px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;box-sizing:border-box">
+        <button onclick="window.aggiungiSede()" class="btn btn-primary">+ Aggiungi</button>
+      </div>
+    </div>
+
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px">
       <div style="font-weight:700;font-size:13px;margin-bottom:12px">💾 Backup dati</div>
       <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Esporta tutti i dati in JSON per backup o ripristino</div>
       <button onclick="window.esportaBackup()" class="btn btn-primary" style="margin-right:8px">⬇️ Esporta backup JSON</button>
@@ -4369,6 +4522,68 @@ window.toggleImpostazione=async function(quale){
   render();
 };
 
+// ── GESTIONE SEDI (punti vendita) ─────────────────────────────
+async function salvaSediSuFirebase(){
+  try {
+    await setDoc(doc(db,'impostazioni','generale'), { sedi: SEDI }, { merge: true });
+    return true;
+  } catch(e) { console.warn('Errore salvataggio sedi:', e); alert('Errore nel salvataggio: '+e.message); return false; }
+}
+
+window.aggiungiSede = async function(){
+  const inp = document.getElementById('nuova-sede');
+  const nome = (inp?.value||'').trim();
+  if(!nome) { alert('Inserisci il nome del punto vendita'); return; }
+  if(SEDI.some(s=>s.toLowerCase()===nome.toLowerCase())) { alert('Questo punto vendita esiste già'); return; }
+  setSedi([...SEDI, nome]);
+  await salvaSediSuFirebase();
+  render();
+};
+
+window.spostaSede = async function(i, dir){
+  const j = i + dir;
+  if(j<0 || j>=SEDI.length) return;
+  const arr = [...SEDI];
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  setSedi(arr);
+  await salvaSediSuFirebase();
+  render();
+};
+
+window.rinominaSede = async function(i){
+  const vecchio = SEDI[i];
+  const nuovo = (prompt('Nuovo nome per "'+vecchio+'":', vecchio)||'').trim();
+  if(!nuovo || nuovo===vecchio) return;
+  if(SEDI.some((s,k)=>k!==i && s.toLowerCase()===nuovo.toLowerCase())) { alert('Esiste già un punto vendita con questo nome'); return; }
+  if(!confirm('Verranno aggiornati anche tutti i dipendenti e le timbrature associati a "'+vecchio+'". Procedere?')) return;
+  try {
+    const dipDaAgg = state.dipendenti.filter(d=>d.sede===vecchio);
+    for(const d of dipDaAgg) await updateDoc(doc(db,'dipendenti',d.id), { sede: nuovo });
+    dipDaAgg.forEach(d=>{ d.sede = nuovo; });
+    const snap = await getDocs(query(collection(db,'timbrature'), where('sede','==',vecchio)));
+    for(const t of snap.docs) await updateDoc(doc(db,'timbrature',t.id), { sede: nuovo });
+    state.timbrature.forEach(t=>{ if(t.sede===vecchio) t.sede = nuovo; });
+    const arr = [...SEDI]; arr[i] = nuovo; setSedi(arr);
+    if(state.filtroSede===vecchio) state.filtroSede = nuovo;
+    await salvaSediSuFirebase();
+    alert('Rinominato: '+dipDaAgg.length+' dipendenti e '+snap.size+' timbrature aggiornati.');
+  } catch(e) { console.warn(e); alert('Errore durante la rinomina: '+e.message); }
+  render();
+};
+
+window.eliminaSede = async function(i){
+  const nome = SEDI[i];
+  if(SEDI.length<=1) { alert('Deve restare almeno un punto vendita'); return; }
+  const dipAttivi = getDipendentiAttivi().filter(d=>d.sede===nome);
+  if(dipAttivi.length) { alert('Impossibile eliminare "'+nome+'": ci sono ancora '+dipAttivi.length+' dipendenti attivi assegnati. Spostali su un\'altra sede prima di procedere.'); return; }
+  const timbEsistenti = state.timbrature.filter(t=>t.sede===nome).length;
+  if(!confirm('Eliminare "'+nome+'" dall\'elenco?'+(timbEsistenti?'\n\nLe '+timbEsistenti+' timbrature storiche di questa sede restano nel database e nei report, ma la sede non sarà più selezionabile.':''))) return;
+  setSedi(SEDI.filter((s,k)=>k!==i));
+  if(state.filtroSede===nome) state.filtroSede = '';
+  await salvaSediSuFirebase();
+  render();
+};
+
 window.esportaBackup=function(){
   const backup = {
     versione: "1.0",
@@ -4423,7 +4638,7 @@ window.importaBackup=async function(input){
 };
 window.renderLoginList=function(){
   const cerca=window._loginCerca||"";
-  const dipAttivi=getDipendentiAttivi();
+  const dipAttivi=dipendentiPerLogin();
   const filtrati=cerca.trim()?dipAttivi.filter(d=>d.nome.toLowerCase().includes(cerca.toLowerCase())):dipAttivi;
   const el=document.getElementById("login-list");
   if(!el)return;
@@ -4492,6 +4707,7 @@ async function caricaTimbratureMese(meseStr) {
     const snap = await getDocs(q);
     const risultati = snap.docs.map(d=>({id:d.id,...d.data()}));
     window._cacheTimbrMese[meseStr] = risultati;
+    _bucketTimbrature["cache:"+meseStr] = risultati;
     // Aggiorna anche state.timbrature se è lo stesso anno del filtro corrente
     if(parseInt(anno) === state.filtroAnno) {
       // Integra i nuovi dati in state.timbrature (evita duplicati)
@@ -4752,7 +4968,7 @@ window.ciSalvaFn=async function(dipId,ds){var tipo=document.getElementById("ci-a
 window.ciSalvaModFn=async function(tid,dipId,ds){var e=document.getElementById("ci-ef-en")?document.getElementById("ci-ef-en").value:"";if(!e){alert("Inserisci orario entrata");return;}var _us=document.getElementById("ci-ef-us")?document.getElementById("ci-ef-us").value:"";var _pa=(document.getElementById("ci-ef-pa")?parseInt(document.getElementById("ci-ef-pa").value)||0:0);var _se=document.getElementById("ci-ef-se")?document.getElementById("ci-ef-se").value:"";var _dip=state.dipendenti.find(function(d){return d.id===dipId;});var _soglia=_dip?sogliaMinutiDip(_dip):400;var _calcolo=(_us&&e)?calcolaTurno(e,_us,_pa,_soglia):null;var upd={entrata:e,uscita:_us,pausa:_pa,sede:_se,aperto:!_us,calcolo:_calcolo};try{var r=await ciGetDB();await r.fs.updateDoc(r.fs.doc(r.db,"timbrature",tid),upd);var p=ciPool(ds),i=p.findIndex(function(t){return t.id===tid;});if(i>=0)Object.assign(p[i],upd);const _ism=state.timbrature.findIndex(function(x){return x.id===tid;});if(_ism>=0)Object.assign(state.timbrature[_ism],upd);state.calGiorno.editTimb=null;ciRenderModalFn();render();}catch(err){alert("Errore: "+err.message);}};
 window.ciElimFn=async function(tid,dipId,ds){if(!confirm("Eliminare?"))return;try{var r=await ciGetDB();await r.fs.deleteDoc(r.fs.doc(r.db,"timbrature",tid));var p=ciPool(ds),i=p.findIndex(function(t){return t.id===tid;});if(i>=0)p.splice(i,1);state.timbrature=state.timbrature.filter(function(x){return x.id!==tid;});ciRenderModalFn();render();}catch(err){alert("Errore: "+err.message);}};
 window.ciChiudiFn=async function(tid,dipId,ds){var u=document.getElementById("ci-ch-u-"+tid)?document.getElementById("ci-ch-u-"+tid).value:"";if(!u){alert("Inserisci uscita");return;}var _chPa=parseInt(document.getElementById("ci-ch-p-"+tid)?document.getElementById("ci-ch-p-"+tid).value:"30")||30;var _chDip=state.dipendenti.find(function(d){return d.id===dipId;});var _chTimb=state.timbrature.find(function(t){return t.id===tid;});var _chSoglia=_chDip?((_chDip.sogliaOre||0)*60||400):400;var _chCalcolo=(_chTimb&&_chTimb.entrata&&u)?calcolaTurno(_chTimb.entrata,u,_chPa,_chSoglia):null;var upd={uscita:u,pausa:_chPa,aperto:false,calcolo:_chCalcolo};try{var r=await ciGetDB();await r.fs.updateDoc(r.fs.doc(r.db,"timbrature",tid),upd);var p=ciPool(ds),i=p.findIndex(function(t){return t.id===tid;});if(i>=0)Object.assign(p[i],upd);const _ich=state.timbrature.findIndex(function(x){return x.id===tid;});if(_ich>=0)Object.assign(state.timbrature[_ich],upd);ciRenderModalFn();render();}catch(err){alert("Errore: "+err.message);}};
-window.ciRenderModalFn=function(){var ex=document.getElementById("ci-modal-bg");if(ex)ex.remove();var g=state.calGiorno;if(!g)return;var dipId=g.dipId,ds=g.data,showForm=g.showForm,editTimb=g.editTimb;var dip=state.dipendenti.filter(function(d){return d.id===dipId;})[0];var dipNome=dip?dip.nome:dipId,dipSede=dip?(dip.sede||"Vivandaio"):"Vivandaio";var pool=ciPool(ds);var timbG=pool.filter(function(t){return t.dipendenteId===dipId&&t.data===ds;});var MESI_MIN=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];var GIORNI=["Domenica","Lunedi","Martedi","Mercoledi","Giovedi","Venerdi","Sabato"];var SEDI=["Vivandaio","Rione Certosa"];var VOCI=["Ferie","Permesso","Malattia","Riposo Compensativo","Congedo Parentale","Giorno Libero"];function sOpts(sel){return SEDI.map(function(s){return"<option"+(s===sel?" selected":"")+">"+s+"</option>";}).join("");}var dt=new Date(ds+"T12:00:00");var dlabel=GIORNI[dt.getDay()]+" "+dt.getDate()+" "+MESI_MIN[dt.getMonth()]+" "+dt.getFullYear();var tHtml="";if(!timbG.length){tHtml='<p style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0">Nessuna timbratura</p>';}else timbG.forEach(function(t){if(t.tipo==="lavoro"){var noU=!t.uscita||t.uscita===""||t.uscita==="--:--";var orari=noU?'<span style="color:#d97706">! Entrata: '+(t.entrata||"?")+" - uscita mancante</span>":(t.entrata||"--:--")+" -> "+(t.uscita||"--:--")+" (pausa:"+(t.pausa||0)+"min)";tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo lav">Turno</div><div class="ci-ti-orari">'+orari+'</div></div><button class="ci-tb2 ci-tb2-e" data-tid="'+t.id+'" onclick="ciModifFn(this.dataset.tid)">Mod</button><button class="ci-tb2 ci-tb2-d" data-tid="'+t.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciElimFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Elm</button></div>';}else if(t.tipo==="assenza")tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo ass">'+(t.assenza||"Assenza")+'</div></div><button class="ci-tb2 ci-tb2-d" data-tid="'+t.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciElimFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Elm</button></div>';});var noU=timbG.filter(function(t){return t.tipo==="lavoro"&&(!t.uscita||t.uscita===""||t.uscita==="--:--");});var chiudiH="";if(noU.length){var tu=noU[0];chiudiH='<div class="ci-warn"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e">Uscita mancante</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div><label>Uscita</label><input type="time" id="ci-ch-u-'+tu.id+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div><div><label>Pausa min</label><input type="number" id="ci-ch-p-'+tu.id+'" value="'+(tu.pausa??0)+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div></div><button style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;width:100%;cursor:pointer;font-weight:600" data-tid="'+tu.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciChiudiFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Chiudi giornata</button></div>';}var editH="";if(editTimb){var tEdit=pool.filter(function(x){return x.id===editTimb;})[0];if(tEdit&&tEdit.tipo==="lavoro"){editH='<div class="ci-af" style="border-color:#3b82f6;background:#eff6ff"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8">Modifica</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-ef-en" value="'+(tEdit.entrata||"")+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-us" value="'+(tEdit.uscita||"")+'"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa min</label><input type="number" id="ci-ef-pa" value="'+(tEdit.pausa!=null?tEdit.pausa:0)+'"></div><div><label>Sede</label><select id="ci-ef-se">'+sOpts(tEdit.sede)+'</select></div></div><button class="ci-sv" style="background:#3b82f6" data-tid="'+tEdit.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciSalvaModFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Salva</button><button class="ci-cv" onclick="ciAnnModFn()">Annulla</button></div>';}}var addH="";if(showForm){addH='<div class="ci-af"><div style="margin-bottom:10px"><label>Tipo</label><select id="ci-af-tipo" onchange="ciTogFn()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lav"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-af-en"></div><div><label>Uscita</label><input type="time" id="ci-af-us"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa min</label><input type="number" id="ci-af-pa" value="0"></div><div><label>Sede</label><select id="ci-af-se">'+sOpts(dipSede)+'</select></div></div></div><div id="ci-af-ass" style="display:none"><div style="margin-bottom:10px"><label>Tipo assenza</label><select id="ci-af-voci">'+VOCI.map(function(v){return"<option>"+v+"</option>";}).join("")+'</select></div><div style="margin-bottom:10px"><label>Sede</label><select id="ci-af-se-ass">'+sOpts(dipSede)+'</select></div></div><button class="ci-sv" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciSalvaFn(this.dataset.did,this.dataset.ds)">Salva</button><button class="ci-cv" onclick="ciNascFn()">Annulla</button></div>';}document.body.insertAdjacentHTML("beforeend",'<div class="ci-mbg" id="ci-modal-bg" onclick="if(event.target===this)ciChiudiModalFn()"><div class="ci-mc"><div class="ci-mh"><div><div class="ci-mt2">'+dlabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px">'+dipNome+'</div></div><button class="ci-mx" onclick="ciChiudiModalFn()">&times;</button></div>'+chiudiH+tHtml+editH+(!showForm&&!editTimb?'<button class="ci-add" onclick="ciAggFn()">+ Aggiungi</button>':"")+addH+"</div></div>");};
+window.ciRenderModalFn=function(){var ex=document.getElementById("ci-modal-bg");if(ex)ex.remove();var g=state.calGiorno;if(!g)return;var dipId=g.dipId,ds=g.data,showForm=g.showForm,editTimb=g.editTimb;var dip=state.dipendenti.filter(function(d){return d.id===dipId;})[0];var dipNome=dip?dip.nome:dipId,dipSede=dip?(dip.sede||(window.SEDI&&window.SEDI[0])||""):((window.SEDI&&window.SEDI[0])||"");var pool=ciPool(ds);var timbG=pool.filter(function(t){return t.dipendenteId===dipId&&t.data===ds;});var MESI_MIN=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];var GIORNI=["Domenica","Lunedi","Martedi","Mercoledi","Giovedi","Venerdi","Sabato"];var SEDI=(window.SEDI&&window.SEDI.length)?window.SEDI:["Vivandaio"];var VOCI=["Ferie","Permesso","Malattia","Riposo Compensativo","Congedo Parentale","Giorno Libero"];function sOpts(sel){return SEDI.map(function(s){return"<option"+(s===sel?" selected":"")+">"+s+"</option>";}).join("");}var dt=new Date(ds+"T12:00:00");var dlabel=GIORNI[dt.getDay()]+" "+dt.getDate()+" "+MESI_MIN[dt.getMonth()]+" "+dt.getFullYear();var tHtml="";if(!timbG.length){tHtml='<p style="color:#9ca3af;font-size:13px;text-align:center;padding:10px 0">Nessuna timbratura</p>';}else timbG.forEach(function(t){if(t.tipo==="lavoro"){var noU=!t.uscita||t.uscita===""||t.uscita==="--:--";var orari=noU?'<span style="color:#d97706">! Entrata: '+(t.entrata||"?")+" - uscita mancante</span>":(t.entrata||"--:--")+" -> "+(t.uscita||"--:--")+" (pausa:"+(t.pausa||0)+"min)";tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo lav">Turno</div><div class="ci-ti-orari">'+orari+'</div></div><button class="ci-tb2 ci-tb2-e" data-tid="'+t.id+'" onclick="ciModifFn(this.dataset.tid)">Mod</button><button class="ci-tb2 ci-tb2-d" data-tid="'+t.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciElimFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Elm</button></div>';}else if(t.tipo==="assenza")tHtml+='<div class="ci-ti"><div class="ci-ti-info"><div class="ci-ti-tipo ass">'+(t.assenza||"Assenza")+'</div></div><button class="ci-tb2 ci-tb2-d" data-tid="'+t.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciElimFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Elm</button></div>';});var noU=timbG.filter(function(t){return t.tipo==="lavoro"&&(!t.uscita||t.uscita===""||t.uscita==="--:--");});var chiudiH="";if(noU.length){var tu=noU[0];chiudiH='<div class="ci-warn"><p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e">Uscita mancante</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px"><div><label>Uscita</label><input type="time" id="ci-ch-u-'+tu.id+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div><div><label>Pausa min</label><input type="number" id="ci-ch-p-'+tu.id+'" value="'+(tu.pausa??0)+'" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div></div><button style="background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;width:100%;cursor:pointer;font-weight:600" data-tid="'+tu.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciChiudiFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Chiudi giornata</button></div>';}var editH="";if(editTimb){var tEdit=pool.filter(function(x){return x.id===editTimb;})[0];if(tEdit&&tEdit.tipo==="lavoro"){editH='<div class="ci-af" style="border-color:#3b82f6;background:#eff6ff"><p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8">Modifica</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-ef-en" value="'+(tEdit.entrata||"")+'"></div><div><label>Uscita</label><input type="time" id="ci-ef-us" value="'+(tEdit.uscita||"")+'"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa min</label><input type="number" id="ci-ef-pa" value="'+(tEdit.pausa!=null?tEdit.pausa:0)+'"></div><div><label>Sede</label><select id="ci-ef-se">'+sOpts(tEdit.sede)+'</select></div></div><button class="ci-sv" style="background:#3b82f6" data-tid="'+tEdit.id+'" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciSalvaModFn(this.dataset.tid,this.dataset.did,this.dataset.ds)">Salva</button><button class="ci-cv" onclick="ciAnnModFn()">Annulla</button></div>';}}var addH="";if(showForm){addH='<div class="ci-af"><div style="margin-bottom:10px"><label>Tipo</label><select id="ci-af-tipo" onchange="ciTogFn()"><option value="lavoro">Turno di lavoro</option><option value="assenza">Assenza</option></select></div><div id="ci-af-lav"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Entrata</label><input type="time" id="ci-af-en"></div><div><label>Uscita</label><input type="time" id="ci-af-us"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Pausa min</label><input type="number" id="ci-af-pa" value="0"></div><div><label>Sede</label><select id="ci-af-se">'+sOpts(dipSede)+'</select></div></div></div><div id="ci-af-ass" style="display:none"><div style="margin-bottom:10px"><label>Tipo assenza</label><select id="ci-af-voci">'+VOCI.map(function(v){return"<option>"+v+"</option>";}).join("")+'</select></div><div style="margin-bottom:10px"><label>Sede</label><select id="ci-af-se-ass">'+sOpts(dipSede)+'</select></div></div><button class="ci-sv" data-did="'+dipId+'" data-ds="'+ds+'" onclick="ciSalvaFn(this.dataset.did,this.dataset.ds)">Salva</button><button class="ci-cv" onclick="ciNascFn()">Annulla</button></div>';}document.body.insertAdjacentHTML("beforeend",'<div class="ci-mbg" id="ci-modal-bg" onclick="if(event.target===this)ciChiudiModalFn()"><div class="ci-mc"><div class="ci-mh"><div><div class="ci-mt2">'+dlabel+'</div><div style="font-size:12px;color:#6b7280;margin-top:2px">'+dipNome+'</div></div><button class="ci-mx" onclick="ciChiudiModalFn()">&times;</button></div>'+chiudiH+tHtml+editH+(!showForm&&!editTimb?'<button class="ci-add" onclick="ciAggFn()">+ Aggiungi</button>':"")+addH+"</div></div>");};
 
 async function ciRR(ds){var p=function(n){return n<10?"0"+n:""+n;};var ms=ds.substring(0,7),mc=state.filtroAnno+"-"+p(state.filtroMese+1);if(ms===mc){if(window._cacheTimbrMese)delete window._cacheTimbrMese[ms];if(window.caricaTimbratureMese)await window.caricaTimbratureMese(ms);}else{if(window._cacheTimbrMese)delete window._cacheTimbrMese[ms];if(window.caricaTimbratureMese)await window.caricaTimbratureMese(ms);}if(state.calGiorno&&window.ciRenderModalFn)window.ciRenderModalFn();render();}
 

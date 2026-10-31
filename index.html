@@ -984,6 +984,9 @@ function generaPIN4() {
 function timeToMin(t) { if(!t) return 0; const [h,m]=t.split(":").map(Number); return h*60+m; }
 function minToHHMM(min) { if(!min||min<=0) return "0:00"; const m=Math.round(min); return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`; }
 function oggi() { return new Date().toISOString().split("T")[0]; }
+function dataLocale(d) { d=d||new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+// Data del turno per un'entrata alle "ora": se l'orario indicato è oltre 60 min nel futuro, il turno è iniziato ieri (entrata recuperata dopo mezzanotte)
+function dataTurnoEntrata(ora) { const n=new Date(); if(timeToMin(ora)-(n.getHours()*60+n.getMinutes())>60){ n.setDate(n.getDate()-1); } return dataLocale(n); }
 function oraNow() { const n=new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
 function euro(n) { return `€ ${(n||0).toFixed(2)}`; }
 
@@ -1653,9 +1656,10 @@ document.addEventListener("click", async function(e) {
     const dip=state.utenteCorrente;
     const ora=document.getElementById("inp-ora-entrata")?.value||oraNow();
     const sede=document.getElementById("inp-sede-entrata")?.value||SEDI[0];
-    if(!confirm(`Confermi entrata alle ${ora}?`))return;
-    const _newTimb704 = await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
-    state.timbrature.push({id:_newTimb704.id,dipendenteId:dip.id,data:oggi(),tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
+    const dataEntrata=dataTurnoEntrata(ora);
+    if(!confirm(`Confermi entrata alle ${ora} del ${dataEntrata.split("-").reverse().join("/")}?`))return;
+    const _newTimb704 = await addDoc(collection(db,"timbrature"),{dipendenteId:dip.id,data:dataEntrata,tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
+    state.timbrature.push({id:_newTimb704.id,dipendenteId:dip.id,data:dataEntrata,tipo:"lavoro",entrata:ora,uscita:null,pausa:0,calcolo:null,sede,aperto:true});
     alert(`✅ Entrata registrata alle ${ora}`);
   }
   else if(t.dataset.timbraUscita!==undefined) {
@@ -2057,7 +2061,7 @@ function renderSupervisoreTab(dip) {
       <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:10px">➕ Aggiungi timbratura</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
         <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Data</label>
-          <input type="date" id="sup-add-data" value="${oggi2}" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
+          <input type="date" id="sup-add-data" value="${new Date().getHours()<5?dataLocale(new Date(Date.now()-864e5)):oggi2}" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
         <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Entrata</label>
           <input type="time" id="sup-add-entrata" value="09:00" style="padding:7px;border:1px solid #d1d5db;border-radius:8px;font-size:13px"></div>
         <div><label style="font-size:11px;color:#6b7280;display:block;margin-bottom:3px">Uscita</label>

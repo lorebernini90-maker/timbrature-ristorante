@@ -3659,8 +3659,13 @@ function calcolaBancaOreMultiMese(dipId) {
     if(diff >= 0) dettaglioMesi[mese].surplus += diff;
     else dettaglioMesi[mese].deficit += Math.abs(diff);
   });
-  const assenzeValide = assenze.filter(a => new Date(a.data).getDay() !== 0 && a.assenza !== "Giorno Libero");
-  // assenze neutre: non cambiano surplus/deficit
+  // Riposo Compensativo: consuma le ore standard dal saldo; le altre assenze restano neutre
+  assenze.filter(a => a.assenza === "Riposo Compensativo").forEach(a => {
+    const mese = new Date(a.data).getMonth();
+    totaleDeficit += soglia;
+    if(!dettaglioMesi[mese]) dettaglioMesi[mese] = { surplus: 0, deficit: 0 };
+    dettaglioMesi[mese].deficit += soglia;
+  });
   const saldo = totaleSurplus - totaleDeficit;
   return { dip, soglia, totaleSurplus, totaleDeficit, saldo, dettaglioMesi, periodoLabel: `Gen–${MESI[meseFiltro]} ${annoFiltro}` };
 }
@@ -3693,9 +3698,17 @@ function calcolaBancaOre(dipId) {
 
   const assenzeValide = assenze.filter(a => {
     const dow = new Date(a.data).getDay();
+    // Riposo Compensativo scala sempre la banca ore, anche se cade di domenica
+    if(a.assenza === "Riposo Compensativo") return true;
     return dow !== 0 && a.assenza !== "Giorno Libero";
   });
   assenzeValide.forEach(a => {
+    if(a.assenza === "Riposo Compensativo"){
+      // consuma le ore standard del dipendente dal saldo
+      totaleDeficit += soglia;
+      dettaglioGiorni.push({ data: a.data, tipo: "assenza", assenza: a.assenza, oreMin: 0, soglia, diff: -soglia });
+      return;
+    }
     dettaglioGiorni.push({ data: a.data, tipo: "assenza", assenza: a.assenza, oreMin: soglia, soglia, diff: 0 });
   });
 
@@ -3752,7 +3765,8 @@ function renderAdminBancaOre() {
     <div class="info-box" style="margin-bottom:16px">
       <p>&#8226; <strong>Surplus</strong>: ore lavorate oltre la soglia giornaliera</p>
       <p>&#8226; <strong>Deficit</strong>: ore mancanti rispetto alla soglia</p>
-      <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
+      <p>&#8226; Ferie, Permesso e Malattia contano come ore standard (saldo neutro)</p>
+      <p>&#8226; <strong>Riposo Compensativo</strong>: scala dal saldo le ore standard giornaliere del dipendente</p>
       <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
     </div>
     <div style="display:contents">
@@ -5101,7 +5115,8 @@ function renderSupBancaOre(dip) {
       <div class="info-box" style="margin-bottom:16px">
         <p>&#8226; <strong>Surplus</strong>: ore lavorate oltre la soglia giornaliera</p>
         <p>&#8226; <strong>Deficit</strong>: ore mancanti rispetto alla soglia</p>
-        <p>&#8226; Ferie, Permesso, Malattia e Riposo Comp. contano come ore standard (saldo neutro)</p>
+        <p>&#8226; Ferie, Permesso e Malattia contano come ore standard (saldo neutro)</p>
+      <p>&#8226; <strong>Riposo Compensativo</strong>: scala dal saldo le ore standard giornaliere del dipendente</p>
         <p>&#8226; Giorno Libero e domeniche non incidono sulla banca ore</p>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
